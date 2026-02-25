@@ -1,0 +1,20 @@
+{
+    "name": "oca/onlyoffice-callback-interceptor",
+    "description": "Intercepts OnlyOffice callbacks and redirects them to Django backend",
+    "type": "project",
+    "license": "AGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Yamaguchi Data Platform Team"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "firebase/php-jwt": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "OCA\\OnlyOfficeCallbackInterceptor\\": "lib/"
+        }
+    }
+}

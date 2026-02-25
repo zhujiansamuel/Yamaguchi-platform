@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: data_platform_postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - data_platform_network
+    restart: unless-stopped
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: data_platform_redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - data_platform_network
+    restart: unless-stopped
+
+  # Django Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data_platform_web
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4
+    volumes:
+      - ./:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - data_platform_network
+    restart: unless-stopped
+
+  # Celery Worker - Data Aggregation
+  celery_aggregation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data_platform_celery_aggregation
+    command: celery -A apps.data_aggregation.celery worker -Q aggregation_queue -n aggregation_worker@%h --loglevel=info
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - data_platform_network
+    restart: unless-stopped
+
+  # Celery Worker - Data Acquisition
+  celery_acquisition:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data_platform_celery_acquisition
+    command: celery -A apps.data_acquisition.celery worker -Q acquisition_queue -n acquisition_worker@%h --loglevel=info
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - data_platform_network
+    restart: unless-stopped
+
+  # Celery Beat (Optional - for scheduled tasks)
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data_platform_celery_beat
+    command: celery -A config beat --loglevel=info
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - data_platform_network
+    restart: unless-stopped
+
+  # Metabase - Data Visualization & Analytics
+  metabase:
+    image: metabase/metabase:latest
+    container_name: data_platform_metabase
+    restart: unless-stopped
+    environment:
+      # Metabase application database (uses PostgreSQL for persistence)
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: ${METABASE_DB_NAME:-metabase}
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${DB_USER}
+      MB_DB_PASS: ${DB_PASSWORD}
+      MB_DB_HOST: postgres
+      # Site settings
+      MB_SITE_NAME: "Data Platform Analytics"
+      MB_SITE_LOCALE: ja
+      # Production Java options
+      JAVA_OPTS: "-Xmx1g -Xms512m"
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase_data:/metabase-data
+    networks:
+      - data_platform_network
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:
+  metabase_data:
+
+networks:
+  data_platform_network:
+    driver: bridge

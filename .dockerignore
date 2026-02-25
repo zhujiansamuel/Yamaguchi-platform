@@ -1,0 +1,98 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+.mypy_cache
+.pytest_cache
+.hypothesis
+nosetests.xml
+coverage.xml
+*.cover
+*.mo
+*.pot
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/staticfiles/
+/media/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker (exclude override files)
+docker-compose*.override.yml
+
+# Environment files (will be mounted separately)
+.env
+.env.local
+.env.*.local
+
+# Documentation
+*.md
+docs/
+
+# Tests
+htmlcov/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# OS files
+Thumbs.db
+
+# Volumes
+volumes/
+postgres_data/
+redis_data/
+logs/

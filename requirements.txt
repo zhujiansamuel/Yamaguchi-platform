@@ -1,0 +1,47 @@
+# Core
+Django==5.2
+djangorestframework==3.15.2
+python-decouple==3.8
+
+# Database
+psycopg2-binary==2.9.9
+
+# Celery
+celery==5.4.0
+redis==5.0.1
+
+# API & Tools
+drf-spectacular==0.27.2
+django-cors-headers==4.3.1
+django-filter==24.2
+
+# Development
+ipython==8.21.0
+django-extensions==3.2.3
+
+# Production Web Server
+gunicorn==21.2.0
+
+# Celery Monitoring
+flower==2.0.1
+
+# Celery Beat Scheduler (for Django integration)
+django-celery-beat
+
+# Nextcloud WebDAV Integration
+# Note: webdavclient3 has compatibility issues, using requests instead
+requests==2.31.0
+openpyxl==3.1.2
+
+# JWT Authentication
+PyJWT==2.8.0
+
+# History Tracking
+django-simple-history==3.7.0
+
+httpx
+pandas
+lxml
+
+# Browser Automation
+playwright

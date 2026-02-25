@@ -1,0 +1,9 @@
+# Production dependencies
+-r requirements.txt
+
+# Production server
+gunicorn==21.2.0
+gevent==24.2.1
+
+# Monitoring & Logging
+sentry-sdk==1.40.0
