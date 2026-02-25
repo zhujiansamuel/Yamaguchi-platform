@@ -1,0 +1,685 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: data-platform-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-data_platform}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - data_platform_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: data-platform-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    networks:
+      - data_platform_internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Django Web Application
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-django
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: gunicorn
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles    # 改这行
+      - /srv/data-platform/media:/app/media           # 改这行
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+      - nextcloud_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"  # 添加这一行
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/schema/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Celery Worker - Acquisition Queue
+  celery_worker_acquisition:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-acquisition
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_acquisition
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles    # 改这行
+      - /srv/data-platform/media:/app/media           # 改这行
+    networks:
+      - data_platform_internal
+      - nextcloud_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Aggregation Queue
+  celery_worker_aggregation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-aggregation
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_aggregation
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles    # 改这行
+      - /srv/data-platform/media:/app/media           # 改这行
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Tracking Phase 1 (Excel Processing)
+  # Handles: process_tracking_excel task
+  # - Downloads Excel files from Nextcloud
+  # - Extracts URLs and creates WebScraper jobs
+  celery_worker_tracking_phase1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-tracking-phase1
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_tracking_phase1
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - data_platform_internal
+      - nextcloud_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Tracking Phase 2 (Webhook Processing)
+  # Handles: process_webscraper_tracking, batch_writeback_tracking_data tasks
+  # - Receives WebScraper webhook callbacks
+  # - Parses CSV data and updates database
+  # - Writes back tracking data to Excel files
+  celery_worker_tracking_phase2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-tracking-phase2
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_tracking_phase2
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+      - nextcloud_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Publish Tracking Batch (Phase 1.5)
+  # Handles: publish_tracking_batch task
+  # - Serially publishes single URLs to WebScraper API
+  # - 6 second sleep after each task
+  # - 1 minute timeout per task
+  celery_worker_publish_tracking_batch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-publish-tracking
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_publish_tracking_batch
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+      - nextcloud_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Yamato Tracking 10 (Local Task)
+  # Handles: process_yamato_tracking_10_excel task
+  # - Local processing (no WebScraper API)
+  # - 5 hour timeout for large batches
+  celery_worker_yamato_tracking_10:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-yamato-tracking-10
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_yamato_tracking_10
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - data_platform_internal
+      - nextcloud_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Yamato Tracking 10 Tracking Number (Worker #7)
+  # Handles: process_yamato_tracking_10_tracking_number task
+  # - Queries Purchasing model for records with order_number starting with 'w'
+  # - Filters tracking_number with 12 digits starting with 4
+  # - Excludes records with latest_delivery_status='配達完了'
+  # - Uses Redis DB 8 for complete isolation
+  # - 30 minute timeout
+  celery_worker_yamato_tracking_10_tracking_number:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-yamato-tracking-10-tracking-number
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_yamato_tracking_10_tracking_number
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Japan Post Tracking 10 Tracking Number (Worker #8)
+  # Handles: process_japan_post_tracking_10_tracking_number task
+  # - Queries Purchasing model for records with order_number starting with 'w'
+  # - Filters tracking_number with digits starting with 1 (any length)
+  # - Excludes records with latest_delivery_status='配達完了'
+  # - Uses Redis DB 6 for complete isolation
+  # - 2 minute timeout
+  celery_worker_japan_post_tracking_10_tracking_number:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-japan-post-tracking-10-tracking-number
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_japan_post_tracking_10_tracking_number
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Tracking Number Empty (Worker #4)
+  # Handles: process_tracking_number_empty task
+  # - Queries Purchasing model for records with empty tracking_number
+  # - order_number starts with 'w' (case-insensitive)
+  # - has related official_account with valid email
+  # - Excludes records with latest_delivery_status IN ['配達完了', 'お届け先にお届け済み']
+  # - Constructs Apple Store URLs and publishes to WebScraper API
+  # - Uses Redis DB 5 for complete isolation
+  # - 2 minute timeout
+  celery_worker_tracking_number_empty:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-tracking-number-empty
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_tracking_number_empty
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Email Content Analysis
+  # Handles: Email parsing and routing to appropriate handlers
+  # - Reads emails from database
+  # - Analyzes content and determines email type
+  # - Creates tasks for the three email handlers
+  celery_worker_email_content_analysis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-email-content-analysis
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_email_content_analysis
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Initial Order Confirmation Email
+  # Handles: Processing initial order confirmation emails
+  # - Receives email data from content analysis
+  # - Updates Purchasing records with confirmation information
+  celery_worker_initial_order_confirmation_email:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-initial-order-confirmation-email
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_initial_order_confirmation_email
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Order Confirmation Notification Email
+  # Handles: Processing order confirmation notification emails
+  # - Receives email data from content analysis
+  # - Updates Purchasing records with notification information
+  celery_worker_order_confirmation_notification_email:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-order-confirmation-notification-email
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_order_confirmation_notification_email
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Send Notification Email
+  # Handles: Processing send notification emails
+  # - Receives email data from content analysis
+  # - Updates Purchasing records with notification information
+  celery_worker_send_notification_email:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-send-notification-email
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_send_notification_email
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Worker - Playwright Apple Pickup (Worker #9)
+  # Handles: process_apple_pickup_contact_update task
+  # - Uses Playwright to automate Apple Store pickup contact updates
+  # - Logs into Apple Store with provided credentials
+  # - Updates pickup contact name on specified order
+  # - Uses Redis DB 9 for complete isolation
+  # - 10 minute timeout
+  celery_worker_playwright_apple_pickup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-playwright-apple-pickup
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_worker_playwright_apple_pickup
+    volumes:
+      - ./:/app
+      - /srv/data-platform/static:/app/staticfiles
+      - /srv/data-platform/media:/app/media
+      - logs_volume:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Celery Beat - Task Scheduler
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-celery-beat
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+    command: celery_beat
+    volumes:
+      - ./:/app
+      - logs_volume:/app/logs
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+
+  # Flower - Celery Monitoring
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data-platform-flower
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+      - FLOWER_USER=${FLOWER_USER:-admin}
+      - FLOWER_PASSWORD=${FLOWER_PASSWORD}
+    command: flower
+    networks:
+      - data_platform_internal
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Metabase - Data Visualization & Analytics
+  metabase:
+    image: metabase/metabase:latest
+    container_name: data-platform-metabase
+    restart: unless-stopped
+    environment:
+      # Metabase application database (uses PostgreSQL for persistence)
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: ${METABASE_DB_NAME:-metabase}
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${DB_USER:-postgres}
+      MB_DB_PASS: ${DB_PASSWORD}
+      MB_DB_HOST: postgres
+      # Site settings
+      MB_SITE_NAME: "Data Platform Analytics"
+      MB_SITE_LOCALE: ja
+      # Java options for memory management
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase_data:/metabase-data
+    networks:
+      - data_platform_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  # Playwright - Browser Automation Service
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.40.0-jammy
+    container_name: data-platform-playwright
+    restart: unless-stopped
+    command: sleep infinity
+    environment:
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+    volumes:
+      - ./:/app
+      - playwright_browsers:/ms-playwright
+    networks:
+      - data_platform_internal
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    working_dir: /app
+    ipc: host
+    security_opt:
+      - seccomp:unconfined
+
+networks:
+  # Internal network for data platform services
+  data_platform_internal:
+    driver: bridge
+
+  # External network to connect with Nextcloud
+  nextcloud_internal:
+    external: true
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  logs_volume:
+    driver: local
+  metabase_data:
+    driver: local
+  playwright_browsers:
+    driver: local

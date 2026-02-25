@@ -1,0 +1,88 @@
+# ==============================================================================
+# Caddyfile Configuration for Host Machine
+# ==============================================================================
+# Add this configuration to your existing /etc/caddy/Caddyfile
+# Then reload Caddy: sudo systemctl reload caddy
+# ==============================================================================
+
+# Data Platform - Django 应用
+data.yamaguchi.lan {
+    tls internal
+
+    # 启用 gzip 压缩
+    encode gzip zstd
+
+    # 静态文件（从宿主机路径提供）
+    handle /static/* {
+        root * /home/user/Data-consolidation
+        file_server
+        header Cache-Control "public, max-age=31536000, immutable"
+    }
+
+    # Media 文件（从宿主机路径提供）
+    handle /media/* {
+        root * /home/user/Data-consolidation
+        file_server
+        header Cache-Control "public, max-age=604800"
+    }
+
+    # Django 应用（反向代理到 Docker 容器）
+    handle {
+        reverse_proxy localhost:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+
+            transport http {
+                read_timeout 120s
+                write_timeout 120s
+            }
+        }
+    }
+
+    # 安全头设置
+    header {
+        Strict-Transport-Security "max-age=15552000; includeSubDomains"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # 日志（可选）
+    log {
+        output file /var/log/caddy/data-platform.log {
+            roll_size 100mb
+            roll_keep 10
+        }
+    }
+}
+
+# Flower - Celery 监控
+flower.yamaguchi.lan {
+    tls internal
+
+    # 反向代理到 Flower 容器
+    reverse_proxy localhost:5555 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # 安全头设置
+    header {
+        Strict-Transport-Security "max-age=15552000; includeSubDomains"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+    }
+
+    # 日志（可选）
+    log {
+        output file /var/log/caddy/flower.log {
+            roll_size 100mb
+            roll_keep 10
+        }
+    }
+}

@@ -1,0 +1,129 @@
+/* Admin settings styles for OnlyOffice Callback Interceptor */
+
+#onlyoffice-callback-interceptor {
+    padding: 10px;
+}
+
+#onlyoffice-callback-interceptor h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+#onlyoffice-callback-interceptor h3 {
+    font-size: 16px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.onlyoffice-settings-section {
+    margin-bottom: 30px;
+}
+
+.onlyoffice-settings-section p {
+    margin: 10px 0;
+}
+
+.onlyoffice-settings-section label {
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 5px;
+}
+
+.onlyoffice-settings-section em {
+    color: #888;
+    font-size: 0.9em;
+    display: block;
+    margin-top: 3px;
+}
+
+.onlyoffice-settings-section input[type="text"],
+.onlyoffice-settings-section input[type="password"],
+.onlyoffice-settings-section input[type="number"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.onlyoffice-settings-section input.checkbox {
+    margin-right: 8px;
+}
+
+.onlyoffice-info-section {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 30px;
+}
+
+.onlyoffice-info-section h3 {
+    margin-top: 0;
+}
+
+.onlyoffice-info-section ol {
+    margin: 10px 0;
+    padding-left: 25px;
+}
+
+.onlyoffice-info-section ol li {
+    margin: 5px 0;
+}
+
+#save-result,
+#health-check-result {
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+#save-result.success,
+#health-check-result.success {
+    color: green;
+}
+
+#save-result.error,
+#health-check-result.error {
+    color: red;
+}
+
+.settings-hint {
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.button-primary {
+    background-color: #0082c9;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.button-primary:hover {
+    background-color: #006aa3;
+}
+
+.button-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.button {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 8px 15px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #e8e8e8;
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
