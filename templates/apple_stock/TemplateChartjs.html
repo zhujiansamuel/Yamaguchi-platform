@@ -1,0 +1,1328 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8"/>
+    <title>跨店铺曲线</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --w: 4080px;
+        }
+
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans", "Noto Sans CJK JP", Roboto, Arial;
+            margin: 16px;
+        }
+
+        .wrap {
+            max-width: var(--w);
+            margin: 0 auto;
+        }
+
+        fieldset {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        legend {
+            padding: 0 6px;
+            color: #111827;
+            font-weight: 600;
+        }
+
+        .row3 {
+            display: grid;
+            grid-template-columns: 1.2fr .9fr .9fr;
+            gap: 10px;
+        }
+
+        .row4 {
+            display: grid;
+            grid-template-columns: .7fr .7fr .5fr .5fr;
+            gap: 10px;
+            max-width: 1500px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        label {
+            font-size: 12px;
+            color: #374151;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"], input[type="datetime-local"] {
+            width: 80%;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+        }
+
+        #shops {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px 10px;
+            max-height: 180px;
+            overflow: auto;
+        }
+
+        #shops label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btns {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: 0;
+            padding: 9px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #111827;
+            color: #fff;
+        }
+
+        button.secondary {
+            background: #374151;
+        }
+
+        button.ghost {
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        #chart {
+            width: 100%;
+            height: 540px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .error {
+            color: #b91c1c;
+            font-size: 13px;
+            margin-left: 8px;
+        }
+
+        .stat {
+            font-size: 12px;
+            white-space: pre-wrap;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h2 style="margin:6px 0 12px">店舗横断価格曲線</h2>
+
+
+    <fieldset>
+        <legend>選択条件</legend>
+        <div class="row4">
+            <div>
+                <label>iPhoneの種類</label>
+                <input id="iphone" list="iphone-list" type="text" placeholder="例：MG864J/A（プルダウンから選択可）"/>
+                <div class="muted" id="iphone-hint" style="margin-top:4px">iPhone の候補を読み込み中…</div>
+                <datalist id="iphone-list"></datalist>
+            </div>
+
+            <div>
+                <label>iPhoneの型番（Part Number）</label>
+                <input id="iphone" list="iphone-list" type="text" placeholder="例：MG864J/A（プルダウンから選択可）"/>
+                <datalist id="iphone-list"></datalist>
+                <div class="muted" id="iphone-hint" style="margin-top:4px">iPhone の候補を読み込み中…</div>
+            </div>
+
+            <div>
+                <label>時間範囲 開始（JST）</label>
+                <input id="start" type="datetime-local" step="60">
+            </div>
+            <div>
+                <label>時間範囲 終了（JST）</label>
+                <input id="end" type="datetime-local" step="60">
+            </div>
+        </div>
+
+        <div style="margin-top:10px">
+            <label>店舗</label>
+            <div id="shops"></div>
+            <div class="btns" style="margin-top:8px">
+                <button class="ghost" id="select-all" type="button">すべて選択</button>
+                <button class="ghost" id="clear-all" type="button">すべて解除</button>
+            </div>
+        </div>
+    </fieldset>
+
+    <div class="btns" style="margin:10px 0 8px">
+        <button id="load" type="button">読み込み・描画</button>
+        <button id="reset" class="secondary" type="button">表示をリセット</button>
+        <span id="status" class="muted"></span><span id="err" class="error"></span>
+    </div>
+
+    <div id="chart"></div>
+
+    <details style="margin-top:10px">
+        <summary class="muted">デバッグ情報（店舗ごとの件数／フィルタ後件数／開始・終了時刻）</summary>
+        <div id="stats" class="stat"></div>
+    </details>
+</div>
+
+<script>
+/* ===================== 0) 工具与常量 ===================== */
+
+const $ = id => document.getElementById(id);
+
+/* —— 颜色规则（按店固定色） —— */
+const SHOP_COLOR_RULES = [
+  {match: /買取商店/, color: "#DD1133", shop_id: 14, order: 1},
+  {match: /海峡通信/, color: "#478CD8", shop_id: 1, order: 2},
+  {match: /買取一丁目/, color: "#B41524", shop_id: 8, order: 3},
+  {match: /モバイルミックス/, color: "#DD1133", shop_id: 13, order: 4},
+  {match: /森森買取/, color: "#278C46", shop_id: 7, order: 5},
+  {match: /買取ルデヤ/, color: "#2DA9E8", shop_id: 9, order: 6},
+  {match: /買取wiki/, color: "#E71534", shop_id: 10, order: 7},
+  {match: /買取ホムラ/, color: "#F27474", shop_id: 19, order: 8},
+  {match: /ドラゴンモバイル/, color: "#3952A6", shop_id: 16, order: 9},
+  {match: /モバステ/, color: "#E60012", shop_id: 18, order: 10},
+  {match: /アキモバ/, color: "#20AECC", shop_id: 12, order: 11},
+  {match: /トゥインクル/, color: "#0EC7D9", shop_id: 17, order: 12},
+  {match: /家電市場/, color: "#FFF100", shop_id: 3, order: 13},
+  {match: /買取楽園/, color: "#DA7C66", shop_id: 4, order: 14},
+  {match: /買取当番/, color: "#1C4473", shop_id: 2, order: 15},
+  {match: /携帯空間/, color: "#0049A8", shop_id: 5, order: 16},
+  {match: /ゲストモバイル/, color: "#34C6F6", shop_id: 11, order: 17},
+  {match: /買取オク/, color: "#033F68", shop_id: 6, order: 18},
+  {match: /毎日買取/, color: "#C30D23", shop_id: 15, order: 19},
+  {match: /Mobile Zone/, color: "#f50620", shop_id: 20, order: 20},
+];
+const LINE_PALETTE = [
+  "#478CD8", "#E71534", "#278C46", "#2DA9E8", "#F27474",
+  "#3952A6", "#E60012", "#20AECC", "#0EC7D9", "#FFF100",
+  "#DA7C66", "#1C4473", "#0049A8", "#34C6F6", "#033F68",
+  "#C30D23", "#f50620", "#7e57c2", "#26a69a", "#ef6c00"
+];
+
+/* —— 接口路径 —— */
+const BROADCAST_URL = '/events/notify_progress_all';
+const ENDPOINT_SHOPS   = `/AppleStockChecker/secondhand-shops/`;
+const ENDPOINT_IPHONES = `/AppleStockChecker/iphones/`;
+const SERIES_API_BASE  = '/AppleStockChecker/purchasing-time-analyses-psta-compact/'; // 原始价格
+const FEATURE_SERIES_API = '/AppleStockChecker/features/points/';                      // Feature 点
+const ENDPOINT_SCOPES = '/AppleStockChecker/options/scopes/';
+
+/* —— 全局索引/缓存 —— */
+const SHOPS_INDEX = new Map();                // shop_id -> shop_name
+const IPHONE_ID_BY_PART = new Map();          // part_number -> iphone_id
+let SHOP_PROFILES = [];                       // [{id,slug,title,label,items:[{shop_id,shop_name,...}],...}]
+let COHORTS = [];                             // [{id,slug,title,label,members:[{iphone_id,part_number,...}]}]
+let PROFILE_BY_ID = new Map();
+let COHORT_BY_ID = new Map();
+let _SCOPES_CACHE = null;
+
+/* —— 查询上下文 —— */
+let ACTIVE_PART_NUMBER = '';
+let ACTIVE_IPHONE_ID   = null;
+let SELECTED_SHOP_IDS  = new Set();
+let SELECTED_START_MS  = null;
+let SELECTED_END_MS    = null;
+
+/* —— 其他常用工具 —— */
+const fmtJPY = n => new Intl.NumberFormat('ja-JP', {style: 'currency', currency: 'JPY', maximumFractionDigits: 0}).format(n);
+const WDAY = ['日', '月', '火', '水', '木', '金', '土'];
+
+function nearestPastMinuteMs(d = new Date()) { return Math.floor(d.getTime() / 60000) * 60000; }
+function toIsoLocal(dtStr) {
+  if (!dtStr || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dtStr)) return '';
+  return `${dtStr}:00+09:00`;
+}
+function toMillis(s) { const t = new Date(s).valueOf(); return Number.isFinite(t) ? t : NaN; }
+
+function verticalTickFormatter(ms) {
+  const d = new Date(ms);
+  const m = d.getMonth() + 1, day = d.getDate(), w = WDAY[d.getDay()];
+  return `${m}\n月\n${day}日\n（${w}）`;
+}
+
+/* ===================== 1) 颜色/顺序规则 ===================== */
+const RULE_BY_ID = new Map(SHOP_COLOR_RULES.filter(r => typeof r.shop_id === 'number').map(r => [r.shop_id, r]));
+function getRuleForShop({name, id}) {
+  if (id != null && RULE_BY_ID.has(Number(id))) return RULE_BY_ID.get(Number(id));
+  for (const r of SHOP_COLOR_RULES) { if (r.match?.test?.(name)) return r; }
+  return null;
+}
+function getOrderForShop({name, id}) {
+  const r = getRuleForShop({name, id});
+  return (r && typeof r.order === 'number') ? r.order : Number.POSITIVE_INFINITY;
+}
+function getColorForShop({name, id}, idx = 0) {
+  const r = getRuleForShop({name, id});
+  return r?.color || LINE_PALETTE[idx % LINE_PALETTE.length];
+}
+
+/* ===================== 2) 图表容器与工厂（主图 + 分图） ===================== */
+
+const ChartGrids = {
+  // 每个 part 一张子图（价格/Feature）
+  price: new Map(),   // part -> {el, chart}
+  feature: new Map(), // part -> {el, chart}
+  hostPrice: null,    // #chart_parts
+  hostFeature: null   // #chart_feature
+};
+
+function createPanel(host, titleText, isFeature = false) {
+  const panel = document.createElement('div');
+  panel.className = 'chart-panel';
+  const title = document.createElement('div');
+  title.className = 'chart-title';
+  title.textContent = titleText || '';
+  const canvas = document.createElement('div');
+  canvas.className = isFeature ? 'feature-canvas' : 'chart-canvas';
+  panel.appendChild(title);
+  panel.appendChild(canvas);
+  host.appendChild(panel);
+  return {panel, canvas};
+}
+
+function initChartHostsOnce() {
+  // 价格分图容器：#chart_parts（若不存在自动插在 #chart 之后）
+  if (!ChartGrids.hostPrice) {
+    let host = document.getElementById('chart_parts');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'chart_parts';
+      const anchor = document.getElementById('chart') || document.querySelector('.wrap') || document.body;
+      anchor.insertAdjacentElement('afterend', host);
+    }
+    host.innerHTML = '';
+    host.classList.add('chart-grid');
+    ChartGrids.hostPrice = host;
+  }
+  // Feature 分图容器：#chart_feature（若不存在自动创建在 #chart_parts 之后）
+  if (!ChartGrids.hostFeature) {
+    let host = document.getElementById('chart_feature');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'chart_feature';
+      const anchor = ChartGrids.hostPrice || document.getElementById('chart') || document.body;
+      anchor.insertAdjacentElement('afterend', host);
+    }
+    host.innerHTML = '';
+    host.classList.add('chart-grid');
+    ChartGrids.hostFeature = host;
+  }
+}
+
+function baseOptionForTimeseries(yName = 'JPY') {
+  return {
+    animation: false,
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    legend: { top: 8, left: 10, itemGap: 14, icon: 'circle' },
+    grid: { left: 16, right: 48, top: 40, bottom: 12 },
+    xAxis: [{
+      type: 'time',
+      minInterval: 24 * 3600 * 1000,
+      axisLabel: { formatter: verticalTickFormatter, lineHeight: 16, margin: 18 },
+      axisTick: { alignWithLabel: true }
+    }],
+    yAxis: [{ type: 'value', position: 'right', name: yName, scale: true }],
+    dataZoom: [
+      { type: 'inside', xAxisIndex: [0] },
+      { type: 'slider', xAxisIndex: [0], bottom: -2, height: 12, handleSize: 0 }
+    ],
+    series: []
+  };
+}
+
+function baseOptionForPrice()   { return baseOptionForTimeseries('JPY'); }
+function baseOptionForFeature() { return baseOptionForTimeseries('Feature'); }
+
+function ensureDailyTicksOn(inst) {
+  inst.setOption({
+    xAxis: [{
+      type: 'time',
+      minInterval: 24 * 3600 * 1000,
+      axisLabel: { formatter: verticalTickFormatter, lineHeight: 16, margin: 18 },
+      axisTick: { alignWithLabel: true }
+    }]
+  }, { notMerge: false, lazyUpdate: true });
+}
+
+function ensureDailyTicksAll() {
+  ChartGrids.price.forEach(m => ensureDailyTicksOn(m.chart));
+  ChartGrids.feature.forEach(m => ensureDailyTicksOn(m.chart));
+}
+
+function buildBusinessHoursMarkArea10to19(startMs, endMs) {
+  const oneDay = 24 * 3600 * 1000;
+  const data = [];
+  let d0 = new Date(startMs); d0.setHours(0,0,0,0);
+  for (let t = d0.valueOf(); t <= endMs + oneDay; t += oneDay) {
+    const s10 = new Date(t); s10.setHours(10,0,0,0);
+    const e19 = new Date(t); e19.setHours(19,0,0,0);
+    const left = Math.max(s10.valueOf(), startMs);
+    const right = Math.min(e19.valueOf(), endMs);
+    if (left < right) data.push([{xAxis: left}, {xAxis: right}]);
+  }
+  return { silent: true, itemStyle: { color: '#fffef8', opacity: 0.35 }, data };
+}
+
+function applyWorkHoursOverlayOn(inst, startMs, endMs) {
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || startMs >= endMs) return;
+  inst.setOption({
+    series: [{
+      id: '__workhours__',
+      type: 'line',
+      data: [],
+      markArea: buildBusinessHoursMarkArea10to19(startMs, endMs),
+      silent: true,
+      z: -10
+    }]
+  }, { notMerge: false, lazyUpdate: true });
+}
+
+function applyWorkHoursOverlayAll(startMs, endMs) {
+  ChartGrids.price.forEach(m => applyWorkHoursOverlayOn(m.chart, startMs, endMs));
+  ChartGrids.feature.forEach(m => applyWorkHoursOverlayOn(m.chart, startMs, endMs));
+}
+
+/* —— 子图工厂 —— */
+function createPanelAndInitChart(host, title, isFeature = false) {
+  const {panel, canvas} = createPanel(host, title, isFeature);
+  const inst = echarts.init(canvas);
+  inst.setOption(isFeature ? baseOptionForFeature() : baseOptionForPrice(), true);
+  ensureDailyTicksOn(inst);
+  return {panel, chart: inst};
+}
+function ensurePriceChartForPart(partNumber) {
+  initChartHostsOnce();
+  if (!ChartGrids.price.has(partNumber)) {
+    const m = createPanelAndInitChart(ChartGrids.hostPrice, `iPhone PN：${partNumber}`, false);
+    ChartGrids.price.set(partNumber, m);
+  }
+  return ChartGrids.price.get(partNumber).chart;
+}
+function ensureFeatureChartForPart(partNumber) {
+  initChartHostsOnce();
+  if (!ChartGrids.feature.has(partNumber)) {
+    const m = createPanelAndInitChart(ChartGrids.hostFeature, `Feature ｜ PN：${partNumber}`, true);
+    ChartGrids.feature.set(partNumber, m);
+  }
+  return ChartGrids.feature.get(partNumber).chart;
+}
+function disposeAllPartCharts() {
+  ChartGrids.price.forEach(m => { try{ m.chart.dispose(); }catch{} });
+  ChartGrids.feature.forEach(m => { try{ m.chart.dispose(); }catch{} });
+  ChartGrids.price.clear(); ChartGrids.feature.clear();
+  if (ChartGrids.hostPrice)  ChartGrids.hostPrice.innerHTML  = '';
+  if (ChartGrids.hostFeature)ChartGrids.hostFeature.innerHTML= '';
+}
+
+/* —— 主图（仅用于 A 旧查询） —— */
+const baseOption = baseOptionForPrice();
+let CHART_MAIN = null;
+function getMainChart() {
+  if (!CHART_MAIN) {
+    const el = document.getElementById('chart');
+    if (!el) { console.warn('#chart not found'); return null; }
+    CHART_MAIN = echarts.init(el);
+    CHART_MAIN.setOption(baseOption, true);
+    window.addEventListener('resize', () => CHART_MAIN && CHART_MAIN.resize());
+  }
+  return CHART_MAIN;
+}
+const chart = getMainChart();
+
+/* —— 新旧两套“增改系列” —— */
+// 主图用（A）
+function addOrUpdateSeries(id, name, color, data) {
+  const inst = chart; if (!inst) return;
+  const opt = inst.getOption() || {};
+  const cur = (opt.series || []).filter(s => s.id !== '__workhours__');
+  const idx = cur.findIndex(s => s.id === id);
+  const base = {
+    id, name, type: 'line', showSymbol: false, smooth: 0.15,
+    xAxisIndex: 0, yAxisIndex: 0,
+    emphasis: { focus: 'series' },
+    lineStyle: { width: 2, color },
+    itemStyle: { color },
+    data
+  };
+  if (idx >= 0) cur[idx] = { ...cur[idx], name, data, lineStyle: { ...(cur[idx].lineStyle||{}), width: 2, color }, itemStyle: { color } };
+  else cur.push(base);
+  inst.setOption({ series: cur, legend: { data: cur.map(s => s.name) } }, { notMerge: false, lazyUpdate: true });
+}
+// 分图用（B/C/D/E）
+function addOrUpdateSeriesForPart(part, id, name, color, data) {
+  const inst = ensurePriceChartForPart(part);
+  const opt = inst.getOption() || {};
+  const arr = (opt.series || []).slice();
+  const idx = arr.findIndex(s => s.id === id);
+  const base = {
+    id, name,
+    type: 'line', showSymbol: false, smooth: 0.15,
+    xAxisIndex: 0, yAxisIndex: 0,
+    emphasis: {focus: 'series'},
+    lineStyle: {width: 2, color},
+    itemStyle: {color},
+    data
+  };
+  if (idx >= 0) {
+    arr[idx] = { ...arr[idx], name, data, xAxisIndex: 0, yAxisIndex: 0,
+      lineStyle: { ...(arr[idx].lineStyle||{}), width: 2, color }, itemStyle: {color} };
+  } else { arr.push(base); }
+  inst.setOption({ series: arr, legend: { data: arr.map(s => s.name) } }, { notMerge: false, lazyUpdate: true });
+}
+
+/* ===================== 3) 数据加载 ===================== */
+
+async function loadShops() {
+  const box = $('shops');
+  if (box) box.innerHTML = '';
+  SHOPS_INDEX.clear();
+  try {
+    const resp = await fetch(ENDPOINT_SHOPS);
+    const payload = await resp.json();
+    const items = Array.isArray(payload) ? payload
+      : Array.isArray(payload?.results) ? payload.results
+      : Array.isArray(payload?.items) ? payload.items : [];
+    const normalized = [];
+    for (const s of items) {
+      const sid = Number(s?.id ?? s?.shop_id ?? s?.pk);
+      if (!Number.isFinite(sid)) continue;
+      const name = s?.name ?? s?.shop_name ?? s?.display_name ?? String(sid);
+      const order = getOrderForShop({name, id: sid});
+      const color = getColorForShop({name, id: sid}, normalized.length);
+      normalized.push({id: sid, name, order, color});
+      SHOPS_INDEX.set(sid, name);
+    }
+    normalized.sort((a,b) => (a.order - b.order) || a.name.localeCompare(b.name, 'ja'));
+    if (box) {
+      for (const s of normalized) {
+        const label = document.createElement('label'); label.title = s.name;
+        const input = document.createElement('input');
+        input.type = 'checkbox'; input.value = String(s.id);
+        input.dataset.name = s.name; input.dataset.shopId = String(s.id);
+        const span = document.createElement('span'); span.textContent = s.name; span.style.color = s.color;
+        label.appendChild(input); label.appendChild(span); box.appendChild(label);
+      }
+    }
+  } catch (e) { console.warn('loadShops failed', e); }
+}
+
+async function loadIphones() {
+  const dl = $('iphone-list'); if (dl) dl.innerHTML = '';
+  IPHONE_ID_BY_PART.clear();
+  try {
+    const resp = await fetch(ENDPOINT_IPHONES);
+    const items = await resp.json();
+    for (const i of items) {
+      const text = `${i.part_number} ｜ ${i.model_name} ${i.capacity_gb}GB ｜ ${i.color}`;
+      if (dl) {
+        const opt = document.createElement('option'); opt.value = i.part_number; opt.label = text;
+        dl.appendChild(opt);
+      }
+      if (i.id != null && i.part_number) IPHONE_ID_BY_PART.set(String(i.part_number), Number(i.id));
+    }
+  } catch (e) { console.warn('loadIphones failed', e); }
+}
+
+function buildURL(base, startIsoJST, endIsoJST, shopId, partNumber) {
+  const sid = Number(shopId);
+  if (!Number.isFinite(sid)) throw new Error('Invalid shop id');
+  if (!startIsoJST || !endIsoJST) throw new Error('Invalid time range');
+  const u = new URL(base, location.origin);
+  u.searchParams.set("start", startIsoJST);
+  u.searchParams.set("end", endIsoJST);
+  u.searchParams.set("shop", String(sid));
+  u.searchParams.set("iphone__part_number", String(partNumber));
+  return u.toString();
+}
+
+async function fetchOneShopSeries(base, startIsoJST, endIsoJST, shopId, shopName, partNumber) {
+  const url = buildURL(base, startIsoJST, endIsoJST, shopId, partNumber);
+  const headers = {"Accept": "application/json"};
+  const token = localStorage.getItem('iphone:token');
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const resp = await fetch(url, {headers});
+  if (!resp.ok) {
+    const txt = await resp.text().catch(()=>'');
+    throw new Error(`HTTP ${resp.status} ${resp.statusText} | ${txt.slice(0,200)}`);
+  }
+  const payload = await resp.json();
+  const raw = Array.isArray(payload) ? payload
+    : Array.isArray(payload?.results) ? payload.results
+    : Array.isArray(payload?.items) ? payload.items : [];
+  // 字段兜底
+  const pick = (r, kList) => kList.find(k => k in r) ?? kList[0];
+  const tKey = raw[0] ? pick(raw[0], ["Timestamp_Time", "timestamp_time", "timestamp", "ts", "t"]) : "Timestamp_Time";
+  const pKey = raw[0] ? pick(raw[0], ["New_Product_Price", "new_product_price", "price", "value"]) : "New_Product_Price";
+  const pnKey= raw[0] ? pick(raw[0], ["iphone", "iphone__part_number", "part_number"]) : "iphone";
+  const rows = raw.filter(r => !r[pnKey] || r[pnKey] === partNumber);
+  const data = rows.map(r => [new Date(r[tKey]).valueOf(), Number(r[pKey])])
+                   .filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]))
+                   .sort((a,b)=>a[0]-b[0]);
+  return { name: shopName, data };
+}
+
+function appendShadowToNowIfNeeded(seriesData) {
+  if (!seriesData.length) return seriesData;
+  const last = seriesData[seriesData.length - 1];
+  const nowMin = nearestPastMinuteMs();
+  const lastT = Array.isArray(last) ? last[0] : (last?.value?.[0] ?? NaN);
+  const lastY = Array.isArray(last) ? last[1] : (last?.value?.[1] ?? NaN);
+  if (Number.isFinite(lastT) && lastT < nowMin && Number.isFinite(lastY)) {
+    seriesData.push({ value: [nowMin, lastY], symbol: 'emptyCircle', symbolSize: 6, shadow: true, src_ts: lastT });
+  }
+  return seriesData;
+}
+
+/* ===================== 4) Scopes：cohort / profile / iphone 选项 ===================== */
+
+function arrFirst(obj, keys) {
+  for (const k of keys) {
+    const v = obj && obj[k];
+    if (Array.isArray(v)) return v;
+  }
+  return [];
+}
+async function loadScopesOnce() {
+  if (_SCOPES_CACHE) return _SCOPES_CACHE;
+  const resp = await fetch(ENDPOINT_SCOPES, { headers: { "Accept": "application/json" } });
+  if (!resp.ok) throw new Error(`Scopes HTTP ${resp.status}`);
+  _SCOPES_CACHE = await resp.json();
+  return _SCOPES_CACHE || {};
+}
+function extractProfilesFromScopes(scopes) {
+  const profs = arrFirst(scopes, ['shop_profiles','profiles','shopGroups','shop_groups']);
+  return profs.map(p => {
+    const itemsRaw = arrFirst(p, ['items','members','shops','shop_members']);
+    const items = itemsRaw.map(it => ({
+      shop_id: Number(it.shop_id ?? it.id ?? it.pk),
+      shop_name: it.shop_name ?? it.name ?? it.display_name ?? String(it.shop_id ?? it.id ?? ''),
+      display_index: Number(it.display_index ?? it.index ?? it.order ?? 999)
+    })).filter(x => Number.isFinite(x.shop_id));
+    return { id: Number(p.id ?? p.profile_id ?? p.pk),
+             slug: p.slug ?? String(p.id ?? ''),
+             title: p.title || p.label || p.slug || `Profile #${p.id}`,
+             label: p.label || p.title || p.slug, items };
+  }).filter(x => Number.isFinite(x.id));
+}
+function extractCohortsFromScopes(scopes) {
+  const raws = arrFirst(scopes, ['cohorts','iphone_cohorts','groups','iphone_groups']);
+  return raws.map(c => {
+    const memRaw = arrFirst(c, ['members','items','iphones','iphone_members','phones']);
+    const members = memRaw.map(m => {
+      const capRaw = m.capacity_gb ?? m.capacity ?? m.storage_gb ?? m.storage;
+      const cap = (typeof capRaw === 'string') ? Number(capRaw.replace(/[^\d]/g,'')) : Number(capRaw);
+      return {
+        iphone_id: Number(m.iphone_id ?? m.id ?? m.pk),
+        part_number: m.part_number ?? m.pn ?? m.part ?? m.sku,
+        model_name: m.model_name ?? m.model ?? m.name ?? '',
+        capacity_gb: Number.isFinite(cap) ? cap : undefined,
+        color: m.color ?? m.colour ?? m.color_name ?? ''
+      };
+    }).filter(x => (Number.isFinite(x.iphone_id) || x.part_number));
+    return { id: Number(c.id ?? c.cohort_id ?? c.pk),
+             slug: c.slug ?? String(c.id ?? ''),
+             title: c.title || c.label || c.slug || `Cohort #${c.id}`,
+             label: c.label || c.title || c.slug, members };
+  }).filter(x => Number.isFinite(x.id));
+}
+function extractUniqueIphonesFromScopes(scopes) {
+  const cohorts = extractCohortsFromScopes(scopes);
+  const seen = new Map();
+  for (const coh of cohorts) for (const m of coh.members) {
+    const pn = m.part_number; if (!pn) continue;
+    if (!seen.has(pn)) {
+      seen.set(pn, {
+        iphone_id: Number(m.iphone_id), part_number: pn,
+        model_name: m.model_name, capacity_gb: m.capacity_gb, color: m.color,
+        label: `${m.model_name} ${m.capacity_gb ? m.capacity_gb+'GB' : ''} ｜ ${pn} ｜ ${m.color||''}`
+      });
+    }
+  }
+  return Array.from(seen.values()).sort((a,b) => (a.model_name||'').localeCompare(b.model_name||'', 'ja') || String(a.part_number).localeCompare(b.part_number));
+}
+
+/* datalist 小挂载（单选） */
+function mountDatalistSingle({ inputId, listId, hintId, hiddenId, swatchId, items,
+  valueBuilder, colorResolver, nameResolver, parseByPattern, labelBuilder }) {
+  const inputEl = $(inputId), listEl = $(listId), hintEl = $(hintId), hiddenEl = $(hiddenId);
+  const swatchEl = swatchId ? $(swatchId) : null;
+  if (!inputEl || !listEl) return;
+
+  const TEXT_TO_ITEM = new Map(), ID_TO_ITEM = new Map();
+  listEl.innerHTML = '';
+  for (const item of items) {
+    const v = valueBuilder(item);
+    const opt = document.createElement('option');
+    opt.value = v;
+    if (typeof labelBuilder === 'function') opt.label = labelBuilder(item);
+    listEl.appendChild(opt);
+    TEXT_TO_ITEM.set(v, item);
+    const anyId = Number(item.id ?? item.iphone_id ?? item.shop_id ?? item.profile_id ?? item.cohort_id);
+    if (Number.isFinite(anyId)) ID_TO_ITEM.set(anyId, item);
+  }
+  if (hintEl) hintEl.textContent = '候補から選択してください';
+
+  function resolve(raw) {
+    if (!raw) return null;
+    if (TEXT_TO_ITEM.has(raw)) return TEXT_TO_ITEM.get(raw);
+    if (typeof parseByPattern === 'function') {
+      const id = parseByPattern(raw); if (id != null && ID_TO_ITEM.has(id)) return ID_TO_ITEM.get(id);
+    }
+    const name = (raw || '').replace(/\s*\(#\d+\)\s*$/, '').trim();
+    const candidates = items.filter(it => (nameResolver?.(it) || '') === name);
+    if (candidates.length === 1) return candidates[0];
+    return null;
+  }
+  function apply(item) {
+    if (hiddenEl) hiddenEl.value = item ? String(item.id ?? item.iphone_id ?? item.shop_id ?? item.profile_id ?? item.cohort_id) : '';
+    if (swatchEl) {
+      const col = item ? (colorResolver?.(item) || '#999') : '#999';
+      swatchEl.style.background = col; swatchEl.title = item ? `${nameResolver?.(item) || ''} ${col}` : '';
+    }
+    if (hintEl) hintEl.textContent = item ? `${nameResolver?.(item) || ''} を選択しました` : '候補から選択してください';
+  }
+  inputEl.addEventListener('input', () => apply(null));
+  inputEl.addEventListener('change', () => apply(resolve(inputEl.value.trim())));
+  inputEl.addEventListener('blur',   () => apply(resolve(inputEl.value.trim())));
+}
+
+/* 将 scopes 数据装入 A/B/C/D/E 的 datalist */
+async function mountAllScopeSelectors() {
+  const scopes = await loadScopesOnce();
+
+  const shops = (() => {
+    // 从 scopes 归并唯一门店，并按固定顺序排序
+    const profs = arrFirst(scopes, ['shop_profiles','profiles','shopGroups','shop_groups']);
+    const seen = new Map();
+    for (const p of profs) {
+      const mems = arrFirst(p, ['items','members','shops','shop_members']);
+      for (const it of mems) {
+        const sid = Number(it.shop_id ?? it.id ?? it.pk);
+        const sname = it.shop_name ?? it.name ?? it.display_name ?? String(sid);
+        if (!Number.isFinite(sid)) continue;
+        if (!seen.has(sid)) {
+          const order = getOrderForShop({name: sname, id: sid});
+          const color = getColorForShop({name: sname, id: sid}, seen.size);
+          seen.set(sid, {id: sid, name: sname, order, color});
+        }
+      }
+    }
+    return Array.from(seen.values()).sort((a,b)=>(a.order-b.order)||a.name.localeCompare(b.name,'ja'));
+  })();
+
+  SHOP_PROFILES = extractProfilesFromScopes(scopes);
+  COHORTS = extractCohortsFromScopes(scopes);
+  PROFILE_BY_ID = new Map(SHOP_PROFILES.map(p => [Number(p.id), p]));
+  COHORT_BY_ID = new Map(COHORTS.map(c => [Number(c.id), c]));
+  const iphones = extractUniqueIphonesFromScopes(scopes).map(i => ({...i, id: i.iphone_id}));
+  const iphoneOptionLabel = (i) => {
+    const pn = i.part_number || ''; const model = i.model_name || '';
+    const capStr = i.capacity_gb ? `${i.capacity_gb}GB` : '';
+    const color = i.color || '';
+    return `${pn} ｜ ${model} ${capStr} ｜ ${color}`.trim();
+  };
+
+  // A) 店铺/Part
+  mountDatalistSingle({
+    inputId: 'sA_shop', listId: 'sA_shop_list', hintId: 'sA_shop_hint',
+    hiddenId: 'sA_shop_id', swatchId: 'sA_shop_swatch',
+    items: shops,
+    valueBuilder: s => `${s.name} (#${s.id})`,
+    nameResolver: s => s.name,
+    colorResolver: s => s.color,
+    parseByPattern: raw => { const m = raw.match(/\(#\s*(\d+)\s*\)$/); return m ? Number(m[1]) : null; }
+  });
+  mountDatalistSingle({
+    inputId: 'sA_part', listId: 'sA_part_list', hintId: 'sA_part_hint',
+    hiddenId: 'sA_iphone_id',
+    items: iphones,
+    valueBuilder: i => i.part_number,
+    labelBuilder: iphoneOptionLabel,
+    nameResolver: i => i.part_number
+  });
+
+  // B) Cohort
+  mountDatalistSingle({
+    inputId: 'sB_cohort', listId: 'sB_cohort_list', hintId: 'sB_cohort_hint',
+    hiddenId: 'sB_cohort_id',
+    items: COHORTS,
+    valueBuilder: c => `${c.title} (#${c.id})`,
+    nameResolver: c => c.title,
+    parseByPattern: raw => { const m = raw.match(/\(#\s*(\d+)\s*\)$/); return m ? Number(m[1]) : null; }
+  });
+
+  // C) Profile + Part
+  mountDatalistSingle({
+    inputId: 'sC_profile', listId: 'sC_profile_list', hintId: 'sC_profile_hint',
+    hiddenId: 'sC_profile_id', swatchId: 'sC_profile_swatch',
+    items: SHOP_PROFILES.map(p=>{
+      const its=(Array.isArray(p.items)?p.items.slice():[]).sort((a,b)=>(a.display_index||999)-(b.display_index||999));
+      let rep='#999'; if(its.length){const sid=Number(its[0].shop_id); const sname=its[0].shop_name||String(sid); rep=getColorForShop({id:sid,name:sname},0);}
+      return {...p,_color:rep};
+    }),
+    valueBuilder: p => `${p.title} (#${p.id})`,
+    nameResolver: p => p.title, colorResolver: p => p._color,
+    parseByPattern: raw => { const m = raw.match(/\(#\s*(\d+)\s*\)$/); return m ? Number(m[1]) : null; }
+  });
+  mountDatalistSingle({
+    inputId: 'sC_part', listId: 'sC_part_list', hintId: 'sC_part_hint',
+    hiddenId: 'sC_iphone_id',
+    items: iphones,
+    valueBuilder: i => i.part_number,
+    labelBuilder: iphoneOptionLabel,
+    nameResolver: i => i.part_number
+  });
+
+  // D) 单店 + Cohort
+  mountDatalistSingle({
+    inputId: 'sD_shop', listId: 'sD_shop_list', hintId: 'sD_shop_hint',
+    hiddenId: 'sD_shop_id', swatchId: 'sD_shop_swatch',
+    items: shops,
+    valueBuilder: s => `${s.name} (#${s.id})`,
+    nameResolver: s => s.name, colorResolver: s => s.color,
+    parseByPattern: raw => { const m = raw.match(/\(#\s*(\d+)\s*\)$/); return m ? Number(m[1]) : null; }
+  });
+  mountDatalistSingle({
+    inputId: 'sD_cohort', listId: 'sD_cohort_list', hintId: 'sD_cohort_hint',
+    hiddenId: 'sD_cohort_id',
+    items: COHORTS,
+    valueBuilder: c => `${c.title} (#${c.id})`,
+    nameResolver: c => c.title,
+    parseByPattern: raw => { const m = raw.match(/\(#\s*(\d+)\s*\)$/); return m ? Number(m[1]) : null; }
+  });
+
+  // E) Profile + Cohort
+  mountDatalistSingle({
+    inputId: 'sE_profile', listId: 'sE_profile_list', hintId: 'sE_profile_hint',
+    hiddenId: 'sE_profile_id', swatchId: 'sE_profile_swatch',
+    items: SHOP_PROFILES.map(p=>{
+      const its=(Array.isArray(p.items)?p.items.slice():[]).sort((a,b)=>(a.display_index||999)-(b.display_index||999));
+      let rep='#999'; if(its.length){const sid=Number(its[0].shop_id); const sname=its[0].shop_name||String(sid); rep=getColorForShop({id:sid,name:sname},0);}
+      return {...p,_color:rep};
+    }),
+    valueBuilder: p => `${p.title} (#${p.id})`,
+    nameResolver: p => p.title, colorResolver: p => p._color,
+    parseByPattern: raw => { const m = raw.match(/\(#\s*(\d+)\s*\)$/); return m ? Number(m[1]) : null; }
+  });
+  mountDatalistSingle({
+    inputId: 'sE_cohort', listId: 'sE_cohort_list', hintId: 'sE_cohort_hint',
+    hiddenId: 'sE_cohort_id',
+    items: COHORTS,
+    valueBuilder: c => `${c.title} (#${c.id})`,
+    nameResolver: c => c.title,
+    parseByPattern: raw => { const m = raw.match(/\(#\s*(\d+)\s*\)$/); return m ? Number(m[1]) : null; }
+  });
+}
+
+/* ===================== 5) FeatureSnapshot ===================== */
+
+const FEATURE_NAMES_DEFAULT = ['mean','std']; // 默认抓两条指标
+
+function toUtcZ(isoStr) { return new Date(isoStr).toISOString().replace('.000Z', 'Z'); }
+
+function buildFeatureScope({shopId = null, profileSlug = null, iphoneId = null}) {
+  const parts = [];
+  if (profileSlug) parts.push(`shopcohort:${profileSlug}`); else if (shopId != null) parts.push(`shop:${shopId}`);
+  if (iphoneId != null) parts.push(`iphone:${iphoneId}`);
+  return parts.join('|');
+}
+
+async function fetchFeatureSeries({scope, name, startIso, endIso}) {
+  const u = new URL(FEATURE_SERIES_API, location.origin);
+  u.searchParams.set('scope', scope);
+  u.searchParams.set('name', name);
+  u.searchParams.set('bucket__gte', toUtcZ(startIso));
+  u.searchParams.set('bucket__lte', toUtcZ(endIso));
+  const headers = {"Accept":"application/json"};
+  const token = localStorage.getItem('iphone:token'); if (token) headers["Authorization"] = `Bearer ${token}`;
+  const resp = await fetch(u.toString(), {headers});
+  if (!resp.ok) throw new Error(`Feature HTTP ${resp.status}`);
+  const arr = await resp.json();
+  return (Array.isArray(arr)?arr:[])
+    .map(r=>[new Date(r.t).valueOf(), Number(r.v)])
+    .filter(p=>Number.isFinite(p[0])&&Number.isFinite(p[1]))
+    .sort((a,b)=>a[0]-b[0]);
+}
+
+async function updateFeatureSnapshot({seriesInputs, title, startIso, endIso}) {
+  const PART_BY_IPHONE_ID = (()=>{ const m=new Map(); IPHONE_ID_BY_PART.forEach((id,pn)=>m.set(Number(id),pn)); return m; })();
+  function resolvePart(si) {
+    const m = String(si.legend||'').match(/^([^·]+)\s*·/);
+    if (m) return m[1].trim();
+    const m2 = String(si.scope||'').match(/iphone:(\d+)/);
+    if (m2) { const pn = PART_BY_IPHONE_ID.get(Number(m2[1])); if (pn) return pn; }
+    return ACTIVE_PART_NUMBER || 'UNKNOWN_PART';
+  }
+  const grouped = new Map();
+  (seriesInputs||[]).forEach(si => {
+    const part = resolvePart(si);
+    if (!grouped.has(part)) grouped.set(part, []);
+    grouped.get(part).push(si);
+  });
+
+  const startMs = new Date(startIso).getTime(), endMs = new Date(endIso).getTime();
+
+  for (const [part, sis] of grouped.entries()) {
+    const inst = ensureFeatureChartForPart(part);
+    inst.setOption(baseOptionForFeature(), true);
+
+    // 若只有 mean，则自动补一条 std
+    const hasStd = sis.some(x => String(x.name).toLowerCase() === 'std');
+    const finalSis = hasStd ? sis : ([
+      ...sis,
+      ...sis.filter(x => String(x.name).toLowerCase()==='mean')
+           .map(x => ({...x, name:'std', legend: (x.legend||'').replace(/mean/i,'std')}))
+    ]);
+
+    const results = await Promise.all(finalSis.map(async (si, i) => {
+      const data = await fetchFeatureSeries({scope: si.scope, name: si.name, startIso, endIso});
+      return { id: `feat:${si.name}|${si.scope}`, name: si.legend || si.name,
+               color: LINE_PALETTE[i % LINE_PALETTE.length], data };
+    }));
+
+    const series = results.map(s => ({
+      id: s.id, name: s.name, type: 'line', showSymbol: false, smooth: 0.15,
+      emphasis: {focus: 'series'},
+      lineStyle: {width: 2, color: s.color}, itemStyle: {color: s.color},
+      data: s.data
+    }));
+
+    inst.setOption({
+      title: { text: 'FeatureSnapshot', subtext: title.includes(part) ? title : `${title}｜${part}`, left: 12, top: 6, textStyle: {fontSize: 14} },
+      legend: { data: series.map(s => s.name) },
+      series
+    }, false);
+
+    applyWorkHoursOverlayOn(inst, startMs, endMs);
+  }
+}
+
+/* ===================== 6) 五种加载处理器（A 保主图，B/C/D/E 分图） ===================== */
+
+const RAW_MAX_SERIES = 60, RAW_CONC_LIMIT = 8;
+async function runWithLimit(tasks, limit = RAW_CONC_LIMIT) {
+  const ret = []; let i=0, running=0;
+  return new Promise(resolve=>{
+    const next = () => {
+      if (i >= tasks.length && running === 0) return resolve(Promise.all(ret));
+      while (running < limit && i < tasks.length) {
+        const p = tasks[i++]().finally(()=>{ running--; next(); });
+        running++; ret.push(p);
+      }
+    }; next();
+  });
+}
+
+async function ensureScopesReady() {
+  if (!SHOP_PROFILES.length || !COHORTS.length) {
+    const sc = await loadScopesOnce();
+    SHOP_PROFILES = extractProfilesFromScopes(sc);
+    COHORTS = extractCohortsFromScopes(sc);
+    PROFILE_BY_ID = new Map(SHOP_PROFILES.map(p => [Number(p.id), p]));
+    COHORT_BY_ID = new Map(COHORTS.map(c => [Number(c.id), c]));
+  }
+}
+
+/* —— A：单店 × 单 part（主图） —— */
+async function handleLoadS1() {
+  await ensureScopesReady();
+  $('status') && ($('status').textContent = '読み込み中…');
+  $('err') && ($('err').textContent = '');
+
+  // 将 datalist 的隐藏 id 与输入框同步（若存在）
+  $('sA_shop')?.dispatchEvent(new Event('blur'));
+  $('sA_part')?.dispatchEvent(new Event('blur'));
+
+  const part = $('sA_part')?.value?.trim();
+  const sidStr = $('sA_shop_id')?.value?.trim();
+  const iphoneIdStr = $('sA_iphone_id')?.value?.trim();
+
+  const startIso = toIsoLocal($('start')?.value);
+  const endIso   = toIsoLocal($('end')?.value);
+
+  if (!sidStr || !part || !startIso || !endIso) {
+    $('err') && ($('err').textContent = 'A) 参数不完整（店铺/part/start/end）');
+    return;
+  }
+
+  const sid = Number(sidStr);
+  const iphoneIdVal = iphoneIdStr ? Number(iphoneIdStr) : NaN;
+  SELECTED_START_MS = new Date(startIso).getTime();
+  SELECTED_END_MS   = new Date(endIso).getTime();
+  ACTIVE_PART_NUMBER= part;
+  ACTIVE_IPHONE_ID  = Number.isFinite(iphoneIdVal) ? iphoneIdVal : (IPHONE_ID_BY_PART.get(part) ?? null);
+  SELECTED_SHOP_IDS = new Set([sid]);
+
+  // 清空分图（A 只画主图）
+  disposeAllPartCharts();
+
+  try {
+    const sname = SHOPS_INDEX.get(sid) || `#${sid}`;
+    const r = await fetchOneShopSeries(SERIES_API_BASE, startIso, endIso, sid, sname, part);
+    const color = getColorForShop({name: sname, id: sid}, 0);
+    const data = appendShadowToNowIfNeeded(r.data.slice());
+    addOrUpdateSeries(`raw:s:${sid}|p:${part}`, sname, color, data);
+
+    // 主图叠营业时段
+    if (chart) {
+      chart.setOption({
+        series: [{
+          id: '__workhours__',
+          type: 'line',
+          data: [],
+          markArea: buildBusinessHoursMarkArea10to19(SELECTED_START_MS, SELECTED_END_MS),
+          silent: true, z: -10
+        }]
+      }, { notMerge: false, lazyUpdate: true });
+      ensureDailyTicksOn(chart);
+    }
+
+    $('status') && ($('status').textContent = `A) 完了：${sname} × ${part}`);
+
+    // Feature（在分图区域，按该 PN）
+    const iphoneId = Number($('sA_iphone_id')?.value) || (IPHONE_ID_BY_PART.get(part) ?? null);
+    if (Number.isFinite(iphoneId)) {
+      const scope = buildFeatureScope({shopId: sid, iphoneId});
+      const seriesInputs = FEATURE_NAMES_DEFAULT.map(name => ({scope, name, legend: `${part} · ${name}`}));
+      await updateFeatureSnapshot({ seriesInputs, title: `${sname} × ${part}`, startIso, endIso });
+    }
+  } catch (e) {
+    $('err') && ($('err').textContent = `A) 読み込み失敗：${e.message}`);
+  }
+}
+
+/* —— B：全部店 × Cohort 内所有 part（分图：每个 part 一张） —— */
+async function handleLoadS2() {
+  await ensureScopesReady();
+  $('status') && ($('status').textContent = '読み込み中…');
+  $('err') && ($('err').textContent = '');
+  $('sB_cohort')?.dispatchEvent(new Event('blur'));
+
+  const cohIdStr = $('sB_cohort_id')?.value?.trim();
+  const startIso = toIsoLocal($('start')?.value);
+  const endIso   = toIsoLocal($('end')?.value);
+  if (!cohIdStr || !startIso || !endIso) {
+    $('err') && ($('err').textContent = 'B) 参数不完整（cohort/start/end）');
+    return;
+  }
+  const cohId = Number(cohIdStr);
+  const cohort = COHORTS.find(c => Number(c.id) === cohId);
+  if (!cohort || !(cohort.members||[]).length) {
+    $('err') && ($('err').textContent = 'B) 该 Cohort 无成员或未识别');
+    return;
+  }
+
+  SELECTED_START_MS = new Date(startIso).getTime();
+  SELECTED_END_MS   = new Date(endIso).getTime();
+  disposeAllPartCharts();  // 清空旧分图
+
+  const allShops = [...SHOPS_INDEX.keys()];
+  const pairs = [];
+  for (const sid of allShops) for (const m of (cohort.members||[])) pairs.push([Number(sid), String(m.part_number)]);
+  let clipped = false; if (pairs.length > RAW_MAX_SERIES) { pairs.length = RAW_MAX_SERIES; clipped = true; }
+
+  const tasks = pairs.map(([sid, part]) => async () => {
+    const sname = SHOPS_INDEX.get(sid) || `#${sid}`;
+    const r = await fetchOneShopSeries(SERIES_API_BASE, startIso, endIso, sid, sname, part);
+    const color = getColorForShop({name: sname, id: sid}, sid);
+    const data = appendShadowToNowIfNeeded(r.data.slice());
+    addOrUpdateSeriesForPart(part, `s:${sid}`, sname, color, data);
+  });
+
+  try {
+    await runWithLimit(tasks, RAW_CONC_LIMIT);
+    ensureDailyTicksAll();
+    applyWorkHoursOverlayAll(SELECTED_START_MS, SELECTED_END_MS);
+    $('status') && ($('status').textContent = `B) 完了：${cohort.title || cohort.label}${clipped ? '（已截断显示）' : ''}`);
+
+    // Feature：全店聚合 profile（假设 slug=full_store）
+    const FULL_STORE_SLUG = (SHOP_PROFILES.find(p => p.slug === 'full_store')?.slug) || 'full_store';
+    const seriesInputs = [];
+    (cohort.members||[]).forEach(m => {
+      const iid = Number(m.iphone_id); if (!Number.isFinite(iid)) return;
+      const scope = buildFeatureScope({profileSlug: FULL_STORE_SLUG, iphoneId: iid});
+      FEATURE_NAMES_DEFAULT.forEach(name => seriesInputs.push({scope, name, legend: `${m.part_number} · ${name}`}));
+    });
+    await updateFeatureSnapshot({ seriesInputs, title: `全店舗 × ${cohort.title || cohort.label}`, startIso, endIso });
+  } catch (e) {
+    $('err') && ($('err').textContent = `B) 読み込み失敗：${e.message}`);
+  }
+}
+
+/* —— C：Profile 内所有店 × 单 part（分图：该 part 一张） —— */
+async function handleLoadS3() {
+  await ensureScopesReady();
+  $('status') && ($('status').textContent = '読み込み中…');
+  $('err') && ($('err').textContent = '');
+  $('sC_profile')?.dispatchEvent(new Event('blur'));
+  $('sC_part')?.dispatchEvent(new Event('blur'));
+
+  const profIdStr = $('sC_profile_id')?.value?.trim();
+  const part = $('sC_part')?.value?.trim();
+  const startIso = toIsoLocal($('start')?.value);
+  const endIso   = toIsoLocal($('end')?.value);
+  if (!profIdStr || !part || !startIso || !endIso) {
+    $('err') && ($('err').textContent = 'C) 参数不完整（profile/part/start/end）');
+    return;
+  }
+  const profile = SHOP_PROFILES.find(p => Number(p.id) === Number(profIdStr));
+  if (!profile || !(profile.items||[]).length) {
+    $('err') && ($('err').textContent = 'C) 未识别的 店舗組合せ 或无成员');
+    return;
+  }
+
+  SELECTED_START_MS = new Date(startIso).getTime();
+  SELECTED_END_MS   = new Date(endIso).getTime();
+  disposeAllPartCharts();
+
+  const shopIds = (profile.items||[]).map(x => Number(x.shop_id));
+  const pairs = shopIds.map(sid => [sid, part]);
+  let clipped = false; if (pairs.length > RAW_MAX_SERIES) { pairs.length = RAW_MAX_SERIES; clipped = true; }
+
+  const tasks = pairs.map(([sid, p]) => async () => {
+    const sname = SHOPS_INDEX.get(sid) || `#${sid}`;
+    const r = await fetchOneShopSeries(SERIES_API_BASE, startIso, endIso, sid, sname, p);
+    const color = getColorForShop({name: sname, id: sid}, sid);
+    const data = appendShadowToNowIfNeeded(r.data.slice());
+    addOrUpdateSeriesForPart(p, `s:${sid}`, sname, color, data);
+  });
+
+  try {
+    await runWithLimit(tasks, RAW_CONC_LIMIT);
+    ensureDailyTicksAll();
+    applyWorkHoursOverlayAll(SELECTED_START_MS, SELECTED_END_MS);
+    $('status') && ($('status').textContent = `C) 完了：${profile.title || profile.label} × ${part}${clipped ? '（已截断显示）' : ''}`);
+
+    const iphoneId = Number($('sC_iphone_id')?.value) || (IPHONE_ID_BY_PART.get(part) ?? null);
+    const profileSlug = profile.slug || null;
+    if (Number.isFinite(iphoneId) && profileSlug) {
+      const scope = buildFeatureScope({profileSlug, iphoneId});
+      const seriesInputs = FEATURE_NAMES_DEFAULT.map(name => ({scope, name, legend: `${part} · ${name}`}));
+      await updateFeatureSnapshot({ seriesInputs, title: `${profile.title || profile.label} × ${part}`, startIso, endIso });
+    }
+  } catch (e) {
+    $('err') && ($('err').textContent = `C) 読み込み失敗：${e.message}`);
+  }
+}
+
+/* —— D：单店 × Cohort 内所有 part（分图：每个 part 一张） —— */
+async function handleLoadS4() {
+  await ensureScopesReady();
+  $('status') && ($('status').textContent = '読み込み中…');
+  $('err') && ($('err').textContent = '');
+  $('sD_shop')?.dispatchEvent(new Event('blur'));
+  $('sD_cohort')?.dispatchEvent(new Event('blur'));
+
+  const sidStr = $('sD_shop_id')?.value?.trim();
+  const cohIdStr = $('sD_cohort_id')?.value?.trim();
+  const startIso = toIsoLocal($('start')?.value);
+  const endIso   = toIsoLocal($('end')?.value);
+  if (!sidStr || !cohIdStr || !startIso || !endIso) {
+    $('err') && ($('err').textContent = 'D) 参数不完整（店铺/cohort/start/end）');
+    return;
+  }
+  const sid = Number(sidStr);
+  const cohort = COHORTS.find(c => Number(c.id) === Number(cohIdStr));
+  if (!cohort || !(cohort.members||[]).length) {
+    $('err') && ($('err').textContent = 'D) 未识别的 Cohort 或无成员');
+    return;
+  }
+  const sname = SHOPS_INDEX.get(sid) || `#${sid}`;
+  SELECTED_START_MS = new Date(startIso).getTime();
+  SELECTED_END_MS   = new Date(endIso).getTime();
+  disposeAllPartCharts();
+
+  const pairs = (cohort.members||[]).map(m => [sid, String(m.part_number)]);
+  let clipped=false; if (pairs.length > RAW_MAX_SERIES) { pairs.length = RAW_MAX_SERIES; clipped = true; }
+
+  const tasks = pairs.map(([s, p]) => async () => {
+    const r = await fetchOneShopSeries(SERIES_API_BASE, startIso, endIso, s, sname, p);
+    const color = getColorForShop({name: sname, id: s}, s);
+    const data = appendShadowToNowIfNeeded(r.data.slice());
+    addOrUpdateSeriesForPart(p, `s:${s}`, sname, color, data);
+  });
+
+  try {
+    await runWithLimit(tasks, RAW_CONC_LIMIT);
+    ensureDailyTicksAll();
+    applyWorkHoursOverlayAll(SELECTED_START_MS, SELECTED_END_MS);
+    $('status') && ($('status').textContent = `D) 完了：${sname} × ${cohort.title || cohort.label}${clipped ? '（已截断显示）' : ''}`);
+
+    const seriesInputs = [];
+    (cohort.members||[]).forEach(m => {
+      const iid = Number(m.iphone_id); if (!Number.isFinite(iid)) return;
+      const scope = buildFeatureScope({shopId: sid, iphoneId: iid});
+      FEATURE_NAMES_DEFAULT.forEach(name => seriesInputs.push({scope, name, legend: `${m.part_number} · ${name}`}));
+    });
+    await updateFeatureSnapshot({ seriesInputs, title: `${sname} × ${cohort.title || cohort.label}`, startIso, endIso });
+  } catch (e) {
+    $('err') && ($('err').textContent = `D) 読み込み失敗：${e.message}`);
+  }
+}
+
+/* —— E：Profile 内所有店 × Cohort 内所有 part（分图：每个 part 一张） —— */
+async function handleLoadS5() {
+  await ensureScopesReady();
+  $('status') && ($('status').textContent = '読み込み中…');
+  $('err') && ($('err').textContent = '');
+  $('sE_profile')?.dispatchEvent(new Event('blur'));
+  $('sE_cohort')?.dispatchEvent(new Event('blur'));
+
+  const profIdStr = $('sE_profile_id')?.value?.trim();
+  const cohIdStr  = $('sE_cohort_id')?.value?.trim();
+  const startIso  = toIsoLocal($('start')?.value);
+  const endIso    = toIsoLocal($('end')?.value);
+  if (!profIdStr || !cohIdStr || !startIso || !endIso) {
+    $('err') && ($('err').textContent = 'E) 参数不完整（profile/cohort/start/end）');
+    return;
+  }
+  const profile = SHOP_PROFILES.find(p => Number(p.id) === Number(profIdStr));
+  const cohort  = COHORTS.find(c => Number(c.id) === Number(cohIdStr));
+  if (!profile || !(profile.items||[]).length) { $('err') && ($('err').textContent = 'E) 未识别的 店舗組合せ 或无店铺成员'); return; }
+  if (!cohort  || !(cohort.members||[]).length) { $('err') && ($('err').textContent = 'E) 未识别的 Cohort 或无 iPhone 成员'); return; }
+
+  SELECTED_START_MS = new Date(startIso).getTime();
+  SELECTED_END_MS   = new Date(endIso).getTime();
+  disposeAllPartCharts();
+
+  const shopIds = (profile.items||[]).map(x => Number(x.shop_id));
+  const members = cohort.members||[];
+  const pairs = [];
+  for (const s of shopIds) for (const m of members) pairs.push([s, String(m.part_number)]);
+  let clipped=false; if (pairs.length > RAW_MAX_SERIES) { pairs.length = RAW_MAX_SERIES; clipped = true; }
+
+  const tasks = pairs.map(([s, p]) => async () => {
+    const sname = SHOPS_INDEX.get(s) || `#${s}`; // ← 修正：局部定义 sname
+    const r = await fetchOneShopSeries(SERIES_API_BASE, startIso, endIso, s, sname, p);
+    const color = getColorForShop({name: sname, id: s}, s);
+    const data = appendShadowToNowIfNeeded(r.data.slice());
+    addOrUpdateSeriesForPart(p, `s:${s}`, sname, color, data);
+  });
+
+  try {
+    await runWithLimit(tasks, RAW_CONC_LIMIT);
+    ensureDailyTicksAll();
+    applyWorkHoursOverlayAll(SELECTED_START_MS, SELECTED_END_MS);
+    $('status') && ($('status').textContent = `E) 完了：${profile.title || profile.label} × ${cohort.title || cohort.label}${clipped ? '（已截断显示）' : ''}`);
+
+    const profileSlug = profile.slug || null;
+    const seriesInputs = [];
+    if (profileSlug) {
+      (members||[]).forEach(m => {
+        const iid = Number(m.iphone_id); if (!Number.isFinite(iid)) return;
+        const scope = buildFeatureScope({profileSlug, iphoneId: iid});
+        FEATURE_NAMES_DEFAULT.forEach(name => seriesInputs.push({scope, name, legend: `${m.part_number} · ${name}`}));
+      });
+    }
+    await updateFeatureSnapshot({ seriesInputs, title: `${profile.title || profile.label} × ${cohort.title || cohort.label}`, startIso, endIso });
+  } catch (e) {
+    $('err') && ($('err').textContent = `E) 読み込み失敗：${e.message}`);
+  }
+}
+
+/* ===================== 7) 事件绑定与默认初始化 ===================== */
+
+document.getElementById('reset')?.addEventListener('click', () => {
+  const inst = getMainChart();
+  if (inst) inst.setOption(baseOption, true);
+  disposeAllPartCharts(); // 同时清空所有 PN 子图
+});
+
+[
+  ['btn_load_A', handleLoadS1], ['btn-load-s1', handleLoadS1],
+  ['btn_load_B', handleLoadS2], ['btn-load-s2', handleLoadS2],
+  ['btn_load_C', handleLoadS3], ['btn-load-s3', handleLoadS3],
+  ['btn_load_D', handleLoadS4], ['btn-load-s4', handleLoadS4],
+  ['btn_load_E', handleLoadS5], ['btn-load-s5', handleLoadS5],
+].forEach(([id, fn]) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); });
+
+document.getElementById('select-all')?.addEventListener('click', () => {
+  document.querySelectorAll('#shops input[type=checkbox][data-shop-id], #shops input[type=checkbox][value]').forEach(cb => cb.checked = true);
+});
+document.getElementById('clear-all')?.addEventListener('click', () => {
+  document.querySelectorAll('#shops input[type=checkbox][data-shop-id], #shops input[type=checkbox][value]').forEach(cb => cb.checked = false);
+});
+
+/* 自动把 end 输入同步到“当前最近整分钟（JST）”，若页面存在这些输入框 */
+function floorToMinute(date = new Date()) { return new Date(Math.floor(date.getTime()/60000)*60000); }
+function toInputValueJST(date) {
+  const tzOffsetMin = date.getTimezoneOffset(), jstOffsetMin = 9*60;
+  const jstTime = new Date(date.getTime() + (jstOffsetMin + tzOffsetMin)*60000);
+  const y=jstTime.getUTCFullYear(), m=String(jstTime.getUTCMonth()+1).padStart(2,'0'),
+        d=String(jstTime.getUTCDate()).padStart(2,'0'), hh=String(jstTime.getUTCHours()).padStart(2,'0'),
+        mm=String(jstTime.getUTCMinutes()).padStart(2,'0');
+  return `${y}-${m}-${d}T${hh}:${mm}`;
+}
+function nearestPastMinuteInputValueJST() { return toInputValueJST(floorToMinute(new Date())); }
+function syncAllEndToNow() {
+  const v = nearestPastMinuteInputValueJST();
+  ['end','s2-end','s3-end','s4-end','s5-end'].forEach(id => { const el = document.getElementById(id); if (el) el.value = v; });
+}
+let END_AUTO_TIMER = null;
+function startAutoEndSync() {
+  syncAllEndToNow();
+  if (END_AUTO_TIMER) clearInterval(END_AUTO_TIMER);
+  let lastMinuteMs = floorToMinute(new Date()).getTime();
+  END_AUTO_TIMER = setInterval(() => {
+    const nowMinuteMs = floorToMinute(new Date()).getTime();
+    if (nowMinuteMs !== lastMinuteMs) { lastMinuteMs = nowMinuteMs; syncAllEndToNow(); }
+  }, 5000);
+}
+
+/* 页面初始化 */
+(function initDefaults() {
+  // 你可以改成你希望的默认时间范围
+  $('start') && ( $('start').value = "2025-10-01T10:00" );
+  $('end')   && ( $('end').value   = "2025-10-20T10:00" );
+
+  loadShops();     // 渲染门店复选框 & 建立 SHOPS_INDEX
+  loadIphones();   // 顶部旧 iPhone 下拉（若存在）
+  startAutoEndSync();
+  (async () => {
+    try { await mountAllScopeSelectors(); } catch (e) { console.warn('[mount scopes selectors] failed', e); }
+  })();
+
+  window.addEventListener('resize', () => {
+    ChartGrids.price.forEach(m => m.chart.resize());
+    ChartGrids.feature.forEach(m => m.chart.resize());
+  });
+})();
+</script>
+
+</body>
+</html>

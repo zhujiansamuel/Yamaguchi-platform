@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>二手店回收价历史（按 PN → 各店）</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Microsoft YaHei,Segoe UI Emoji,Segoe UI Symbol,sans-serif;background:#fafafa;color:#111;margin:0}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:12px}
+    .row{display:grid;grid-template-columns:1fr 140px 120px auto;gap:12px;align-items:end}
+    .row label{font-size:12px;color:#6b7280;display:block;margin-bottom:4px}
+    input[type=text],input[type=number]{width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;outline:0;background:#fff}
+    button{padding:9px 14px;border-radius:10px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+    button.ghost{background:#fff;color:#111}
+    .muted{font-size:12px;color:#6b7280}
+    .line{height:1px;background:#e5e7eb;margin:12px 0}
+    .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .checks{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+    .checks label{font-size:13px}
+  </style>
+  <!-- 正确引入 Chart.js（与你的最小例子一致） -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 时间坐标需要适配器（可选，不装也能用字符串刻度；装了更友好） -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+</head>
+<body>
+<div class="wrap">
+  <h2>二手店回收价历史（按 PN → 各店）</h2>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>PN（唯一编码）</label>
+        <input id="pnInput" type="text" placeholder="如：MTUW3J/A"/>
+      </div>
+      <div>
+        <label>最近 N 天</label>
+        <input id="daysInput" type="number" min="1" max="180" value="30"/>
+      </div>
+      <div class="controls">
+        <label style="display:flex;gap:6px;align-items:center">
+          <input id="showPoints" type="checkbox" checked/> 显示点
+        </label>
+        <label style="display:flex;gap:6px;align-items:center">
+          <input id="showAvg" type="checkbox" checked/> 显示平均线（30 分钟分桶）
+        </label>
+      </div>
+      <div style="text-align:right">
+        <button id="refreshBtn">查询</button>
+      </div>
+    </div>
+    <div class="muted" id="meta" style="margin-top:6px"></div>
+    <div class="line"></div>
+    <div>
+      <canvas id="myChart" height="420"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "/AppleStockChecker";
+const $ = s => document.querySelector(s);
+let chart;  // Chart.js 实例
+
+// —— 认证与拉取 —— //
+function handleAuth(resp){
+  if (resp.status === 401 || resp.status === 403 || (resp.redirected && resp.url.includes("/accounts/login"))){
+    const next = encodeURIComponent(location.pathname + location.search);
+    location.href = `/accounts/login/?next=${next}`;
+    return false;
+  }
+  return true;
+}
+async function fetchJSON(url){
+  const r = await fetch(url, {credentials:"same-origin"});
+  if(!handleAuth(r)) throw new Error("未登录");
+  if(!r.ok) throw new Error(`请求失败：${r.status}`);
+  return r.json();
+}
+
+// —— 30 分钟分桶平均 —— //
+function slot30Key(ts){
+  const d = new Date(ts);
+  d.setSeconds(0,0);
+  const mins = d.getHours()*60 + d.getMinutes();
+  const slot = Math.floor(mins/30)*30;
+  d.setHours(Math.floor(slot/60), slot%60, 0, 0);
+  return d.getTime();
+}
+function calcAvg30Min(datasets){
+  const acc = new Map(); // slot -> {sum,n}
+  datasets.forEach(ds=>{
+    (ds.data||[]).forEach(p=>{
+      if(p==null || p.y==null || Number.isNaN(p.y)) return;
+      const k = slot30Key(p.x);
+      const cur = acc.get(k) || {sum:0,n:0};
+      cur.sum += Number(p.y);
+      cur.n   += 1;
+      acc.set(k, cur);
+    });
+  });
+  return Array.from(acc.entries())
+    .sort((a,b)=>a[0]-b[0])
+    .map(([k,v])=>({x:k, y: v.n ? v.sum/v.n : null}));
+}
+
+// —— 颜色调色板（店铺曲线） —— //
+const PALETTE = [
+  "#2563eb","#16a34a","#f59e0b","#ef4444","#8b5cf6",
+  "#06b6d4","#a855f7","#f97316","#22c55e","#3b82f6",
+  "#e11d48","#14b8a6","#7c3aed","#0ea5e9","#84cc16"
+];
+
+// —— 绘图 —— //
+function drawChart(datasets, showPoints, withAvg){
+  // 销毁旧实例
+  if(chart) chart.destroy();
+
+  const ctx = document.getElementById('myChart');
+  const dsLines = datasets.map((ds,i)=>({
+    label: ds.label,
+    data:  ds.data.map(p=>({x:new Date(p.x), y:p.y})),
+    borderColor: PALETTE[i % PALETTE.length],
+    backgroundColor: PALETTE[i % PALETTE.length],
+    borderWidth: 1,
+    pointRadius: showPoints ? 2 : 0,
+    spanGaps: true
+  }));
+
+  // 平均线（黑色）
+  if(withAvg){
+    const avgData = calcAvg30Min(datasets).map(p=>({x:new Date(p.x), y:p.y}));
+    dsLines.push({
+      label: "平均(30min)",
+      data: avgData,
+      borderColor: "#000",
+      backgroundColor: "#000",
+      borderWidth: 3,
+      pointRadius: 0,
+      spanGaps: true,
+      order: 0
+    });
+  }
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: dsLines },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { type: 'time', time: { unit: 'day' }, title: { display: true, text: '记录时间' } },
+        y1: { beginAtZero: false, title: { display: true, text: '价格（円）' } },
+        y2: { beginAtZero: false, title: { display: true, text: '价格（円）' } }
+      },
+        grid: {
+          drawOnChartArea: false, // only want the grid lines for one axis to show up
+        },
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: { callbacks: { label: it => `${it.dataset.label}: ¥${Number(it.parsed.y).toLocaleString()}` } }
+      },
+      elements: { line: { tension: 0.2 } }
+    }
+  });
+}
+
+// —— 主流程 —— //
+async function run(){
+  const pn   = ($('#pnInput').value||'').trim();
+  const days = Math.max(1, parseInt($('#daysInput').value||'30',10));
+  if(!pn){ alert("请输入 PN"); return; }
+
+  const recorded_after = new Date(Date.now() - days*24*60*60*1000).toISOString();
+  const params = new URLSearchParams({
+    iphone_part_number: pn,
+    recorded_after,
+    ordering: 'recorded_at'
+  });
+
+  try{
+    const data = await fetchJSON(`${API_BASE}/purchasing-price-records/?${params.toString()}`);
+    const rows = data.results || data;
+
+    // 按店铺分组
+    const byShop = new Map(); // shop_name -> [{x,y}]
+    let iphoneLabel = "";
+    for (const r of rows){
+      const shop = r.shop_name || `Shop#${r.shop}`;
+      const arr  = byShop.get(shop) || [];
+      arr.push({x: r.recorded_at, y: r.price_new});
+      byShop.set(shop, arr);
+      if (!iphoneLabel && (r.iphone_label || r.iphone_part_number)) {
+        iphoneLabel = r.iphone_label ? `${r.iphone_label} (${r.iphone_part_number||pn})` : r.iphone_part_number;
+      }
+    }
+    // 构造 Chart.js datasets
+    const datasets = Array.from(byShop.entries()).map(([label, pts])=>({label, data: pts}));
+
+    // meta
+    const meta = $('#meta');
+    meta.textContent = rows.length
+      ? `PN：${pn}；机型：${iphoneLabel || '未知'}；门店数：${byShop.size}；点数：${rows.length}`
+      : '无数据';
+
+    // 画图
+    drawChart(datasets, $('#showPoints').checked, $('#showAvg').checked);
+  }catch(e){
+    alert(`加载失败：${e.message||e}`);
+    if(chart) chart.destroy();
+  }
+}
+
+$('#refreshBtn').addEventListener('click', run);
+$('#pnInput').addEventListener('keydown', e=>{ if(e.key==='Enter') run(); });
+</script>
+</body>
+</html>
