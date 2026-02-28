@@ -1,0 +1,47 @@
+<div class="container">
+    <h2 class="scanpay-title">
+        <img src="__ADDON__/images/logo-alipay.png" alt="" height="32" class="pull-left" style="margin-right:5px;"> Alipay支払い
+        <div class="scanpay-time">
+            次の時間内に <span>60</span> 秒以内に支払いを完了してください
+        </div>
+    </h2>
+
+    <div class="scanpay scanpay-alipay">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-5">
+                        <div class="scanpay-body">
+                            <div class="scanpay-order clearfix">
+                                <p>注文タイトル：<em>{$orderData.title}</em></p>
+                                <p>注文番号：<em>{$orderData.orderid}</em></p>
+                                <p>注文金額：<em class="scanpay-price">￥{$orderData.amount}</em> 元</p>
+                            </div>
+                            <div class="scanpay-qrcode">
+                                <div class="qrcode" data-text="{$payData.qr_code}"></div>
+                                <div class="expired hidden"></div>
+                                <div class="paid hidden"></div>
+                            </div>
+                            <div class="scanpay-tips">
+                                <p>Alipayのスキャン機能をご利用ください<br>QRコードをスキャンしてお支払いください</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-6 hidden-xs">
+                        <div class="scanpay-screenshot">
+                            <img src="__ADDON__/images/screenshot-alipay.png" class="img-responsive" alt=""/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!--@formatter:off-->
+<script>
+    var queryParams = {"paytype":"alipay", "orderid":"{$orderData.orderid}", "returnurl":"{$orderData.returnurl}"};
+</script>
+<!--@formatter:on-->

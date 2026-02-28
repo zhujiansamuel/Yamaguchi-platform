@@ -1,0 +1,90 @@
+{if $type=='jsapi'}
+<div class="container">
+    <div class="row" style="margin-top:20px;">
+        <div class="col-xs-12">
+            <button type="button" class="btn btn-success btn-lg btn-block">WeChat決済を開始しています</button>
+            <button type="button" class="btn btn-default btn-lg btn-block" onclick="location.href='{$orderData.returnurl}'">ページが自動的に遷移しない場合</button>
+        </div>
+    </div>
+</div>
+<!--@formatter:off-->
+<script>
+    function onBridgeReady() {
+        WeixinJSBridge.invoke('getBrandWCPayRequest', {$payData|json_encode}, function(res) {
+            if (res.err_msg == "get_brand_wcpay_request:ok") {
+                layer.msg('支払い成功！');
+            } else if (res.err_msg == "get_brand_wcpay_request:cancel") {
+                layer.msg('お支払いをキャンセルしました');
+            } else if (res.err_msg == "get_brand_wcpay_request:fail") {
+                layer.msg('支払いに失敗しました');
+            }else{
+                layer.msg(typeof res.err_msg!='undefined' ? res.err_msg : (typeof res.errMsg !=='undefined' ? res.errMsg : "不明な支払ステータス"));
+            }
+            setTimeout(function () {
+                location.href = '{$orderData.returnurl}';
+            }, 1500);
+        });
+    }
+
+    if (typeof WeixinJSBridge == "undefined") {
+        if (document.addEventListener) {
+            document.addEventListener('WeixinJSBridgeReady', onBridgeReady, false);
+        } else if (document.attachEvent) {
+            document.attachEvent('WeixinJSBridgeReady', onBridgeReady);
+            document.attachEvent('onWeixinJSBridgeReady', onBridgeReady);
+        }
+    } else {
+        onBridgeReady();
+    }
+</script>
+<!--@formatter:on-->
+
+{elseif $type=='pc' /}
+<div class="container">
+    <h2 class="scanpay-title">
+        <img src="__ADDON__/images/logo-wechat.png" alt="" height="32" class="pull-left" style="margin-right:5px;"> WeChat決済
+        <div class="scanpay-time">
+            次の時間内に <span>60</span> 秒以内に支払いを完了してください
+        </div>
+    </h2>
+
+    <div class="scanpay scanpay-wechat">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-5">
+                        <div class="scanpay-body">
+                            <div class="scanpay-order clearfix">
+                                <p>注文タイトル：<em>{$orderData.title}</em></p>
+                                <p>注文番号：<em>{$orderData.orderid}</em></p>
+                                <p>注文金額：<em class="scanpay-price">￥{$orderData.amount}</em> 元</p>
+                            </div>
+                            <div class="scanpay-qrcode">
+                                <div class="qrcode" data-text="{$payData.code_url}"></div>
+                                <div class="expired hidden"></div>
+                                <div class="paid hidden"></div>
+                            </div>
+                            <div class="scanpay-tips">
+                                <p>WeChatのスキャン機能をご利用ください<br>QRコードをスキャンしてお支払いください</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-6 hidden-xs">
+                        <div class="scanpay-screenshot">
+                            <img src="__ADDON__/images/screenshot-wechat.png" class="img-responsive" alt=""/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!--@formatter:off-->
+<script>
+    var queryParams = {"paytype":"wechat", "orderid":"{$orderData.orderid}", "returnurl":"{$orderData.returnurl}"};
+</script>
+<!--@formatter:on-->
+{/if}

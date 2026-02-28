@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="inTop">
+			<div class="address mt20">
+				<div class="contain address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href=""> お問い合わせ</a>
+				</div>
+			</div>
+			<div class="inTop1">
+				お問い合わせ
+			</div>
+		</div>
+		<div class="record">
+		<form name="form" id="contactus-form" class="form-vertical" method="POST" action="">
+			<div class="vipMess_d">
+				<div class="vipMess12">
+					*<span>は必須項目です</span>
+				</div>
+				<div class="vipMess">
+					お名前 <span>*</span>
+				</div>
+				<div class="vipMess2">
+					<input placeholder="例）中口太郎" type="text" name="name" value="">
+				</div>
+				<div class="vipMess">
+					お名前 <code>（カナ）</code> <span>*</span>
+				</div>
+				<div class="vipMess2">
+					<input placeholder="例）ナカヤマタロウ" type="text" name="katakana" value="">
+				</div>
+				<div class="vipMess">
+					お電話番号 
+				</div>
+				<div class="vipMess3">
+					<input placeholder="例 ハイフンなしでご入力ください" type="text" name="tel" value="">
+				</div>
+				<div class="vipMess">
+					メールアドレス <span>*</span>
+				</div>
+				<div class="vipMess3">
+					<input placeholder="例 yourmail@example.com" type="text" name="email" id="zipcode" value="" >
+					<input placeholder="確認用" type="text" name="confirm" id="zipcode" value="" >
+				</div>
+				<div class="vipMess">
+					郵便番号 <span>*</span>
+				</div>
+				<div class="vipMess3">
+					<input placeholder="例 104-0041" type="text" name="zip_code" id="zipcode" value="" >
+				</div>
+				<div class="vipMess">
+					ご住所 <span>*</span>
+				</div>
+				<div class="vipMess2">
+					<input type="text" name="address" value="" class="text" placeholder="例 東京都中央区新富1-9-6 ザ・パークレックス新富町">
+				</div>
+				<div class="vipMess">
+					お問い合わせ内容 <span>*</span>
+				</div>
+				<div class="vipMess2">
+					<textarea name="content" id=""></textarea>
+				</div>
+				<div class="vipMess10 jusc">
+					<input type="checkbox" value="1" id="grqb" required="">
+					<a class="qbButt1 qbButtc" href="javascript:void(0)">個人情報の取り扱い</a>
+					に同意する
+				</div>
+				<div class="vipMess11">
+					<input type="submit" class="submitcontactus" value="送  信">
+				</div>
+			</div>
+		</form>
+		</div>
+		
+		
+		{include file="common/foot" /}
+		
+	</body>
+</html>

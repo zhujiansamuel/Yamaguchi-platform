@@ -1,0 +1,135 @@
+<form id="add-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('User_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-user_id" data-rule="required" min="0" data-source="user/user/index" data-field="nickname" class="form-control selectpage" name="row[user_id]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Store_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-store_id" data-rule="required" min="0" data-source="store/index" class="form-control selectpage" name="row[store_id]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('No')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-no" data-rule="required" class="form-control" name="row[no]" type="text">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank_account_type')}:</label>
+        <div class="col-xs-12 col-sm-8">
+                        
+            <select  id="c-bank_account_type" data-rule="required" class="form-control selectpicker" name="row[bank_account_type]">
+                {foreach name="bankAccountTypeList" item="vo"}
+                    <option value="{$key}" {in name="key" value="0"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank_account_name')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bank_account_name" data-rule="required" class="form-control" name="row[bank_account_name]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank_account')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bank_account" data-rule="required" class="form-control" name="row[bank_account]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bank" data-rule="required" class="form-control" name="row[bank]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank_branch')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bank_branch" data-rule="required" class="form-control" name="row[bank_branch]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Store_name')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-store_name" data-rule="required" class="form-control" name="row[store_name]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Go_store_date')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-go_store_date" class="form-control datetimepicker" data-date-format="YYYY-MM-DD" data-use-current="true" name="row[go_store_date]" type="text" value="{:date('Y-m-d')}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Go_store_time')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-go_store_time" class="form-control datetimepicker" data-date-format="YYYY-MM-DD HH:mm:ss" data-use-current="true" name="row[go_store_time]" type="text" value="{:date('Y-m-d H:i:s')}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Price')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-price" data-rule="required" class="form-control" name="row[price]" type="number" value="0">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Procedures')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-procedures" data-rule="required" class="form-control" name="row[procedures]" type="number" value="0">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Total_price')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-total_price" data-rule="required" class="form-control" name="row[total_price]" type="number" value="0">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-status" data-rule="required" class="form-control" name="row[status]" type="number" value="1">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Admin_status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-admin_status" data-rule="required" class="form-control" name="row[admin_status]" type="number" value="1">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Pay_mode')}:</label>
+        <div class="col-xs-12 col-sm-8">
+                        
+            <select  id="c-pay_mode" data-rule="required" class="form-control selectpicker" name="row[pay_mode]">
+                {foreach name="payModeList" item="vo"}
+                    <option value="{$key}" {in name="key" value="0"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Type')}:</label>
+        <div class="col-xs-12 col-sm-8">
+                        
+            <select  id="c-type" data-rule="required" class="form-control selectpicker" name="row[type]">
+                {foreach name="typeList" item="vo"}
+                    <option value="{$key}" {in name="key" value="1"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>

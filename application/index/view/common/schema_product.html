@@ -1,0 +1,28 @@
+<!-- Product Schema (Goods Details Page) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "{$goods.title|htmlentities}",
+  "image": "{$Request.domain}{$goods.image}",
+  "description": "{$goods.memo|default='中古スマートフォン、パソコン、デジタル機器の買取サービス'|htmlentities}",
+  "sku": "GOODS-{$goods.id}",
+  "offers": {
+    "@type": "Offer",
+    "url": "{$Request.domain}/gdetails/{$goods.id}",
+    "priceCurrency": "JPY",
+    "price": "{$goods.price}",
+    "priceValidUntil": "{:date('Y-m-d', strtotime('+30 days'))}",
+    "itemCondition": "https://schema.org/UsedCondition",
+    "availability": "https://schema.org/InStock",
+    "seller": {
+      "@type": "Organization",
+      "name": "{$site.name|htmlentities}"
+    }
+  },
+  "brand": {
+    "@type": "Brand",
+    "name": "{$goods.title|htmlentities|substr=0,20}"
+  }
+}
+</script>

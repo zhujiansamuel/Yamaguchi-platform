@@ -1,0 +1,39 @@
+<!-- 左側メニュー -->
+<section class="sidebar">
+    <!-- 管理者情報 -->
+    <div class="user-panel hidden-xs">
+        <div class="pull-left image">
+            <a href="general/profile" class="addtabsit"><img src="{$admin.avatar|cdnurl|htmlentities}" class="img-circle" /></a>
+        </div>
+        <div class="pull-left info">
+            <p>{$admin.nickname|htmlentities}</p>
+            <i class="fa fa-circle text-success"></i> {:__('Online')}
+        </div>
+    </div>
+
+    <!-- メニュー検索 -->
+    <form action="" method="get" class="sidebar-form" onsubmit="return false;">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="{:__('Search menu')}">
+            <span class="input-group-btn">
+                <button type="submit" name="search" id="search-btn" class="btn btn-flat"><i class="fa fa-search"></i>
+                </button>
+            </span>
+            <div class="menuresult list-group sidebar-form hide">
+            </div>
+        </div>
+    </form>
+
+    <!-- モバイル用第1階層メニュー -->
+    <div class="mobilenav visible-xs">
+
+    </div>
+
+    <!-- 左側メニュー -->
+    <ul class="sidebar-menu {if $Think.config.fastadmin.show_submenu}show-submenu{/if}">
+
+        <!-- メニューは 管理画面->権限管理->メニュールール で追加・削除・編集および並び替えができます -->
+        {$menulist}
+
+    </ul>
+</section>

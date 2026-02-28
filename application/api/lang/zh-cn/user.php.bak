@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'User center'                           => '会员中心',
+    'Register'                              => '注册',
+    'Login'                                 => '登录',
+    'Sign up successful'                    => '登録成功',//注册成功
+    'Username can not be empty'             => '用户名不能为空',
+    'Username must be 3 to 30 characters'   => '用户名必须3-30个字符',
+    'Username must be 6 to 30 characters'   => '用户名必须6-30个字符',
+    'Password can not be empty'             => 'パスワードを空にすることはできません',//密码不能为空
+    'Password must be 6 to 30 characters'   => '密码必须6-30个字符',
+    'Mobile is incorrect'                   => '手机格式不正确',
+    'Username already exist'                => 'ユーザー名はすでに存在します',//用户名已经存在
+    'Nickname already exist'                => '昵称已经存在',
+    'Email already exist'                   => 'メールボックスは既に存在します',//邮箱已经存在
+    'Mobile already exist'                  => '手机号已经存在',
+    'Username is incorrect'                 => 'ユーザー名が正しくありません',//用户名不正确
+    'Email is incorrect'                    => 'メールアドレスが正しくありません',//邮箱不正确
+    'Account is locked'                     => 'アカウントがロックされています',
+    'Password is incorrect'                 => 'パスワードをもう一度ご確認ください。',
+    'Account is incorrect'                  => 'アカウントが正しくありません',
+    'Account not exist'                     => 'アカウントは存在しません',//账户不存在
+    'Account can not be empty'              => 'アカウントを空にすることはできません',//账户不能为空
+    'Username or password is incorrect'     => 'ユーザー名またはパスワードが正しくありません',//用户名或密码不正确
+    'You are not logged in'                 => 'あなたはまだログインしていません',//你当前还未登录
+    'You\'ve logged in, do not login again' => 'あなたはすでに存在します。繰り返しログインしないでください',//你已经存在，请不要重复登录
+    'Profile'                               => '个人资料',
+    'Verify email'                          => '邮箱验证',
+    'Change password'                       => '修改密码',
+    'Captcha is incorrect'                  => '検証コードを確認してください。',//验证码不正确
+    'Logged in successful'                  => 'ログイン成功',//登录成功
+    'Logout successful'                     => '退出成功',
+    'Operation failed'                      => '操作失败',
+    'Invalid parameters'                    => 'パラメータが正しくありません',//参数不正确
+    'Change password failure'               => 'パスワードの変更に失敗しました',//修改密码失败
+    'Change password successful'            => 'パスワードの変更に成功しました',//修改密码成功
+    'Reset password successful'             => 'パスワードのリセットに成功しました',//重置密码成功
+    '数据不存在' => 'データが存在しません',
+    '请选择门店' => '店舗をお選びください',
+    '请选择来店日期' => 'ご来店日をお選びください',
+    '请选择来店时间' => 'ご来店時間をお選びください',
+    '请选择银行账户类型' => '銀行口座タイプを選択してください',
+    '请输入银行名称' => '銀行名を入力してください',
+    '请输入支行' => '支店を入力してください',
+    '请输入支行号' => '支店番号を入力してください',
+    '请输入汇款账户号码' => '送金口座番号を入力してください',
+    '请输入汇款账户名称' => '送金口座名を入力してください',
+    '两次密码不相同' => '2回のパスワードが異なる',
+    '成功' => 'カートに入りました。',
+    '' => '',
+    '' => '',
+    '' => '',
+    '' => '',
+    '' => '',
+    '' => '',
+];

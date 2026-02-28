@@ -1,0 +1,157 @@
+<div style="width: 100%;display: inline-flex;">
+    <div style="float:left;width: 50%;"> 
+        <h4 style="text-align: center;">お客様の情報 </h4>
+        <table class="table table-striped" >
+            <!-- <thead>
+            <tr>
+                <th>{:__('打卡位置')}</th>
+                <th>{:__('拍照图片')}</th>
+                <th>{:__('时间')}</th>
+            </tr>
+            </thead> -->
+            <tbody>
+        {if $user}
+            <tr>
+                <th width="30%">お名前</th>
+                <td>{$user['name']}</td>
+            </tr>
+            <tr>
+                <th width="30%">メールアドレス</th>
+                <td>{$user['email']}</td>
+            </tr>
+            <tr>
+                <th width="30%">個人法人区分</th>
+                <td>{:getConfigOther('persion_type_list', $user['persion_type'])}</td>
+            </tr>
+            <tr>
+                <th width="30%">お電話番号</th>
+                <td>{$user['mobile']}</td>
+            </tr>
+            <tr>
+                <th width="30%">ご住所</th>
+                <td>{$user['address']}</td>
+            </tr>
+            <tr>
+                <th width="30%">生年月日</th>
+                <td>{$user['birthday']}</td>
+            </tr>
+            <tr>
+                <th width="30%">職業</th>
+                <td>{:getCategoryName($user['occupation'])}</td>
+            </tr>
+            <tr>
+                <th width="30%">個人書類種別</th>
+                <td>{:getCategoryName($user['szb'])}</td>
+            </tr>
+        {else /}
+            暂无数据
+        {/if}  
+
+            </tbody>
+        </table>
+        <h4 style="text-align: center;">個人書類アップロード </h4>
+        <div>
+            {volist name="$user['szb_image']" id="item"}
+                <img src="{$item|getDomainName}" width="150">
+            {/volist}
+        </div>  
+    </div>
+    <div style="float:left;width: 40%;margin-left: 20px;">
+    
+        <h4 style="text-align: center;">&nbsp;</h4>
+        <table class="table table-striped" style="width:100%">
+            <tbody>
+                <tr>
+                    <th width="50%">お支払い方法</th>
+                    <td>{:getConfigOther('pay_mode_list', $row['pay_mode'])}</td>
+                </tr>
+            {if $row['pay_mode'] == 2}
+                <tr>
+                    <th width="50%">銀行</th>
+                    <td>{$row['bank']}</td>
+                </tr>
+                <tr>
+                    <th width="50%">支店</th>
+                    <td>{$row['bank_branch']}</td>
+                </tr>
+                <tr>
+                    <th width="50%">預金種目</th>
+                    <td>{:getConfigOther('bank_account_type', $row['bank_account_type'])}</td>
+                </tr>
+                <tr>
+                    <th width="50%">振込口座番号</th>
+                    <td>{$row['bank_account']}</td>
+                </tr>
+                <tr>
+                    <th width="50%">振込口座名義</th>
+                    <td>{$row['bank_account_name']}</td>
+                </tr>
+            {/if}
+            </tbody>
+        </table>
+        
+        <h4 style="text-align: center;">合计</h4>
+        <table class="table table-striped"  style="width:100%">
+      
+            <tbody>
+            <tr>
+                <th width="40%">商品价格</th>
+                <td>
+                {$row['price']}
+                </td>
+            </tr>
+            <tr>
+                <th width="40%">共</th>
+                <td>
+                {$row['total_price']}
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th width="20%">{:__('商品名称')}</th>
+        <th>{:__('備考')}</th>
+        <th>{:__('商品图片')}</th>
+        <th>{:__('商品规格')}</th>
+        <th>{:__('数量')}</th>
+        <th>{:__('单价')}</th>
+        <!-- <th>{:__('类型')}</th> -->
+    </tr>
+    </thead>
+    <tbody>
+{volist name="order_details" id="item"}
+    <tr>
+        <td>{$item['title']}</td>
+        <td>{$item['memo']}</td>
+        <td><img src="{$item['image']|getDomainName}" width="100"></td>
+        <td>{$item['color']}<br>{$item['specs_name']}</td>
+        <td>{$item['num']}</td>
+        <td>{$item['price']}</td>
+        <!-- <td>{:getConfigOther('goods_type', $item['type'])}</td> -->
+    </tr>
+  {/volist}
+
+   
+
+
+    {if $Think.get.dialog}
+
+    {/if}
+    </tbody>
+</table>
+
+<div style="width: 100%;display: inline-flex;">
+    <div style="float:left;width: 50%;"> 
+        
+        
+    </div>
+    
+</div>
+
+

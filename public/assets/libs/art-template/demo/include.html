@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>include-demo</title>
+<script src="../dist/template.js"></script>
+</head>
+
+<body>
+<div id="content"></div>
+<script id="test" type="text/html">
+<h1>{{title}}</h1>
+{{include 'list'}}
+</script>
+<script id="list" type="text/html">
+<ul>
+    {{each list as value i}}
+        <li>インデックス {{i + 1}} ：{{value}}</li>
+    {{/each}}
+</ul>
+</script>
+
+<script>
+var data = {
+	title: '子テンプレートをインクルード',
+	list: ['アート', 'ブログ', '写真撮影', '映画', 'フォークソング', '旅行', 'ギター']
+};
+var html = template('test', data);
+document.getElementById('content').innerHTML = html;
+</script>
+</body>
+</html>

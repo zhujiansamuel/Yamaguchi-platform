@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'Toggle all'                                                => 'すべて表示',
+    'Condition'                                                 => 'ルール条件',
+    'Remark'                                                    => '備考',
+    'Icon'                                                      => 'アイコン',
+    'Alert'                                                     => '警告',
+    'Name'                                                      => 'ルール',
+    'Controller/Action'                                         => 'コントローラー名/メソッド名',
+    'Ismenu'                                                    => 'メニュー',
+    'Menutype'                                                  => 'メニュータイプ',
+    'Addtabs'                                                   => 'タブ(デフォルト)',
+    'Dialog'                                                    => 'ポップアップ',
+    'Ajax'                                                      => 'Ajaxリクエスト',
+    'Blank'                                                     => 'リンク',
+    'Extend'                                                    => '拡張属性',
+    'Search icon'                                               => 'アイコンを検索',
+    'Toggle menu visible'                                       => 'クリックしてメニューの表示を切り替え',
+    'Toggle sub menu'                                           => 'クリックしてサブメニューを切り替え',
+    'Menu tips'                                                 => '親メニューはコントローラーやメソッドと一致させる必要はありません,サブメニューにはコントローラー名を使用してください',
+    'Node tips'                                                 => 'コントローラー/メソッド名,ディレクトリがある場合は使用してください ディレクトリ名/コントローラー名/メソッド名',
+    'Url tips'                                                  => '通常は空欄のままで問題ありません,外部リンクまたは相対リンクの場合は入力してください',
+    'The non-menu rule must have parent'                        => 'メニュー以外のルールノードには必ず親ノードが必要です',
+    'Can not change the parent to child'                        => '親ノードに子ノードを指定することはできません',
+    'Can not change the parent to self'                         => '親ノードに自分自身を指定することはできません',
+    'Name only supports letters, numbers, underscore and slash' => 'URLルールは小文字のアルファベットのみ使用可能、数値、アンダースコアと/から構成',
+];

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="inTop">
+			<div class="address mt20">
+				<div class="contain address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href="/news"> お知らせ</a>
+				</div>
+			</div>
+			<div class="inTop1">
+				お知らせ
+			</div>
+		</div>
+		<div class="sknews">
+			<div class="contain">
+				<div class="sknews1">
+					<div class="sknews2">
+						<ul>
+						{volist name="news" id="item"}
+							<li>
+								<div class="sknews3">
+									<img src="{$item['image']}" alt="{$item['title']}" />
+								</div>
+								<div class="sknews4">
+									<div class="sknews5">
+										{$item['createtime']|date='Y-m-d',###}
+									</div>
+									<div class="sknews6">
+										{$item['title']}
+									</div>
+									<div class="sknews7">
+										{$item['desc']}
+									</div>
+									<div class="sknews8">
+										<a href="/ndetails/{$item['id']}">詳しく見る</a>
+									</div>
+								</div>
+							</li>
+						{/volist}
+							
+						</ul>
+					</div>
+					{$page}
+				</div>
+			</div>
+		</div>
+		
+		
+		{include file="common/foot" /}
+		
+	</body>
+</html>

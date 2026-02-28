@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="inTop">
+			<div class="address mt20">
+				<div class="contain address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href="/guide"> ご利用ガイド</a>
+				</div>
+			</div>
+			<div class="inTop1">
+				ご利用ガイド
+			</div>
+		</div>
+		<div class="guide">
+			<div class="contain pd113">
+				<div class="guide1" style="display:none;">
+					ご利用ガイド
+				</div>
+				<div class="guide2" style="display:none;">
+				{volist name="guide_type" id="item"}
+					<div class="guide3">
+						<div class="guide4">
+							<img src="{$item['image']}" alt="{$item['name']}アイコン" />
+							{$item['name']}
+						</div>
+						<div class="guide5">
+						{if isset($guide_list[$item['id']])}
+						{volist name="$guide_list[$item['id']]" id="item2"}
+							<a href="#{$item2['title']}">{$item2['title']}</a>
+						{/volist}
+						{/if}	
+						</div>
+					</div>
+				{/volist}
+					
+				</div>
+			{volist name="guide_type" id="item"}
+				<div class="guide6">
+					{$item['name']}
+				</div>
+				{if isset($guide_list[$item['id']])}
+				{volist name="$guide_list[$item['id']]" id="item2"}
+				<div id="{$item2['title']}" class="guide7">
+					{$item2['title']}
+				</div>
+				<div class="guide8">
+					{$item2['content']}
+				</div>
+					{if $item2['is_pdf'] == 1}
+						<div class="guide9">
+							<a class="pdf1" target="_blank" href="{$site.protector_consent_form}">保護者同意書(PDF)</a>
+							<a class="pdf2" target="_blank" href="{$site.buy_application_form}">買取申し込み書(PDF)</a>
+						</div>
+					{/if}
+				{/volist}
+				{/if}
+				
+			{/volist}	
+			</div>
+		</div>
+		
+		
+		{include file="common/foot" /}
+		
+	</body>
+</html>

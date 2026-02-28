@@ -1,0 +1,37 @@
+<!-- Organization Schema (Global) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "{$site.name|htmlentities}",
+  "image": "{$Request.domain}/uploads/20251029/a0480341e272cdcb79c34cfcf78c3007.png",
+  "telephone": "{$site.tel}",
+  "email": "{$site.email}",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "新富1-9-6 ザ・パークレックス新富町1F",
+    "addressLocality": "中央区",
+    "addressRegion": "東京都",
+    "postalCode": "{$site.zip_code}",
+    "addressCountry": "JP"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": "35.67197977247592",
+    "longitude": "139.7716134110254"
+  },
+  "url": "{$Request.domain}",
+  "priceRange": "¥¥",
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "opens": "10:00",
+    "closes": "18:00"
+  },
+  "sameAs": [
+{volist name="sns" id="item"}
+    "{$item.url}"{eq name="i" value="$key"}}{else},{/eq}
+{/volist}
+  ]
+}
+</script>

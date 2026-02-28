@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="cart">
+			<div class="pd150 contain">
+				<div class="address1">
+						<a href="/">ホーム</a>
+						&gt;
+						<a href=""> カート</a>
+					</div>
+			</div>
+		    <div class="contain pd150 mt20">
+				<div class="m31 w cle">
+					<div class="table">
+						<div class="tb">
+							<table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
+								<tbody>
+								{volist name="list" id="item"}
+									<tr data-id="{$item['id']}">
+										<td>
+											<div class="pr_info">
+												<div class="pic">
+													<img src="{$item['image']}">
+												</div>
+												<div class="cn">
+													{$item['title']}
+													<div class="cn_1">
+													{if $item['memo']}
+													備考 : {$item['memo']} <br>
+													{/if}
+													<!-- 状態 : {$item['type'] == 1 ? '新品' : '中古'} -->
+													 <!-- specs_name实际上存储的是商品颜色 -->
+													色 :  {$item['specs_name']}<br>
+
+													<!-- // カラー -->
+
+													</div>
+												</div>
+											</div>
+										</td>
+										<td>
+											<div class="pr_info2" data-id="{$item['id']}">
+												<div class="t3">
+													数量
+													<div class="nub_box">
+													<input class="nub_inp updateshopping" min="1" max="1000" type="number" value="{$item['num']}" data-price="{$item['raw_price']}" ></div>
+												</div>
+											</div>
+										</td>
+										<td>
+											<div class="pr_info2 pr_pri">
+												<div class="t1">
+													小計：
+													<span class="price" id="ntotal1233">
+														￥
+														<span class="subtotal-value">{$item['subtotal']}</span>
+													</span>
+													（税込）
+												</div>
+												<div class="t4">
+													<a class="delshopping" href="javascript:;">
+														<span>削除</span>
+													</a>
+												</div>
+											</div>
+										</td>
+									</tr>
+								{/volist}
+									
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="tab_buts">
+						<div class="tb_1">
+							合計：<span class="price" id="ftotal">￥<span>{$totalMoney}</span></span>（税込）
+						</div>
+						<div class="tb_3">
+							<input type="checkbox" id="xyh1" value="1" required="">
+							<a class="qbButt" href="/privacy_policy">プライバシーポリシー</a>
+								に同意する
+						</div>
+						<div class="tb_3">
+							<input type="checkbox" id="xyh2" value="1" required="">
+							<a class="qbButt" href="/use_terms">買取利用規約</a>
+							に同意する
+						</div>
+						<div class="td_2 cle">
+							<span>
+								<input class="fl bt_1 tz_goods" onclick="window.location.href='/goods'" type="button" value="他の商品を追加する" >
+							</span>
+							<span>
+								<input class="fr bt_2 apply" data-type="1" type="button" value="店頭買取のお申し込み" >
+								<input class="fr bt_2 apply" data-type="2" type="button" value="郵送買取のお申し込み" >
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		{include file="common/foot" /}
+		
+	</body>
+</html>

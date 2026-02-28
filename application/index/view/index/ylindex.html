@@ -1,0 +1,445 @@
+{if $rt neq 1}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/js/jquery.js"></script>
+</head>
+
+<body style="padding:40px 30px 0;width:670px;" id="content">
+<!--startprint-->
+<!-- 買取依頼書 2025-11-04版 本文开始 -->
+
+<style>
+    /* 打印：A4纸、整体收窄以减少上下余白 */
+    @page {
+        size: A4;
+        margin: 15mm 10mm;   /* 上下 左右 */
+        /* 清空页眉页脚（Chrome/Edge 支持；Firefox 需在打印对话框中取消勾选「页眉和页脚」） */
+        @top-left { content: none; }
+        @top-center { content: none; }
+        @top-right { content: none; }
+        @bottom-left { content: none; }
+        @bottom-center { content: none; }
+        @bottom-right { content: none; }
+    }
+    /* 打印：--print-scale 整体 --table-scale 表格 --content-width 整体宽度(0.92=92%收窄) */
+    :root { --print-scale: 1; --table-scale: 1; --content-width: 0.95; }
+    @media print {
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: calc(100% * var(--content-width)) !important;
+            max-width: calc(100% * var(--content-width)) !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            box-sizing: border-box !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            zoom: var(--print-scale);
+        }
+        table {
+            width: calc(100% * var(--table-scale)) !important;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    }
+    .ls3-6{
+        width: 8ch;          /* 目标空间 */
+        letter-spacing: 2.5ch; /* 示例：按需要调 */
+        white-space: nowrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .ls5-6{
+        width: 8ch;          /* 目标空间 */
+        letter-spacing: 0.05ch; /* 示例：按需要调 */
+        white-space: nowrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .ls4-6{
+        width: 8ch;          /* 目标空间 */
+        letter-spacing: 1.2ch; /* 示例：按需要调 */
+        white-space: nowrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .circle-wrap{
+        display:inline-block;border:1.5px solid #000;border-radius:50%;padding:0.1em 0.3em;min-width:1.8em;text-align:center;font-size:10px;
+    }
+    /* 标签等宽：inline-block + letter-spacing，不影响表格布局 */
+    .label-eq { display: inline-block; width: 6.5em; text-align: center; white-space: nowrap; }
+    .label-eq-3 { letter-spacing: 1.75em; }  /* (6.5-3)/2 */
+    .label-eq-4 { letter-spacing: 0.83em; }  /* (6.5-4)/3 */
+    .label-eq-6 { letter-spacing: 0.1em; }   /* (6.5-6)/5 */
+    .label-eq-7 { width: 7em; letter-spacing: 0; }
+</style>
+
+
+<div style="font-size:12px;">
+
+    <!-- 标题 & お申込日 -->
+    <div style="width:100%;position:relative;margin-bottom:5px;">
+        <div style="text-align:center;font-size:20px;font-weight:bold;">
+            買取依頼書
+        </div>
+        <div style="text-align:right;margin-top:5px;margin-right:2em;font-size:11px;">
+            お申込日　<span style="border-bottom:1px solid #000;">{$order.createtime|date="Y",###}</span>年<span style="border-bottom:1px solid #000;">{$order.createtime|date="m",###}</span>月<span style="border-bottom:1px solid #000;">{$order.createtime|date="d",###}</span>日
+        </div>
+    </div>
+
+    <!-- お客様情報 -->
+    <table cellspacing="0" cellpadding="0"
+           style="width:100%;border-collapse:collapse;border:1px solid #000;font-size:11px;table-layout:fixed;">
+        <tr>
+            <td colspan="2" style="width:15%;border:1px solid #000;padding:3px 5px;background:#e7e6e6;text-align:center;">
+                <span class="label-eq label-eq-4">フリガナ</span>
+            </td>
+            <td colspan="3" style="width:30%;border:1px solid #000;padding:3px 5px;">
+                {$user.katakana}
+            </td>
+            <td colspan="5" style="width:35%;border:1px solid #000;padding:3px 5px;text-align:center;">
+                生年月日（<span class="circle-wrap">西暦</span>　昭和　平成）
+            </td>
+            <td colspan="2" rowspan="2" style="width:10%;border:1px solid #000;padding:3px 5px;background:#e7e6e6;text-align:center;vertical-align:middle;">
+                性　別
+            </td>
+            <td rowspan="2" style="width:10%;border:1px solid #000;padding:3px 5px;text-align:center;vertical-align:middle;">
+                {if $user.gender eq 1}<span class="circle-wrap">男</span>　女{elseif $user.gender eq 2}男　<span class="circle-wrap">女</span>{else}男　女{/if}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="width:15%;border:1px solid #000;padding:3px 5px;background:#e7e6e6;text-align:center;">
+                <span class="label-eq label-eq-7">お名前(漢字)</span>
+            </td>
+            <td colspan="3" style="border:1px solid #000;padding:3px 5px;">
+                {$user.name}
+            </td>
+            <td colspan="5" style="border:1px solid #000;padding:3px 5px;text-align:center;">
+                <span style="border-bottom:1px solid #000;">{:date('Y', strtotime($user['birthday']))}</span>年<span style="border-bottom:1px solid #000;">{:date('m', strtotime($user['birthday']))}</span>月<span style="border-bottom:1px solid #000;">{:date('d', strtotime($user['birthday']))}</span>日　満　<span style="border-bottom:1px solid #000;">{$age}</span>　歳
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="width:15%;border:1px solid #000;padding:3px 5px;background:#e7e6e6;text-align:center;">
+                <span class="label-eq label-eq-6">ご連絡先電話</span>
+            </td>
+            <td colspan="11" style="border:1px solid #000;padding:3px 5px;">
+                {$formatted_phone|default=$user.mobile}　　　　郵便番号：〒{$zip_part1|default=$user.zip_code}{if $zip_part2}-{/if}{$zip_part2}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="width:15%;border:1px solid #000;padding:3px 5px;background:#e7e6e6;text-align:center;">
+                <span class="label-eq label-eq-3">ご住所</span>
+            </td>
+            <td colspan="11" style="border:1px solid #000;padding:3px 5px;">
+                {$user.address}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="width:15%;border:1px solid #000;padding:3px 5px;background:#e7e6e6;text-align:center;">
+                <span class="label-eq label-eq-3">ご職業</span>
+            </td>
+            <td colspan="11" style="border:1px solid #000;padding:3px 5px;">
+                {if !empty($user) && ($user['persion_type'] ?? 1) == 1}
+                {eq name="user.occupation" value="61"}<span class="circle-wrap">自営業</span>{else/}自営業{/eq}、{eq name="user.occupation" value="178"}<span class="circle-wrap">役員</span>{else/}役員{/eq}、{eq name="user.occupation" value="62"}<span class="circle-wrap">会社員</span>{else/}会社員{/eq}、{eq name="user.occupation" value="60"}<span class="circle-wrap">アルバイト</span>{else/}アルバイト{/eq}、{eq name="user.occupation" value="63"}<span class="circle-wrap">学生</span>{else/}学生{/eq}、{eq name="user.occupation" value="179"}<span class="circle-wrap">主婦</span>{else/}主婦{/eq}、{eq name="user.occupation" value="180"}<span class="circle-wrap">公務員</span>{else/}公務員{/eq}、{eq name="user.occupation" value="181"}<span class="circle-wrap">教職員</span>{else/}教職員{/eq}、{eq name="user.occupation" value="59"}<span class="circle-wrap">その他</span>{else/}その他{/eq}（　　　　）
+                {else/}－（法人のため省略）
+                {/if}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3" style="border:1px solid #000;padding:1px 1px;background:#e7e6e6;font-size:8px;text-align:center;">
+                適格請求書発行事業者に該当します
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;text-align:center;">
+                {if !empty($user.business_number)}<span class="circle-wrap">はい</span>{else/}はい{/if}
+            </td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;text-align:center;">
+                {if empty($user.business_number)}<span class="circle-wrap">いいえ</span>{else/}いいえ{/if}
+            </td>
+            <td colspan="7" style="border:1px solid #000;padding:3px 5px;">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;width:100%;">
+                    <span>T{$user.business_number|default='             '}</span>
+                    <span style="font-size:6px;white-space:nowrap;">
+                        「はい」の場合はT+13桁の事業者登録番号をご記入ください
+                    </span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="6" style="border:1px solid #000;padding:3px 5px;font-size:8px;">
+                （ご記入がない場合は「いいえ」とみなします）
+            </td>
+            <td colspan="3" style="border:1px solid #000;padding:3px 5px;text-align:center;">
+                当店のご利用回数
+            </td>
+            <td colspan="4" style="border:1px solid #000;padding:3px 5px;text-align:center;">
+                {if isset($ornum) and $ornum eq 1}<span class="circle-wrap">新規</span>　２回目以降{else}新規　<span class="circle-wrap">２回目以降</span>{/if}
+            </td>
+        </tr>
+        <tr>
+            <td style="border:1px solid #000;padding:3px 5px;background:#e7e6e6;text-align:center;">
+                身分証明書
+            </td>
+            <td colspan="12" style="border:1px solid #000;padding:5px 5px;">
+                {if !empty($user) && ($user['persion_type'] ?? 1) == 2}
+                <div>
+                    {if $is_corp_driver}<span class="circle-wrap">運転免許証のコピー</span>{else/}運転免許証のコピー{/if}　{if $is_corp_mynum}<span class="circle-wrap">個人番号カード</span>{else/}個人番号カード{/if}　{if $is_corp_pass}<span class="circle-wrap">パスポート写し(写真面＋住所面)</span>{else/}パスポート写し(写真面＋住所面){/if}　{if $is_corp_zairyu}<span class="circle-wrap">在留カード</span>{else/}在留カード{/if}　{if $is_corp_other}<span class="circle-wrap">その他</span>{else/}その他{/if}
+                </div>
+                {else/}
+                <div>
+                    {eq name="user.szb" value="55"}<span class="circle-wrap">運転免許証の写し（両面）</span>{else/}運転免許証の写し（両面）{/eq}　　　　　　{eq name="user.szb" value="51"}<span class="circle-wrap">個人番号カード（表のみコピー）</span>{else/}個人番号カード（表のみコピー）{/eq}
+                </div>
+                <div>
+                    {eq name="user.szb" value="50"}<span class="circle-wrap">パスポートの写し（写真面+住所面）</span>{else/}パスポートの写し（写真面+住所面）{/eq} 　{eq name="user.szb" value="46"}<span class="circle-wrap">在留カード</span>{else/}在留カード{/eq}　　{eq name="is_szb_other" value="1"}<span class="circle-wrap">その他</span>{else/}その他{/eq}（　　　　）
+                </div>
+                {/if}
+            </td>
+        </tr>
+    </table>
+
+    <!-- 商品明細 -->
+    <table id="ginfo" cellspacing="0" cellpadding="0"
+           style="width:100%;border-collapse:collapse;border:1px solid #000;border-top:none;font-size:11px;margin-top:8px;">
+        <tr>
+            <td colspan="6" style="border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;width:42%;">
+                商品名・（カラー容量など）
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;width:6%;">
+                備考
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;width:14%;">
+                状態
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;width:12%;">
+                査定金額
+            </td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;width:8%;">
+                個数
+            </td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;width:12%;">
+                合計金額
+            </td>
+        </tr>
+
+        {volist name="order['details']" id="info"}
+        <tr>
+            <td colspan="6" style="border:1px solid #000;padding:3px 5px;text-align:left;">
+                {$info.title}　{$info['specs_name']}&nbsp;{$info['color']}
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;text-align:left;">
+                &nbsp;
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;text-align:center;">
+                {$info['color']}
+
+                <!--                 {if $info.type eq 1}未開封{/if} -->
+                <!--                 {if $info.type eq 2}中古{/if} -->
+                <!--                 {if $info.type eq 3}開封未使用{/if} -->
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;text-align:right;">
+                {$info['price']} 円
+            </td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;text-align:center;">
+                {$info.num}
+            </td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;text-align:right;">
+                {$info['total_price']} 円
+            </td>
+        </tr>
+        {/volist}
+
+        <?php
+            // 按 Word 模板预留 10 行
+            for($i = count($order['details']); $i < 10; $i++){
+        ?>
+        <tr>
+            <td colspan="6" style="border:1px solid #000;padding:3px 5px;">&nbsp;</td>
+            <td style="border:1px solid #000;padding:3px 5px;">&nbsp;</td>
+            <td style="border:1px solid #000;padding:3px 5px;text-align:center;">未開封・中古</td>
+            <td style="border:1px solid #000;padding:3px 5px;">&nbsp;</td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;">&nbsp;</td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;">&nbsp;</td>
+        </tr>
+        <?php } ?>
+
+        <tr>
+            <td colspan="9" style="border:1px solid #000;padding:3px 5px;text-align:right;background:#e7e6e6;font-weight:bold;">
+                総合計　　　　　　
+            </td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;text-align:center;">
+                {$totalNum}
+            </td>
+            <td colspan="2" style="border:1px solid #000;padding:3px 5px;text-align:right;">
+                {$order['total_price']} 円
+            </td>
+        </tr>
+    </table>
+
+    <!-- ※確認事項 -->
+    <div style="margin-top:8px;font-size:10px;">
+        <div style="font-weight:bold;color:#ff0000;font-size:14px">※確認事項</div>
+        <div style="margin-left:20px;line-height:0.5;">
+            <p style="font-size:11px;">・18才未成年のお客様は保護者の承諾書添付必要。</p>
+            <p>1．盗難紛失品、模倣品、海賊品、不正購入品、偽造品など買取できません。　2．買い取り成立後のキャンセルは出来ません。</p>
+            <p>3．お客様の個人情報の保護に関する法律・その他法令を尊守し、また「個人情報保護方針」を定め、個人情報の適切な取り扱いを行います。</p>
+            <p>4．お客様にご提供頂きました本同意書の個人情報は、下記目的のために利用いたします。</p>
+            <p style="margin-left:18px;">
+                ① 買取申込・同意の確認及び所有者の確認。②古物営業法に則った売買履歴の管理。
+            </p>
+            <p>5．お客様の個人情報を、お客様の同意なしに第三者に提供することはございません。</p>
+        </div>
+    </div>
+
+    <!-- 店舗情報 -->
+    <div style="margin-top:10px;font-size:10px;line-height:1.5;">
+
+    </div>
+
+    <!-- 銀行振込先 -->
+    <table cellspacing="0" cellpadding="0"
+           style="width:100%;border-collapse:collapse;border:1px solid #000;margin-top:8px;font-size:11px;">
+        <tr>
+            <td colspan="5" style="border:1px solid #000;padding:3px 5px;text-align:center;font-weight:bold;">
+                銀行振込先
+            </td>
+        </tr>
+        <tr>
+            <td style="width:19%;border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;">
+                銀行名
+            </td>
+            <td style="width:16%;border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;">
+                支店番号
+            </td>
+            <td style="width:22%;border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;">
+                支店名
+            </td>
+            <td style="width:22%;border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;">
+                口座番号
+            </td>
+            <td style="width:21%;border:1px solid #000;padding:3px 5px;background:#d9d9d9;text-align:center;">
+                口座名義
+            </td>
+        </tr>
+        <tr>
+            <td style="border:1px solid #000;padding:3px 5px;">
+                {$order.bank}　
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;">
+                {$order.bank_branch_no}　
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;">
+                {$order.bank_branch}　
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;">
+                {$order.bank_account}　
+            </td>
+            <td style="border:1px solid #000;padding:3px 5px;">
+                {$order.bank_account_name}　
+            </td>
+        </tr>
+    </table>
+
+    <!-- ご署名（2枠） -->
+    <div style="margin-top:5px;display:flex;gap:24px;font-size:10px;">
+        <div style="flex:1;min-width:0;">
+            <p style="color:#ff0000;font-size:20px!important;margin:1px;font-family:'MS Gothic','Hiragino Sans','Yu Gothic',sans-serif;font-weight:bold;">Mobile Zone</p>
+            <p style="margin:1px!important;color:#5d5d5d;">
+                郵送先：
+                {if !empty($order['store'])}
+                {$order['store']['address']}
+                {else /}
+                〒104-0041 東京都中央区新富1-9-6ザ・パークレックス新富町１F 　　  　　 株式会社山口商事
+                {/if}
+            </p>
+            <p style="margin:1px!important;color:#5d5d5d;">古物商許可：第301072318469号</p>
+            <p style="margin:1px!important;color:#5d5d5d;">TEL：{$site.tel}</p>
+        </div>
+        <div style="flex:0 0 270px;">
+            <div style="color:#ff0000;font-size:11px;">
+                <br>
+                確認事項にご同意いただける場合はご署名下さい。
+            </div>
+            <div style="border:2px solid #ff0000;height:50px;margin-top:4px;position:relative;">
+                <span style="position:absolute;right:8px;bottom:4px;font-size:30px;">㊞　</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 社内用 -->
+    <table cellspacing="0" cellpadding="0"
+           style="width:100%;border-collapse:collapse;border:1px solid #000;margin-top:10px;font-size:10px;">
+        <tr style="height:22px;">
+            <td style="width:18%;border-right:1px solid #000;text-align:center;font-weight:bold;">
+                社内用
+            </td>
+            <td style="width:14%;border-left:1px solid #000;text-align:center;border-right:1px solid #000;padding-left:10px;font-weight:bold;">
+                追跡番号
+            </td>
+            <td style="width:18%;border-left:1px solid #000;text-align:center;border-right:1px solid #000;">
+                &nbsp;
+            </td>
+            <td style="width:15%;border-left:1px solid #000;text-align:center;border-right:1px solid #000;padding-left:10px;font-weight:bold;">
+                入力者
+            </td>
+            <td style="width:12%;border-left:1px solid #000;border-right:1px solid #000;">
+                &nbsp;
+            </td>
+            <td style="width:10%;border-left:1px solid #000;text-align:center;border-right:1px solid #000;padding-left:10px;font-weight:bold;">
+                確認者
+            </td>
+            <td style="width:13%;border-left:1px solid #000;">
+                &nbsp;
+            </td>
+        </tr>
+    </table>
+
+</div>
+<!-- 買取依頼書 2025-11-04版 本文结束 -->
+
+<!--endprint-->
+
+<script src="/js/jspdf.debug.js"></script>
+<script src="/js/html2canvas.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $(".dcClick").click(function(event) {
+            html2canvas(document.body, {
+                onrendered: function(canvas) {
+                    var imgData = canvas.toDataURL();
+                    var doc = new jsPDF('p', 'pt', 'a4');
+                    var doc = new jsPDF();
+                    doc.addImage(imgData, 'png', 0, 0, 210, 0);
+                    doc.save('買取申込書.pdf');
+                }
+            });
+        });
+    });
+
+    function stzz(){
+        html2canvas(document.body, {
+            onrendered: function(canvas) {
+                var imgData = canvas.toDataURL();
+                var doc = new jsPDF('p', 'pt', 'a4');
+                var doc = new jsPDF();
+                doc.addImage(imgData, 'png', 0, 0, 210, 0);
+                doc.save('買取申込書.pdf');
+            }
+        });
+    }
+
+    setTimeout(doPrint(),1000);
+    function doPrint() {
+        bdhtml = window.document.body.innerHTML;
+        sprnstr = "<!--startprint-->";
+        eprnstr = "<!--endprint-->";
+        prnhtml = bdhtml.substr(bdhtml.indexOf(sprnstr) + 0);
+        prnhtml = prnhtml.substring(0, prnhtml.indexOf(eprnstr));
+        window.document.body.innerHTML = prnhtml;
+        window.print();
+    }
+</script>
+</body>
+</html>
+{/if}

@@ -1,0 +1,135 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('User_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-user_id" data-rule="required" min="0" data-source="user/user/index" data-field="nickname" class="form-control selectpage" name="row[user_id]" type="text" value="{$row.user_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Store_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-store_id" data-rule="required" min="0" data-source="store/index" class="form-control selectpage" name="row[store_id]" type="text" value="{$row.store_id|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('No')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-no" data-rule="required" class="form-control" name="row[no]" type="text" value="{$row.no|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank_account_type')}:</label>
+        <div class="col-xs-12 col-sm-8">
+                        
+            <select  id="c-bank_account_type" data-rule="required" class="form-control selectpicker" name="row[bank_account_type]">
+                {foreach name="bankAccountTypeList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.bank_account_type"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank_account_name')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bank_account_name" data-rule="required" class="form-control" name="row[bank_account_name]" type="text" value="{$row.bank_account_name|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank_account')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bank_account" data-rule="required" class="form-control" name="row[bank_account]" type="text" value="{$row.bank_account|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bank" data-rule="required" class="form-control" name="row[bank]" type="text" value="{$row.bank|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Bank_branch')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-bank_branch" data-rule="required" class="form-control" name="row[bank_branch]" type="text" value="{$row.bank_branch|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Store_name')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-store_name" data-rule="required" class="form-control" name="row[store_name]" type="text" value="{$row.store_name|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Go_store_date')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-go_store_date" class="form-control datetimepicker" data-date-format="YYYY-MM-DD" data-use-current="true" name="row[go_store_date]" type="text" value="{$row.go_store_date}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Go_store_time')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-go_store_time" class="form-control datetimepicker" data-date-format="YYYY-MM-DD HH:mm:ss" data-use-current="true" name="row[go_store_time]" type="text" value="{:$row.go_store_time?datetime($row.go_store_time):''}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Price')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-price" data-rule="required" class="form-control" name="row[price]" type="number" value="{$row.price|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Procedures')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-procedures" data-rule="required" class="form-control" name="row[procedures]" type="number" value="{$row.procedures|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Total_price')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-total_price" data-rule="required" class="form-control" name="row[total_price]" type="number" value="{$row.total_price|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-status" data-rule="required" class="form-control" name="row[status]" type="number" value="{$row.status|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Admin_status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-admin_status" data-rule="required" class="form-control" name="row[admin_status]" type="number" value="{$row.admin_status|htmlentities}">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Pay_mode')}:</label>
+        <div class="col-xs-12 col-sm-8">
+                        
+            <select  id="c-pay_mode" data-rule="required" class="form-control selectpicker" name="row[pay_mode]">
+                {foreach name="payModeList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.pay_mode"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Type')}:</label>
+        <div class="col-xs-12 col-sm-8">
+                        
+            <select  id="c-type" data-rule="required" class="form-control selectpicker" name="row[type]">
+                {foreach name="typeList" item="vo"}
+                    <option value="{$key}" {in name="key" value="$row.type"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>

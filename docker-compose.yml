@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mobilezone_web
+    ports:
+      - "8001:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - TZ=Asia/Tokyo
+    restart: unless-stopped
+    networks:
+      - mobilezone_network
+
+  db:
+    image: mysql:5.7
+    container_name: mobilezone_db
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fastadmin
+      TZ: Asia/Tokyo
+    volumes:
+      - mobilezone_mysql_data:/var/lib/mysql
+      - ./application/admin/command/Install/fastadmin.sql:/docker-entrypoint-initdb.d/01-fastadmin.sql
+      - ./bulk_price_menu.sql:/docker-entrypoint-initdb.d/02-bulk_price_menu.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - mobilezone_network
+
+volumes:
+  mobilezone_mysql_data:
+
+networks:
+  mobilezone_network:
+    driver: bridge

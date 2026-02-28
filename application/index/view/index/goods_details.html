@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+		{include file="common/schema_product" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="proDeta">
+			<div class="contain">
+				<div class="address1 pd150">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href="/goods"> 商品一覧</a>
+					&gt;
+					<a href="/javascript:;"> {$goods['title']}</a>
+				</div>
+			</div>
+			<div class="contain proDeta1 pd150">
+				<div class="proDeta2">
+					<img src="{$goods['image']}" alt="{$goods['title']}" />
+				</div>
+				<div class="proDeta3">
+					<div class="proDeta4">
+						{$goods['title']}
+					</div>
+					{if !empty($goods['memo'])}
+					<div class="">
+						備考:<span>{$goods['memo']}</span>
+					</div>
+					{/if}
+					{if $goods['imei']}
+					<!-- <div class="">
+						IMEI:<span>{$goods['imei']}</span>
+					</div> -->
+					{/if}
+					<div class="proDeta5">
+						￥<span>{$goods['price']}</span>
+					</div>
+				<form name="form" id="addshopping-form" class="form-vertical" method="POST" action="">
+					<div class="proDeta11">
+						<div class="proDeta12">
+							<div class="proDeta13">
+								仕様・カラー	
+							</div>
+							<div class="proDeta14">
+								<select name="color">
+							{volist name="$goods['color']" id="item"}
+									<option value="{$item}">{$item}</option>
+							{/volist}
+								</select>
+							</div>
+							<div class="proDeta13">
+								商品状態選択
+							</div>
+							<div class="proDeta14">
+								<select name="spec" class="select_spec">
+								{volist name="$goods['spec_info']" id="item"}
+									<option data-price="{$item['handle_price']}" value="{$key}">{$item['name']}</option>
+								{/volist}
+								</select>
+							</div>
+						</div>
+						<div class="proDeta10">
+							<span>数量</span>
+							<img class="reduce" src="/img/reduce.png" alt="数量を減らす" />
+							<input class="proDeta10a" type="text" name="num" value="1" />
+							<img class="add" src="/img/add.png" alt="数量を増やす" />
+							<input  type="hidden" name="goods_id" value="{$goods['id']}"/>
+							<input class="proDeta10b addshopping" type="submit" value="カートに追加" />
+						</div>
+					</div>
+				</form>
+				</div>
+			</div>
+		</div>
+		{include file="common/foot" /}
+		
+	</body>
+</html>

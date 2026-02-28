@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="cart">
+			<div class="pd150 contain">
+				<div class="address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href="/user/shopping"> カート</a>
+					&gt;
+					<a href="javascript:;">{$type == 1 ? '店頭買取のお申し込み' : '郵送買取のお申し込み'}</a>
+				</div>
+			</div>
+		<form name="form" id="order-form" class="form-vertical" method="POST" action="">
+			<div class="contain orderDeta1">
+				<div class="orderLeft">
+					<div class="orderLeft1">
+						<div class="orderDeta2">
+							お客様の情報
+						</div>
+						<div class="orderDeta3">
+							{$userInfo->name}
+						</div>
+						<div class="orderDeta4">
+							{switch $userInfo->persion_type}
+							    {case 1}個人{/case}
+							    {case 2}法人{/case}
+							    {default /}<font color="red">未設定</font>
+							{/switch}
+							{if $userInfo->persion_type == 2 && $userInfo->corporate_name}
+							<br />会社名:{$userInfo->corporate_name}
+							<br />事業者登録番号:{$userInfo->business_number}
+							{/if}
+							<br />
+							{$userInfo->email}<br />
+							〒{$userInfo->zip_code ?: '<font color="red">未設定</font>'} <br />
+							{$userInfo->address} <br />
+							電話番号:{$userInfo->mobile ?: '<font color="red">未設定</font>'} <br />
+							{if $userInfo->persion_type == 1}
+							生年月日:{$userInfo->birthday ?: '<font color="red">未設定</font>'} <br />
+							性別:{if $userInfo->gender}{$userInfo->gender == 1 ? '男性' : '女性'} {else/} <font color="red">未設定</font> {/if}<br />
+							職業:
+							{if $userInfo->occupation}
+							    {:getCategoryName($userInfo->occupation)}
+							{else/}
+							    <font color="red">未設定</font>
+							{/if}
+							{/if}
+						</div>
+						<div class="orderDeta5">
+							<a href="/user">変更</a>
+						</div>
+					</div>
+					<div class="orderLeft6">
+						<div class="orderDeta2">
+							お申し込み内容
+						</div>
+						<div class="orderLeft7">
+							<div class="orderLeft8">
+								<div class="orderLeft9">
+									<ul>
+										<li class="oWidth">
+											商品品名
+										</li>
+										<li class="oWidth1">
+											数量
+										</li>
+										<li class="oWidth2">
+											小計
+										</li>
+									</ul>
+								</div>
+							{volist name="list" id="item"}
+								<div class="orderLeft10">
+									<ul>
+										<li class="oWidth">
+											<div class="orderLeft11">
+												<div class="orderLeft11a">
+													<img alt="{$item['title']}" src="{$item['image']}">
+												</div>
+												<div class="orderLeft11b">
+													<div class="orderLeft11c">
+														{$item['title']}
+													</div>
+													<div class="orderLeft11d">
+														{if $item['memo']}
+														備考 : {$item['memo']} <br>
+														{/if}
+														状態 : {$item['type'] == 1 ? '新品' : '中古'}
+													</div>
+												</div>
+											</div>
+										</li>
+										<li class="oWidth1">
+											{$item['num']}
+										</li>
+										<li class="oWidth2">
+											￥{$item['subtotal']}（税込）
+										</li>
+									</ul>
+								</div>
+							{/volist}
+							</div>
+						</div>
+						<div class="orderDeta5">
+							<a href="/user/shopping">変更</a>
+						</div>
+					</div>
+					<div class="orderLeft1">
+						<div class="orderDeta2">
+							お支払い方法
+						</div>
+						<div class="orderDeta3">
+							ご希望の買取金額に対するお支払い方法を選択してください
+						</div>
+						<div class="orderLeft12">
+							<!-- 将来現金払いを有効にする場合、このコメントを外してください
+							<label for="pay_mode_1">
+								<input name="pay_mode" id="pay_mode_1" class="new_lab" type="radio" value="1">
+								現金払い
+							</label>
+							-->
+							<label for="pay_mode_2">
+								<input name="pay_mode" id="pay_mode_2" class="new_lab" checked type="radio" value="2">
+								銀行振込
+							</label>
+			            </div>
+						<div class="orderLeft13" id="et">
+							<div class="orderLeft13a">
+								振込口座
+							</div>
+							<div class="orderLeft13b">
+								<label for="ptyh">
+									<input name="bank_account_type" id="ptyh" checked type="radio" value="1">
+									普通預金
+								</label>
+								<label for="ptyh">
+									<input name="bank_account_type" id="ptyh" type="radio" value="2">
+									当座預金
+								</label>
+							</div>
+							<div class="orderLeft13c">
+								<input placeholder="銀行名" type="text" id="etx1" name="bank">
+							</div>
+							<div class="orderLeft13c">
+								<input placeholder="支店名" type="text" id="etx2" name="bank_branch">
+							</div>
+							<div class="orderLeft13c">
+								<input placeholder="支店番号" type="text" id="etx2" name="bank_branch_no">
+							</div>
+							<div class="orderLeft13a">
+								口座番号
+							</div>
+							<div class="orderLeft13c">
+								<input placeholder="半角32文字まで" type="text" id="etx3" name="bank_account">
+							</div>
+							<div class="orderLeft13a">
+								口座名義
+							</div>
+							<div class="orderLeft13c">
+								<input placeholder="ご本人様名義の口座に限ります" id="etx4" type="text" name="bank_account_name">
+							</div>
+						</div>
+					</div>
+				<script type="text/javascript">
+					// 支払方法に応じて振込口座欄の表示を切り替え（初期表示＋将来現金払い復活時も対応）
+					(function(){
+						var bankEl = document.getElementById('et');
+						var radios = document.querySelectorAll('input[name="pay_mode"]');
+						if (!bankEl || !radios.length) return;
+						function syncBankDetail() {
+							var checked = document.querySelector('input[name="pay_mode"]:checked');
+							bankEl.style.display = (checked && checked.value == '2') ? '' : 'none';
+						}
+						radios.forEach(function(r){ r.addEventListener('change', syncBankDetail); });
+						syncBankDetail();
+					})();
+				</script>
+				{if $type == 1}
+					<div class="orderLeft1">
+						<div class="orderDeta2">
+							来店予約
+						</div>
+						<div class="orderDeta3">
+							買取方法：{$type == 1 ? '店頭買取' : '郵送買取'}
+						</div>
+						<div class="orderLeft16">
+							<span>来店場所</span>
+							<select id="" name="store_id" required>
+								<option value="">選択してください</option>
+							{volist name="shopList" id="item" key="k"}
+								<option value="{$item['id']}"{eq name="k" value="1"} selected{/eq}>{$item['name']}</option>
+							{/volist}
+							</select>
+					    </div>
+						<div class="orderLeft16">
+							<span>来店日時</span>
+							<select id="dateInput" name="go_store_date" required="">
+								<option value="">選択してください</option>
+								<!-- 以下は JS で生成 -->
+							</select>
+						</div>
+						<div class="orderLeft16">
+							<span>来店時間</span>
+							<select id="go_store_time" name="go_store_time" required="">
+								<option value="">選択してください</option>
+							{volist name="goShopTime" id="item"}
+								<option value="{$item}">{$item}</option>
+							{/volist}
+							</select>
+						</div>
+					</div>
+				{/if}
+				</div>
+				<script type="text/javascript" charset="utf-8">
+				    document.addEventListener('DOMContentLoaded', function() {
+                        const dateSelect = document.getElementById('dateInput');
+                        if (!dateSelect) return;
+                        
+                        // 生成来店日の選択肢（今日から14日間）
+                        const labels = ['今日', '明日', '明後日'];
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        for (var i = 0; i < 14; i++) {
+                            var d = new Date(today);
+                            d.setDate(d.getDate() + i);
+                            var yyyy = d.getFullYear();
+                            var mm = String(d.getMonth() + 1).padStart(2, '0');
+                            var dd = String(d.getDate()).padStart(2, '0');
+                            var value = yyyy + '-' + mm + '-' + dd;
+                            var label = (i < 3 ? labels[i] + '（' : '') + value + (i < 3 ? '）' : '');
+                            var opt = document.createElement('option');
+                            opt.value = value;
+                            opt.textContent = label;
+                            if (i === 0) opt.selected = true;
+                            dateSelect.appendChild(opt);
+                        }
+                    });
+				</script>
+				<div class="orderRight">
+					<div class="orderLeft1">
+						<div class="orderDeta2">
+							買取金額
+						</div>
+						<div class="orderRight1">
+							<span>商品合計（税込）</span>
+							<code>￥{$totalMoney}</code>
+						</div>
+						<div class="orderRight1">
+							<span>手数料</span>
+							<code>￥0</code>
+						</div>
+						<div class="orderRight2">
+							<span>合計：（税込）</span>
+							<code>￥{$totalMoney}</code>
+						<input type="hidden" name="type" value="{$type}">
+						</div>
+						<div class="orderRight3 tips_tc4bzz">
+							<input type="submit" class="submitorder" value="お申し込みを確定する">
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+		</div>
+		
+		{include file="common/foot" /}
+		
+	</body>
+</html>

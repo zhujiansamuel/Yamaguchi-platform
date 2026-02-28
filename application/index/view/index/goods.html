@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="inTop">
+			<div class="address mt20">
+				<div class="contain address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href="/goods"> 商品一覧</a>
+				</div>
+			</div>
+			<div class="inTop1">
+				商品一覧
+			</div>
+		</div>
+		<div class="list">
+			<div class="contain">
+				<div class="listRight1">
+					<div class="listRight2">
+						<div class="listRight3">
+							<img src="/img/tips.png" alt="確認事項アイコン" />
+							 売却前の確認事項
+						</div>
+						<div class="listRight4">
+							※必ずお読みください。
+							<span>
+								<img class="tiparrow" src="/img/tiparrow.png" alt="展開する" />
+								<img class="tiparrow1" src="/img/tiparrow1.png" alt="閉じる" />
+							</span>
+						</div>
+					</div>
+					<div class="listRight5">
+						{$site.goodsConfirmItem}
+					</div>
+					<div class="listRight6">
+						<a href="/">ホーム</a>
+					{if $category_id}
+						＞
+						<a href="/goods">商品一覧</a>
+						{if $category_name}
+							＞
+							⁨⁩⁨⁩⁨⁨⁩⁨⁩⁨<a href="/goods/{$category_id}">{$category_name}</a>
+						{/if}
+						{if $category_second_name}
+							＞
+							⁨⁩⁨⁩⁨<a href="/goods/{$category_id}/{$category_second}">{$category_second_name}</a>
+						{/if}
+						{if $category_three_name}
+							＞
+							⁨⁩⁨⁩⁨<a href="/goods/{$category_id}/{$category_second}/{$category_three}">{$category_three_name}</a>
+						{/if}
+					{else/}
+						＞
+						商品一覧
+					{/if}
+						
+					</div>
+				</div>
+			</div>
+			<div class="contain list1">
+				<div class="listLeft">
+				{volist name="goodsCategoryTree" id="item"}
+					{if empty($category_id)}
+						<div class="listLeft1 {$i == 1 ? 'on' : ''}">
+					{else/}
+						<div class="listLeft1 {$category_id == $item['id'] ? 'on' : ''}">
+					{/if}
+					
+						<div class="listLeft2">
+							⁨⁩⁨⁩⁨{$item['name']}
+						{if !empty($item['children'])}
+							<img class="zk" src="/img/arrow.png" alt="展開する" />
+							<img class="sq" src="/img/arrow1.png" alt="閉じる" />
+						{/if}
+						</div>
+						{if !empty($item['children'])}
+						{volist name="item['children']" id="item2"}
+						<div class="listLeft3">
+							<div class="listLeft4 on">
+								{$item2['name']}
+								<a {if $category_second == $item2['id']} class="on" {/if} href="/goods/{$item['id']}/{$item2['id']}"></a>
+							{if !empty($item2['children'])}
+								<span>
+									<img class="larrow" src="/img/arrow1a.png" alt="サブカテゴリを展開" />
+									<img class="larrow1" src="/img/arrow1b.png" alt="サブカテゴリを閉じる" />
+								</span>
+							{/if}
+							</div>
+							{if !empty($item2['children'])}
+							<div class="listLeft5 show">
+							{volist name="item2['children']" id="item3"}
+								<a {if $category_three == $item3['id']} class="on" {/if} href="/goods/{$item['id']}/{$item2['id']}/{$item3['id']}">{$item3['name']}</a>
+							{/volist}
+							</div>
+							{/if}
+						</div>
+						{/volist}
+						{/if}
+					</div>
+				{/volist}
+					
+				</div>
+				<div class="listRight">
+					<div class="inprodu">
+						<ul>
+						{volist name="goods" id="item"}
+							<li>
+								<div class="syproduct4">
+									<div class="syproduct5">
+										<a href="/gdetails/{$item['id']}"><img src="{$item['image']}" alt="{$item['title']}" /></a>
+									</div>
+									<div class="syproduct6">
+										{$item['title']}
+									</div>
+									<div class="syproduct7">
+									{if !empty($item['memo'])}
+										備考：{$item['memo']}
+									{/if}
+									</div>
+									<!-- <div class="syproduct8">
+										中古
+										<span>¥{$item['price_zg']}</span>
+									</div> -->
+									<div class="syproduct8">
+										買取価格
+										<span>¥{$item['price']}</span>
+									</div>
+								</div>
+								<div class="syproduct9">
+									<a href="/gdetails/{$item['id']}">買取申込</a>
+								</div>
+							</li>
+						{/volist}
+						</ul>
+					</div>
+					{$page}
+					
+				</div>
+			</div>
+		</div>
+		
+		{include file="common/foot" /}
+		
+		
+		
+	</body>
+</html>

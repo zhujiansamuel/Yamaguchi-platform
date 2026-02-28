@@ -1,0 +1,441 @@
+<form id="config-form" class="edit-form form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="panel panel-default panel-intro">
+        <div class="panel-heading">
+            <ul class="nav nav-tabs nav-group">
+                <li class="active"><a href="#wechat" data-toggle="tab">WeChat決済</a></li>
+                <li><a href="#alipay" data-toggle="tab">Alipay</a></li>
+            </ul>
+        </div>
+
+        <div class="panel-body">
+            <div id="myTabContent" class="tab-content">
+                {foreach $addon.config as $item}
+                {if $item.name=='version'}
+                <input type="hidden" value="{$item.value}" name="row[version]"/>
+
+                {elseif $item.name=='wechat'/}
+                <div class="tab-pane fade active in" id="wechat">
+                    <table class="table table-striped table-config">
+                        <tbody>
+                        <tr>
+                            <td width="20%">APPのapp_id</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][appid]" value="{$item.value.appid|default=''}" class="form-control" data-rule="" data-tip="APPアプリ内決済で使用"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>公式アカウントのapp_id</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][app_id]" value="{$item.value.app_id|default=''}" class="form-control" data-rule="" data-tip="公式アカウント内決済で使用"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>公式アカウントのapp_secret</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][app_secret]" value="{$item.value.app_secret|default=''}" class="form-control" data-rule="" data-tip="公式アカウント内決済で使用"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>ミニプログラムのapp_id</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][miniapp_id]" value="{$item.value.miniapp_id|default=''}" class="form-control" data-rule="" data-tip="ミニプログラム決済時のみ使用"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>WeChat Pay マーチャント番号</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][mch_id]" value="{$item.value.mch_id|default=''}" class="form-control" data-rule="" data-tip=""/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>WeChat Pay マーチャントAPIキーV2</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][key]" value="{$item.value.key|default=''}" class="form-control" data-rule="" data-tip=""/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>WeChat Pay マーチャントAPIキーV3</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][key_v3]" value="{$item.value.key_v3|default=''}" class="form-control" data-rule="" data-tip=""/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>支払いモード</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        {:Form::radios('row[wechat][mode]',['normal'=>'本番環境','dev'=>'サンドボックス環境','service'=>'サービスプロバイダーモード'],$item.value.mode??'normal')}
+                                        <div style="margin-top:5px;" data-type="dev" class="text-muted {if ($item.value.mode??'')!=='dev'}hidden{/if}">
+                                            <i class="fa fa-info-circle"></i> サンドボックス環境：<a href="https://pay.weixin.qq.com/wiki/doc/api/jsapi.php?chapter=23_1&index=2" target="_blank">WeChat Pay 検収ガイド</a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-type="service" class="{:$item.value.mode!='service'?'hidden':''}">
+                            <td>サブマーチャント番号ID</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][sub_mch_id]" value="{$item.value.sub_mch_id|default=''}" class="form-control" data-rule="" data-tip="サブマーチャントを使用しない場合，入力しないでください"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-type="service" class="{:$item.value.mode!='service'?'hidden':''}">
+                            <td>サブマーチャントAPPのapp_id</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][sub_appid]" value="{$item.value.sub_appid|default=''}" class="form-control" data-rule="" data-tip="サブマーチャントを使用しない場合，入力しないでください"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-type="service" class="{:$item.value.mode!='service'?'hidden':''}">
+                            <td>サブマーチャント公式アカウントのapp_id</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][sub_app_id]" value="{$item.value.sub_app_id|default=''}" class="form-control" data-rule="" data-tip="サブマーチャントを使用しない場合，入力しないでください"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-type="service" class="{:$item.value.mode!='service'?'hidden':''}">
+                            <td>サブマーチャントミニプログラムのapp_id</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][sub_miniapp_id]" value="{$item.value.sub_miniapp_id|default=''}" class="form-control" data-rule="" data-tip="サブマーチャントを使用しない場合，入力しないでください"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>コールバック通知URL</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[wechat][notify_url]" value="{$item.value.notify_url|default=''}" class="form-control" data-rule="" data-tip="むやみに変更しないでください，実際にはロジックコード内でリクエストされる内容が優先されます"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>WeChat決済API証明書cert</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <div class="input-group">
+                                            <input id="c-cert_client" class="form-control" size="50" name="row[wechat][cert_client]" type="text" value="{$item.value.cert_client|htmlentities}" data-tip="選択可能, 返金時のみ、お年玉などの状況で必要になります">
+                                            <div class="input-group-addon no-border no-padding">
+                                                <span><button type="button" id="faupload-cert_client" class="btn btn-danger faupload" data-url="epay/upload" data-multipart='{"certname":"cert_client"}' data-mimetype="pem" data-input-id="c-cert_client" data-multiple="false"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                                            </div>
+                                            <span class="msg-box n-right" for="c-cert_client"></span>
+                                        </div>
+                                        <div style="margin-top:5px;"><a href="https://pay.weixin.qq.com" target="_blank"><i class="fa fa-question-circle"></i> WeChat Payを取得する方法API証明書?</a></div>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>WeChat決済API証明書key</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <div class="input-group">
+                                            <input id="c-cert_key" class="form-control" size="50" name="row[wechat][cert_key]" type="text" value="{$item.value.cert_key|htmlentities}" data-tip="選択可能, 返金時のみ、お年玉などの状況で必要になります">
+                                            <div class="input-group-addon no-border no-padding">
+                                                <span><button type="button" id="faupload-cert_key" class="btn btn-danger faupload" data-url="epay/upload" data-multipart='{"certname":"cert_key"}' data-mimetype="pem" data-input-id="c-cert_key" data-multiple="false"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                                            </div>
+                                            <span class="msg-box n-right" for="c-cert_key"></span>
+                                        </div>
+                                        <div style="margin-top:5px;"><a href="https://pay.weixin.qq.com" target="_blank"><i class="fa fa-question-circle"></i> WeChat Payを取得する方法API証明書?</a></div>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>ログを記録</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        {:Form::radios('row[wechat][log]',['1'=>'有効','0'=>'無効'],$item.value.log)}
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {elseif $item.name=='alipay'}
+                <div class="tab-pane fade" id="alipay">
+                    <table class="table table-striped table-config">
+                        <tbody>
+                        <tr>
+                            <td>支払いモード</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-12 col-xs-12">
+                                        {:Form::radios('row[alipay][mode]',['normal'=>'本番環境','dev'=>'サンドボックス環境', 'service'=>'サービスプロバイダーモード'],$item.value.mode??'normal')}
+
+                                        <div style="margin-top:5px;" data-mode="dev" class="text-muted {if ($item.value.mode??'')!=='dev'}hidden{/if}">
+                                            <i class="fa fa-info-circle"></i> サンドボックス環境を使用する場合，必ずサンドボックスのapp_idとサンドボックス設定を使用し，またサンドボックスアカウントでテストしてください。<br>
+                                            サンドボックス環境：<a href="https://openhome.alipay.com/develop/sandbox/app" target="_blank">https://openhome.alipay.com/develop/sandbox/app</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="text-muted {if ($item.value.mode??'')!=='service'}hidden{/if}" data-mode="service">
+                            <td width="20%">サービスプロバイダーID(pid)</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[alipay][pid]" value="{$item.value.pid|default=''}" class="form-control" data-rule="" data-tip=""/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="20%">アプリケーションID(app_id)</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[alipay][app_id]" value="{$item.value.app_id|default=''}" class="form-control" data-rule="" data-tip=""/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>コールバック通知URL</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[alipay][notify_url]" value="{$item.value.notify_url|default=''}" class="form-control" data-rule="" data-tip="むやみに変更しないでください，実際にはロジックコード内でリクエストされる内容が優先されます"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>支払いリダイレクトURL</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[alipay][return_url]" value="{$item.value.return_url|default=''}" class="form-control" data-rule="" data-tip="むやみに変更しないでください，実際にはロジックコード内でリクエストされる内容が優先されます"/>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>アプリケーション秘密鍵(private_key)</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <input type="text" name="row[alipay][private_key]" value="{$item.value.private_key|default=''}" class="form-control" data-rule=""/>
+                                        <div style="margin-top:5px;"><a href="https://opensupport.alipay.com/support/helpcenter/207/201602469554" target="_blank"><i class="fa fa-question-circle"></i> アプリケーション秘密鍵を取得する方法?</a></div>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>署名方式</td>
+                            <td>
+                                <div>
+                                    <div class="radio">
+                                        <label for="row[alipay][signtype]-publickey"><input id="row[alipay][signtype]-publickey" name="row[alipay][signtype]" {if isset($item.value.signtype)&&$item.value.signtype=='publickey'}checked{/if} type="radio" value="publickey"> 通常の公開鍵</label>
+                                        <label for="row[alipay][signtype]-cert"><input id="row[alipay][signtype]-cert" {if isset($item.value.signtype)&&$item.value.signtype=='cert'}checked{/if} name="row[alipay][signtype]" type="radio" value="cert"> 公開鍵証明書</label>
+                                    </div>
+                                </div>
+                                <div style="margin-top:5px;" class="text-muted">
+                                    <i class="fa fa-info-circle"></i> 振込を利用する場合、出金機能，は必ず公開鍵証明書を使用してください
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span data-signtype="publickey" class="{if ($item.value.signtype??'')==='cert'}hidden{/if}">Alipay公開鍵</span>
+                                <span data-signtype="cert" class="{if ($item.value.signtype??'')==='publickey' || ($item.value.signtype??'')==''}hidden{/if}">Alipay公開鍵証明書パス</span>
+                                (alipay_public_key)
+                            </td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <div class="input-group">
+                                            <input id="c-ali_public_key" class="form-control" size="50" name="row[alipay][ali_public_key]" type="text" value="{$item.value.ali_public_key|default=''|htmlentities}" placeholder="通常の公開鍵は直接貼り付けてください，公開鍵証明書は右側のアップロードをクリックしてください">
+                                            <div class="input-group-addon no-border no-padding {if ($item.value.signtype??'')==='publickey' || ($item.value.signtype??'')==''}hidden{/if}" data-signtype="cert">
+                                                <span><button type="button" id="faupload-ali_public_key" class="btn btn-danger faupload" data-url="epay/upload" data-multipart='{"certname":"ali_public_key"}' data-mimetype="crt" data-input-id="c-ali_public_key" data-multiple="false"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                                            </div>
+                                            <span class="msg-box n-right" for="c-ali_public_key"></span>
+                                        </div>
+                                        <div style="margin-top:5px;"><a href="https://opensupport.alipay.com/support/FAQ/aba5803b-ad15-4474-aed6-92e43ea253ea" target="_blank"><i class="fa fa-question-circle"></i> Alipay公開鍵を取得する方法?</a></div>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span data-signtype="publickey" class="{if ($item.value.signtype??'')==='cert'}hidden{/if}">アプリケーション公開鍵</span>
+                                <span data-signtype="cert" class="{if ($item.value.signtype??'')==='publickey' || ($item.value.signtype??'')==''}hidden{/if}">アプリケーション公開鍵証明書パス</span>
+                                (app_cert_public_key)
+                            </td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <div class="input-group">
+                                            <input id="c-app_cert_public_key" class="form-control" size="50" name="row[alipay][app_cert_public_key]" type="text" value="{$item.value.app_cert_public_key|default=''|htmlentities}">
+                                            <div class="input-group-addon no-border no-padding {if ($item.value.signtype??'')==='publickey' || ($item.value.signtype??'')==''}hidden{/if}" data-signtype="cert">
+                                                <span><button type="button" id="faupload-app_cert_public_key" class="btn btn-danger faupload" data-url="epay/upload" data-multipart='{"certname":"app_cert_public_key"}' data-mimetype="crt" data-input-id="c-app_cert_public_key" data-multiple="false"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                                            </div>
+                                            <span class="msg-box n-right" for="c-app_cert_public_key"></span>
+                                        </div>
+                                        <div style="margin-top:5px;"><a href="https://opensupport.alipay.com/support/FAQ/aba5803b-ad15-4474-aed6-92e43ea253ea" target="_blank"><i class="fa fa-question-circle"></i> アプリケーション公開鍵を取得する方法?</a></div>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="{if ($item.value.signtype??'')==='publickey' || ($item.value.signtype??'')==''}hidden{/if}" data-signtype="cert">
+                            <td>Alipayルート証明書パス(alipay_root_cert)</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <div class="input-group">
+                                            <input id="c-alipay_root_cert" class="form-control" size="50" name="row[alipay][alipay_root_cert]" type="text" value="{$item.value.alipay_root_cert|default=''|htmlentities}">
+                                            <div class="input-group-addon no-border no-padding">
+                                                <span><button type="button" id="faupload-alipay_root_cert" class="btn btn-danger faupload" data-url="epay/upload" data-multipart='{"certname":"alipay_root_cert"}' data-mimetype="crt" data-input-id="c-alipay_root_cert" data-multiple="false"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                                            </div>
+                                            <span class="msg-box n-right" for="c-alipay_root_cert"></span>
+                                        </div>
+                                        <div style="margin-top:5px;"><a href="https://opensupport.alipay.com/support/helpcenter/271/201602474998" target="_blank"><i class="fa fa-question-circle"></i> Alipayルート証明書を取得する方法?</a></div>
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>ログを記録</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        {:Form::radios('row[alipay][log]',['1'=>'有効','0'=>'無効'],$item.value.log)}
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>PCPC側でスキャン決済を使用</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        {:Form::radios('row[alipay][scanpay]',['1'=>'有効','0'=>'無効'],$item.value.scanpay??0)}
+                                    </div>
+                                    <div class="col-sm-4"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {/if}
+                {/foreach}
+                <div class="form-group layer-footer">
+                    <label class="control-label col-xs-12 col-sm-2"></label>
+                    <div class="col-xs-12 col-sm-8">
+                        <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+                        <button type="reset" class="btn btn-default btn-embossed">{:__('Reset')}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script>
+    require.callback = function () {
+        define('backend/addon', ['backend', 'form'], function (Backend, Form) {
+            var Controller = {
+                config: function () {
+                    $(document).on("click", ".nav-group li a[data-toggle='tab']", function () {
+                        if ($(this).attr("href") == "#all") {
+                            $(".tab-pane").addClass("active in");
+                        }
+
+                        return;
+                    });
+
+                    $(document).on("click", "input[name='row[wechat][mode]']", function () {
+                        $("#wechat [data-type]").addClass("hidden");
+                        $("#wechat [data-type='" + $(this).val() + "']").removeClass("hidden");
+                    });
+                    $(document).on("click", "input[name='row[alipay][mode]']", function () {
+                        $("#alipay [data-mode]").addClass("hidden");
+                        $("#alipay [data-mode='" + $(this).val() + "']").removeClass("hidden");
+                    });
+                    $(document).on("click", "input[name='row[alipay][signtype]']", function () {
+                        $("#alipay [data-signtype]").addClass("hidden");
+                        $("#alipay [data-signtype='" + $(this).val() + "']").removeClass("hidden");
+                    });
+
+                    Form.api.bindevent($("form[role=form]"));
+                }
+            };
+            return Controller;
+        });
+    };
+</script>

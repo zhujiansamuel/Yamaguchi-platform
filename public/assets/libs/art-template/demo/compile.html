@@ -1,0 +1,27 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>compile-demo</title>
+<script src="../dist/template.js"></script>
+</head>
+
+<body>
+<h1>でjavascript中にテンプレートを保存</h1>
+<div id="content"></div>
+<script>
+var source = '<ul>'
++    '{{each list as value i}}'
++        '<li>インデックス {{i + 1}} ：{{value}}</li>'
++    '{{/each}}'
++ '</ul>';
+
+var render = template.compile(source);
+var html = render({
+    list: ['写真撮影', '映画', 'フォークソング', '旅行', 'ギター']
+});
+
+document.getElementById('content').innerHTML = html;
+</script>
+</body>
+</html>

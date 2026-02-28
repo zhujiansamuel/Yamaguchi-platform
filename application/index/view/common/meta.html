@@ -1,0 +1,39 @@
+<meta charset="utf-8">
+<title>{$title|default=''|htmlentities} – {$site.name|htmlentities}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="msapplication-tap-highlight" content="no">
+<meta name="format-detection" content="telephone=no" />
+{if isset($keywords)}
+<meta name="keywords" content="{$keywords|htmlentities}">
+{/if}
+{if isset($description)}
+<meta name="description" content="{$description|htmlentities}">
+{/if}
+
+<!-- Open Graph & Twitter Card Tags -->
+{include file="common/og_tags" /}
+
+<link rel="shortcut icon" href="__CDN__/assets/img/favicon.ico" />
+
+<link rel="stylesheet" href="/css/swiper.min.css" />
+<link rel="stylesheet" href="/css/base.css" />
+<link rel="stylesheet" href="/css/base_rel.css" />
+<script src="/js/jquery.js"></script>
+<script src="/js/swiper.min.js"></script>
+<script src="/js/js.js"></script>
+
+<!-- HTML5 shim, for IE6-8 support of HTML5 elements. All other JS at the end of file. -->
+<!--[if lt IE 9]>
+  <script src="__CDN__/assets/js/html5shiv.js"></script>
+  <script src="__CDN__/assets/js/respond.min.js"></script>
+<![endif]-->
+<script type="text/javascript">
+    var require = {
+        config: {$config|json_encode}
+    };
+</script>
+
+<!-- Structured Data (JSON-LD) -->
+{include file="common/schema_organization" /}

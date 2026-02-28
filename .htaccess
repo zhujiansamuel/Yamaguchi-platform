@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+ RewriteEngine on
+  RewriteCond %{REQUEST_URI} ^/(static|uploads|assets|css|js|img|font|order)/ [NC]
+ RewriteRule ^(.*)$ public/$1 [L]
+ 
+ RewriteBase /
+ RewriteCond %{REQUEST_FILENAME} !-d
+ RewriteCond %{REQUEST_FILENAME} !-f
+ RewriteRule ^(.*)$ index.php?s=/$1 [QSA,PT,L]
+</IfModule>

@@ -1,0 +1,48 @@
+<!-- Open Graph Tags (General) -->
+<meta property="og:site_name" content="{$site.name|htmlentities}">
+<meta property="og:locale" content="ja_JP">
+{if isset($og_title)}
+<meta property="og:title" content="{$og_title|htmlentities}">
+{else /}
+<meta property="og:title" content="{$title|default=''|htmlentities} – {$site.name|htmlentities}">
+{/if}
+{if isset($og_description)}
+<meta property="og:description" content="{$og_description|htmlentities}">
+{elseif isset($description) /}
+<meta property="og:description" content="{$description|htmlentities}">
+{else /}
+<meta property="og:description" content="東京都中央区でスマートフォン、パソコン、デジタル機器の高価買取を行っています。店頭買取・郵送買取に対応。">
+{/if}
+{if isset($og_type)}
+<meta property="og:type" content="{$og_type}">
+{else /}
+<meta property="og:type" content="website">
+{/if}
+<meta property="og:url" content="{$Request.url}">
+{if isset($og_image)}
+<meta property="og:image" content="{$Request.domain}{$og_image}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+{else /}
+<meta property="og:image" content="{$Request.domain}/uploads/20251029/a0480341e272cdcb79c34cfcf78c3007.png">
+{/if}
+
+<!-- Twitter Card Tags -->
+<meta name="twitter:card" content="summary_large_image">
+{if isset($og_title)}
+<meta name="twitter:title" content="{$og_title|htmlentities}">
+{else /}
+<meta name="twitter:title" content="{$title|default=''|htmlentities} – {$site.name|htmlentities}">
+{/if}
+{if isset($og_description)}
+<meta name="twitter:description" content="{$og_description|htmlentities}">
+{elseif isset($description) /}
+<meta name="twitter:description" content="{$description|htmlentities}">
+{else /}
+<meta name="twitter:description" content="東京都中央区でスマートフォン、パソコン、デジタル機器の高価買取を行っています。店頭買取・郵送買取に対応。">
+{/if}
+{if isset($og_image)}
+<meta name="twitter:image" content="{$Request.domain}{$og_image}">
+{else /}
+<meta name="twitter:image" content="{$Request.domain}/uploads/20251029/a0480341e272cdcb79c34cfcf78c3007.png">
+{/if}

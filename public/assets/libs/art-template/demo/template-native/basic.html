@@ -1,0 +1,34 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>basic-demo</title>
+<script src="../../dist/template-native.js"></script>
+</head>
+
+<body>
+<div id="content"></div>
+<script id="test" type="text/html">
+<% if (isAdmin) { %>
+
+<h1><%=title%></h1>
+<ul>
+    <% for (var i = 0; i < list.length; i ++) { %>
+        <li>インデックス <%= i + 1 %> ：<%= list[i] %></li>
+    <% } %>
+</ul>
+
+<% } %>
+</script>
+
+<script>
+var data = {
+	title: '基本例',
+	isAdmin: true,
+	list: ['アート', 'ブログ', '写真撮影', '映画', 'フォークソング', '旅行', 'ギター']
+};
+var html = template('test', data);
+document.getElementById('content').innerHTML = html;
+</script>
+</body>
+</html>

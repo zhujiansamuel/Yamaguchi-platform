@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="inTop">
+			<div class="address mt20">
+				<div class="contain address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href=""> マイページ</a>
+				</div>
+			</div>
+			<div class="inTop1">
+				マイページ
+			</div>
+		</div>
+		<div class="reItemz">
+		    {include file="common/user_nav" /}
+		</div>
+		<div class="record">
+			<div class="contain">
+				<div class="record1 pc">
+					<div class="record2">
+						<div class="record3">
+							<ul>
+								<li class="rWidth">
+									お申込み日時<br>
+									{$info['createtime']|date='Y/m/d',###}
+								</li>
+								<li class="rWidth1">
+									商品品名
+								</li>
+								<li class="rWidth2">
+									数量
+								</li>
+								<li class="rWidth3">
+									金額
+								</li>
+							</ul>
+						</div>
+					{volist name="info['details']" id="item2"}
+						<div class="record4">
+							<ul>
+								<li class="rWidth">
+									<div class="record5">
+										<img alt="{$item2['title']}" src="{$item2['image']}">
+									</div>
+								</li>
+								<li class="rWidth1">
+									<div class="record6">
+										<div class="record6a">
+											{$item2['title']}
+										</div>
+										<div class="record6b">
+											JAN : {$item2['goods']['jan'] ?? ''}<br>
+											<!-- 状態 : {$item['type'] == 1 ? '新品' : '中古'} -->
+											{$item2['color']}<br>
+											{$item2['specs_name']}<br>
+										</div>
+									</div>
+						        </li>
+								<li class="rWidth2">
+									{$item2['num']}
+								</li>
+								<li class="rWidth3">
+									￥{$item2['price']}<span>（税込）</span>
+								</li>
+							</ul>
+						</div>
+					{/volist}
+						<div class="record7">
+							<span>ご予約番号：{$info['no']}</span>
+							<code>
+								合計金額：￥{$info['total_price']}(税込)
+							</code>
+						</div>
+					</div>
+					<div class="recordDeta">
+						<div class="recordDeta1">
+							お客様の情報
+						</div>
+						<div class="recordDeta2">
+							{$info['user']['name']}
+						</div>
+						<div class="recordDeta3">
+							<p>{$info['user']['persion_type'] == 1 ? '個人' : '法人'}</p>
+							{if $info['user']['persion_type'] == 2 && $info['user']['corporate_name']}
+							<p>会社名:{$info['user']['corporate_name']}</p>
+							<p>事業者登録番号:{$info['user']['business_number']}</p>
+							{/if}
+							<p>{$info['user']['email']}</p>
+							<p>〒{$info['user']['zip_code']} {$info['user']['address']}</p>
+							<p>電話番号:{$info['user']['mobile']}</p>
+							{if $info['user']['persion_type'] == 1}
+							<p>生年月日:{$info['user']['birthday']}</p>
+							<p>職業:{:getCategoryName($info['user']['occupation'])}</p>
+							{/if}
+						</div>
+					</div>
+				{if $info['type'] == 1}
+					<div class="recordDeta">
+						<div class="recordDeta4">
+							買取方法 : 店頭買取
+						</div>
+						<div class="recordDeta5">
+							来店場所 : {$info['store']['address']}<br>
+							来店日時 : {$info['go_store_date']} &nbsp;{$info['go_store_time']}
+						</div>
+					</div>
+				{/if}
+					<div class="recordDeta">
+						<div class="recordDeta5">
+							お支払方法 :
+							{if $info['pay_mode'] == 1}
+								現金払い 
+							{else/}
+								銀行振込<br>
+								銀行：{$info['bank']}<br>
+								支店：{$info['bank_branch']}<br>
+								預金種目：{$info['bank_account_type'] == 1 ? '普通預金' : '当座預金 '}<br>
+								振込口座番号：{$info['bank_account']}<br>
+								振込口座名義：{$info['bank_account_name']}
+							{/if}
+							
+						</div>
+					</div>
+					<div class="record8">
+						<div class="record8a">
+							<img src="/img/ddicon1.png" alt="" />
+							{$info['status_text']}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="recordDeta8 pc">
+				<a href="javascript:history.go(-1);">戻る</a>
+			</div>
+			<div class="contain">
+				<div class="record1 wap">
+					<div class="sjmine">
+						<div class="sjmine1">
+							お申込み日時 <br>
+							{$info['createtime']|date='Y/m/d',###}
+						</div>
+						<div class="sjmine2">
+							商品品名
+						</div>
+					</div>
+				{volist name="info['details']" id="item2"}
+					<div class="sjmine3">
+						<div class="sjmine3_d">
+							<div class="sjmine4">
+								<img alt="" src="{$item2['image']}">
+							</div>
+							<div class="sjmine5">
+								<div class="sjmine5a">
+									{$item2['title']}
+								</div>
+								<div class="sjmine5b">
+									JAN : {$item2['goods']['jan'] ?? ''}<br>
+									状態 : {$item['type'] == 1 ? '新品' : '中古'}
+								</div>
+							</div>
+						</div>
+						<div class="sjmine6">
+							<div class="sjmine6a">
+								数量 {$item2['num']}
+							</div>
+							<div class="sjmine6b">
+								金額 ￥{$item2['price']} <span>（税込）</span>
+							</div>
+						</div>
+					</div>
+				{/volist}
+					<div class="sjmine7">
+						<div class="sjmine7a">
+							ご予約番号：{$info['no']}
+						</div>
+						<div class="sjmine7b">
+							合計金額：￥{$info['total_price']}(税込)
+						</div>
+					</div>
+					<div class="sjmine7">
+						<div class="sjmine7b">
+							お客様の情報
+						</div>
+						<div class="sjmine7c">
+							{$info['user']['name']}
+						</div>
+						<div class="sjmine7a">
+							<p>{$info['user']['persion_type'] == 1 ? '個人' : '法人'}</p>
+							{if $info['user']['persion_type'] == 2 && $info['user']['corporate_name']}
+							<p>会社名:{$info['user']['corporate_name']}</p>
+							<p>事業者登録番号:{$info['user']['business_number']}</p>
+							{/if}
+							<p>{$info['user']['email']}</p>
+							<p>〒{$info['user']['zip_code']} {$info['user']['address']}</p>
+							<p>電話番号:{$info['user']['mobile']}</p>
+							{if $info['user']['persion_type'] == 1}
+							<p>生年月日:{$info['user']['birthday']}</p>
+							<p>職業:{:getCategoryName($info['user']['occupation'])}</p>
+							{/if}
+						</div>
+					</div>
+				{if $info['type'] == 1}
+					<div class="sjmine7">
+						<div class="sjmine7c">
+							買取方法 : 店頭買取
+						</div>
+					</div>
+					<div class="sjmine7">
+						<div class="sjmine7a">
+							来店場所 : {$info['store']['address']}<br>
+							来店日時 : {$info['go_store_date']} &nbsp;{$info['go_store_time']}
+						</div>
+					</div>
+				{/if}
+					<div class="sjmine7">
+						<div class="sjmine7a">
+							お支払方法 :
+							{if $info['pay_mode'] == 1}
+								現金払い 
+							{else/}
+								銀行振込<br>
+								銀行：{$info['bank']}<br>
+								支店：{$info['bank_branch']}<br>
+								預金種目：{$info['bank_account_type'] == 1 ? '普通預金' : '当座預金 '}<br>
+								振込口座番号：{$info['bank_account']}<br>
+								振込口座名義：{$info['bank_account_name']}
+							{/if}
+						</div>
+					</div>
+					<div class="sjmine8">
+						<img src="/img/ddicon1.png" alt="" />
+						{$info['status_text']}
+					</div>
+				</div>
+				<div class="sjmine9 wap">
+					<a href="">戻る</a>
+				</div>
+			</div>
+		</div>
+		{include file="common/foot" /}
+		
+	</body>
+</html>

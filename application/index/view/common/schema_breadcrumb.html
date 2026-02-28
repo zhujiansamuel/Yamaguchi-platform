@@ -1,0 +1,19 @@
+<!-- BreadcrumbList Schema -->
+{if isset($breadcrumbs) && $breadcrumbs}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+{volist name="breadcrumbs" id="item"}
+    {
+      "@type": "ListItem",
+      "position": {$i},
+      "name": "{$item.name|htmlentities}",
+      "item": "{$Request.domain}{$item.url}"
+    }{eq name="i" value="$key"}}{else},{/eq}
+{/volist}
+  ]
+}
+</script>
+{/if}

@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'Id'                  => 'ID',
+    'User_id'             => '所属ユーザー',
+    'No'                  => '伝票番号',
+    'Bank_account_type'   => '銀行口座種別',
+    'Bank_account_type 1' => '普通預金',
+    'Bank_account_type 2' => '当座預金',
+    'Bank_account_name'   => '口座名義',
+    'Bank_account'        => '銀行口座番号',
+    'Bank'                => '銀行名',
+    'Bank_branch'         => '支店名',
+    'Store_name'          => '来店場所',
+    'Go_store_date'       => '来店日時',
+    'Go_store_time'       => '来店時間',
+    'Price'               => '商品金額',
+    'Procedures'          => '手数料',
+    'Total_price'         => '合計金額',
+    'Status'              => 'ユーザー側ステータス',
+    'Admin_status'        => '管理者ステータス',
+    'Pay_mode'            => '支払方法',
+    'Pay_mode 1'          => '現金',
+    'Pay_mode 2'          => '銀行',
+    'Type'                => 'タイプ',
+    'Type 1'              => '店舗',
+    'Type 2'              => '郵送',
+    'Createtime'          => '作成時間',
+    'Deletetime'          => '削除時間'
+];
