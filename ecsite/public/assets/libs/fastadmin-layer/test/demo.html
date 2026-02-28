@@ -1,0 +1,76 @@
+﻿
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>layer-あなたをより理解するwebポップアップソリューション</title>
+
+  <style>
+  html{background-color:#E3E3E3; font-size:14px; color:#000; font-family:'Microsoft YaHei'}
+  a,a:hover{ text-decoration:none;}
+  pre{font-family:'Microsoft YaHei'}
+  .box{padding:20px; background-color:#fff; margin:50px 100px; border-radius:5px;}
+  .box a{padding-right:15px;}
+  #about_hide{display:none}
+  .layer_text{background-color:#fff; padding:20px;}
+  .layer_text p{margin-bottom: 10px; text-indent: 2em; line-height: 23px;}
+  .button{display:inline-block; *display:inline; *zoom:1; line-height:30px; padding:0 20px; background-color:#56B4DC; color:#fff; font-size:14px; border-radius:3px; cursor:pointer; font-weight:normal;}
+  .photos-demo img{width:200px;}
+  </style>
+  
+  <script src="http://cdn.bootcss.com/jquery/1.12.3/jquery.min.js"></script>
+  <script src="../dist/layer.js"></script>
+</head>
+<body>
+<div class="box">
+<pre>
+ @Name：layer
+ @Version：v<script>document.write(layer.v)</script>
+ @Description：汎用 Web ポップアップコンポーネント
+
+
+<strong>【注意事項】</strong>
+月、使用時には，フォルダ layer 整个放置在您站点的任何月个目录，読み込むだけで layer.js 構いません，を除き jQuery 以外は，その他のファイルを追加で読み込む必要はありません。
+火、もしあなたの js 読み込みは結合処理によるか、使用したくない場合layer自動取得された絶対パス，を通じて layer.config() を設定できます（詳しくは公式サイトを参照 API ページ）
+水、jQuery が必要 1.8+
+木、さらなる使用説明およびデモ，参照してください layer 公式サイト。
+金、使用時は必ず出典を明記してください，自国の法律・法規に違反する Web プラットフォーム。
+土、layer は無償の公益プロジェクトです，に準拠し MIT オープンソースライセンス。
+</pre>
+</div>
+
+<div class="box" style="text-align:center">
+  <a href="http://layer.layui.com/" target="_blank">その他のサンプル</a>
+  <a href="http://www.layui.com/doc/modules/layer.html" target="_blank">使用ドキュメント</a>
+  <a href="javascript:;" id="about">について</a>
+</div>
+
+<script>
+;!function(){
+
+
+//ページ表示と同時に実行，に入れるのはreadyためですlayer必要なコンポーネント（css、拡張モジュール）読み込み完了
+layer.ready(function(){ 
+  layer.open({
+    type: 2,
+    title: 'ようこそページ',
+    maxmin: true,
+    area: ['800px', '500px'],
+    content: 'http://layer.layui.com/test/welcome.html',
+    end: function(){
+      layer.tips('Hi', '#about', {tips: 1})
+    }
+  });
+});
+
+//について
+$('#about').on('click', function(){
+  layer.alert('layui 制作');
+});
+
+}();
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+{if $rt neq 1}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="/js/jquery.js"></script>
+	</head>
+	
+	<body style="padding:40px 30px 0;width:774px;" id="content">
+		<!--startprint-->
+		<div  id="content1" style="width:100%;">
+		<div class="dcClick2">
+				<button class="dcClick" id="doxt" style="opacity:0;">ダウンロード</button>
+			</div>
+			{/if}
+		<style>
+* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;font-style:normal;font-variant-caps:normal;font-variant-ligatures:normal;font-variant-numeric:normal;font-variant-east-asian:normal;font-variant-alternates:normal;font-size-adjust:none;font-kerning:auto;font-optical-sizing:auto;font-feature-settings:normal;font-variation-settings:normal;font-variant-position:normal;font-variant-emoji:normal;font-weight:normal;font-stretch:normal;font-size:12px;line-height:normal;font-family:Tahoma;}tr, td{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;height:10px;font-size:12px;}a{text-decoration-line:none;text-decoration-thickness:initial;text-decoration-style:initial;text-decoration-color:initial;color:inherit;}ul{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}p{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;}ul li{list-style-type:none;}input{background-image:none;background-position-x:initial;background-position-y:initial;background-size:initial;background-repeat:initial;background-attachment:initial;background-origin:initial;background-clip:initial;background-color:initial;}input[type="button"]{cursor:pointer;}button{cursor:pointer;}.dcClick{border-top-width:initial;border-right-width:initial;border-bottom-width:initial;border-left-width:initial;border-top-style:none;border-right-style:none;border-bottom-style:none;border-left-style:none;border-top-color:initial;border-right-color:initial;border-bottom-color:initial;border-left-color:initial;border-image-source:initial;border-image-slice:initial;border-image-width:initial;border-image-outset:initial;border-image-repeat:initial;outline-color:initial;outline-style:none;outline-width:initial;width:124px;border-top-left-radius:5px;border-top-right-radius:5px;border-bottom-right-radius:5px;border-bottom-left-radius:5px;background-image:initial;background-position-x:initial;background-position-y:initial;background-size:initial;background-repeat:initial;background-attachment:initial;background-origin:initial;background-clip:initial;background-color:rgb(35, 90, 167);text-align:center;font-size:14px;float:right;}.dcClick2{width:100%;display:none;}#uinfo *{font-size:12px;}#ginfo *{font-size:12px;}#doxt{opacity:0;}#ig2dq{float:left;height:50px;}#ii6ys{font-size:14px;color:#000000;}#iknv3{font-size:14px;color:#000000;line-height:24px;background-color:#dcdcdc;display:block;border-bottom:1px solid #000000;}#ilao2{font-size:14px;color:#000000;line-height:24px;display:block;padding:0 9px;}#iusgi{float:right;border:1px solid #000000;}#igu3{width:100%;text-align:center;font-size:24px;color:#000000;}#i7n6x{float:right;font-size:14px;color:#000000;text-align:right;}#i0dvr{width:100%;margin-top:30px;}#ir9sd{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;width:10%;}#ik395{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;width:32%;}#it9si{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;width:10%;}#iihqs{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;width:14%;}#izqoz{border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;}#itz3j{width:100%;}#iwe91{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;}#i7y5e{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#ibg8s{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;width:10%;}#isz5d{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#iex2r{border-bottom:1px solid #000000;border:1px solid #000000;}#i95mc{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;}#ifmeb{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#ix7ug{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;width:10%;}#itfr3{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#i5ett{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;}#izwwl{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#iq25n{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#iajn8{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;}#iths3{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#i5prl{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#ijy9s{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;}#it83p{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#i3mxk{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;}#ium0h{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#i7sdg{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;background:#dcdcdc;}#ibdtk{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#iakbl{border-right:1px solid #000000;border-bottom:1px solid #000000;border:1px solid #000000;}#i5wuw{display:none;}#i48pa{border:1px solid #000000;width:100%;text-align:center;font-size:14px;color:#000000;}#iviq3{background:#bfceff;display:inline-block;width:300px;line-height:24px;padding-left:10px;}#ilyuz{font-size:14px;color:#000000;margin-top:5px;}#iaw27{font-size:12px;color:#ff0000;margin-bottom:5;}#igi6wh{background:#bfceff;border:1px solid #000000;border-right:1px solid #000000;width:80px;}#i8uk6j{border:1px solid #000000;border-right:1px solid #000000;width:100px;}#ic4jmi{background:#bfceff;border:1px solid #000000;border-right:1px solid #000000;}#iyh3ro{border:1px solid #000000;border-right:1px solid #000000;width:100px;}#ihz44a{background:#bfceff;border:1px solid #000000;border-right:1px solid #000000;}#ip2eqd{border:1px solid #000000;border-right:1px solid #000000;width:100px;}#izodpk{height:12px;width:99%;}#is0ag4{background:#bfceff;border:1px solid #000000;border-right:1px solid #000000;}#irop9h{border:1px solid #000000;border-right:1px solid #000000;width:100px;}#ip2jtu{background:#bfceff;border:1px solid #000000;border-right:1px solid #000000;width:80px;}#i0diro{border:1px solid #000000;border-right:1px solid #000000;width:80px;}#i658nx{background:#bfceff;border:1px solid #000000;border-right:1px solid #000000;}#islq1r{border:1px solid #000000;border-right:1px solid #000000;width:80px;}#il1i5l{height:12px;width:99%;}#idbd6f{background:#bfceff;border:1px solid #000000;border-right:1px solid #000000;width:80px;}#i6k9yz{font-size:12px;color:#ff0000;text-align:left;}#i7g2cd{font-size:12px;color:#000000;text-align:left;}#i7u2ml{font-size:12px;color:#ff0000;text-align:left;}#irkevm{font-size:12px;color:#000000;text-align:left;}#i40rd7{border:1px solid #000000;border-right:1px solid #000000;}#isatjr{height:12px;width:99%;}#uinfo{border:1px solid #000000;width:100%;text-align:center;font-size:14px;color:#000000;}#io7yjq{background:#ffc2c2;display:inline-block;width:300px;line-height:24px;padding-left:10px;}#iw21xf{font-size:14px;color:#000000;margin-top:5px;margin-bottom:6px;}#ir5vgr{background:#ffc2c2;border:1px solid #000000;border-right:1px solid #000000;width:100px;}#i09dh7{font-size:12px;color:#ff0000;text-align:left;}#ikzind{font-size:12px;color:#000000;text-align:left;}#i9p80n{border:1px solid #000000;border-right:1px solid #000000;}#i4mbfq{height:12px;width:99%;}#uinfo-2{border:1px solid #000000;width:100%;text-align:center;font-size:14px;color:#000000;}#iaempg{background:#ffc2c2;border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#isk6oh{background:#ffc2c2;border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#ibp4yn{background:#ffc2c2;border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#iqz1u4{background:#ffc2c2;border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#iuey29{background:#ffc2c2;border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#i829oe{width:100%;}#il2rkh{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#ilpvvv{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#iu3dt9{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#ins7j7{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#iriz2u{border-bottom:1px solid #000000;border:1px solid #000000;}#ikmi5m{border:none;}#it0mta{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#icphpt{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#iknyye{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#ifuaec{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#ixmnye{border-bottom:1px solid #000000;border:1px solid #000000;}#i2v5uw{border:none;}#izl3hy{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;background:#ffc2c2;}#i30dsz{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#i5ko7l{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;}#iuiuvj{border:1px solid #000000;border-right:1px solid #000000;border-bottom:1px solid #000000;background:#ffc2c2;}#ijwsmi{border:1px solid #000000;border-bottom:1px solid #000000;}#i8r2s4{border:1px solid #000000;border-bottom:1px solid #000000;}#ginfo{border-bottom:0;border:1px solid #000000;width:100%;text-align:center;font-size:14px;color:#000000;margin-top:5px;}#i544jk{font-size:12px;color:#ff0000;padding-top:5px;}#iwhsut{background:#dcdcdc;display:inline-block;width:300px;line-height:24px;padding-left:10px;}#i92ls9{font-size:14px;color:#000000;margin-top:5px;margin-bottom:6px;}#iw4w7q{font-size:12px;color:#000000;border:2px solid #000000;padding:5px;}#iicfaf{background:#dcdcdc;display:inline-block;width:300px;line-height:24px;padding-left:10px;}#ixkwyg{font-size:14px;color:#000000;margin-top:5px;margin-bottom:6px;}#iq4hd2{height:30px;}#ius90t{font-size:14px;color:#000000;}#iy4gxi{font-size:12px;color:#000000;margin-top:5px;float:left;width:100%;}#im3mtg{font-size:12px;color:#000000;display:block;float:left;width:100%;}#if57hr{font-size:12px;color:#000000;line-height:20px;margin-bottom:18px;}#ic9edm{font-size:12px;}#iw7z15{float:left;}#icpyhl{font-size:12px;color:#ff0000;}#incnvs{float:right;margin-right:10px;width:30px;margin-top:5px;}#ipiw5f{border:2px solid #ff0000;height:60px;margin-bottom:5px;}#icguam{float:right;width:280px;}#impskf{overflow:hidden;}#iy67ry{border:1px solid #000000;border-right:1px solid #000000;background-color:#e7e6e6;}#i7n4vh{border:1px solid #000000;border-right:1px solid #000000;}#iso6tw{border:1px solid #000000;border-right:1px solid #000000;width:160px;}#igkp1k{border:1px solid #000000;border-right:1px solid #000000;}#i4zcvi{border:1px solid #000000;border-right:1px solid #000000;width:160px;}#ipueop{border:1px solid #000000;border-right:1px solid #000000;}#i606oe{border:1px solid #000000;border-right:1px solid #000000;width:160px;}#i66p1c{height:12px;width:99%;}#ik60ez{border:1px solid #000000;width:100%;text-align:center;font-size:14px;color:#000000;}#ij3a9o{width:100%;margin-top:10px;font-size:14px;text-align:left;padding:10px;}#content1{width:100%;}@page{size:a4;margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;}
+		</style>
+			
+<body><div id="content1"><div class="dcClick2"><button id="doxt" class="dcClick">ダウンロード</button></div>
+			{/if}
+		
+			
+			<!--  --><div id="igu3"><img alt="" src="/img/logo.png" id="ig2dq"/>
+			    買取申込書 <span id="ii6ys"></span><div id="iusgi"><span id="iknv3">予約番号</span><span id="ilao2">
+			           {$order.no}
+			        </span></div></div><div id="i0dvr"><div id="i7n6x">
+					記入日   	{$order.createtime|date="Y年m月d日",###}
+				</div></div><!--  --><!--<div style="width: 100%;text-align: center;font-size: 14px;color: #FF0000;font-weight: bold;">ご記入の際には、黒インクまたは黒ボールペンを使用し全ての項目をご記入ください。--><!--</div>--><!--  --><!--  --><table cellpadding="0" cellspacing="0" id="i48pa"><tbody><tr id="itz3j"><td bgcolor="#dcdcdc" id="ir9sd">
+						フリガナ</td><td id="ik395">						 {$user.katakana}</td><td bgcolor="#dcdcdc" id="it9si">
+						性別</td><td id="iihqs">
+							{if $user.gender eq 1}男性{/if}{if $user.gender eq 2}女性{/if}		<!-- 男性  ・  女性 --><!-- ・ --><!-- 男性 --></td><td bgcolor="#dcdcdc" colspan="2" id="izqoz">
+						生年月日</td></tr><tr><td bgcolor="#dcdcdc" id="iwe91">
+						お名前</td><td id="i7y5e">  {$user.name}
+					</td><td bgcolor="#dcdcdc" id="ibg8s">
+						年齢</td><td id="isz5d">
+						{$age}
+						</td><td colspan="2" id="iex2r"><!-- 	昭和 ・平成       --> 
+						{$user.birthday}
+					</td></tr><tr><td bgcolor="#dcdcdc" id="i95mc">
+				    	電話番号</td><td colspan="2" id="ifmeb">{$user.mobile}</td><td bgcolor="#dcdcdc" rowspan="3" id="ix7ug">
+				    	住所</td><td colspan="2" id="itfr3">
+				    	〒{$user.zip_code} {$user.address}</td></tr><tr><td bgcolor="#dcdcdc" id="i5ett">
+				    	E-mail</td><td colspan="2" id="izwwl">{$user.username}</td><td rowspan="" colspan="2" id="iq25n">{$user.address}</td></tr><tr><td bgcolor="#dcdcdc" id="iajn8">
+				    	職業</td><td colspan="2" id="iths3">
+    				    {:getCategoryName($user['occupation'])}
+    				</td><td colspan="2" id="i5prl"></td></tr><tr><td bgcolor="#dcdcdc" id="ijy9s">会員番号</td><td id="it83p">{:substr(1000000+$user.id,1,6)}</td><td colspan="2" id="i3mxk">当店のご利用回数</td><td colspan="2" id="ium0h"><!-- 今回が初めて(新規)    ・　　2回目以降 --><!-- {if isset($ornum) and $ornum eq 1}今回が初めて(新規){else}2回目以降{/if} --></td></tr><tr id="i5wuw"><td bgcolor="#dcdcdc" colspan="2" id="i7sdg">適格請求書発行事業者に該当します</td><td colspan="2" id="ibdtk">{if true}いいえ{else}はい{/if}</td><!-- <td style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;">はい</td> --><td colspan="2" id="iakbl">T</td></tr><!-- <tr style="">
+					<td style="border-right: 1px solid #000000;border: 1px solid #000000;font-size: 12px;" colspan="3">
+					    ※ご記入がない場合は 「いいえ」 とみなします。
+					</td>
+					<td style="border: 1px solid #000000;font-size: 12px;" colspan="2">
+					    「はい」の場合はT+13桁の事業者登録番号をご記入ください。
+					</td>
+				</tr> --></tbody></table><!--  --><div id="ilyuz"><span id="iviq3">・振込ご希望の場合</span></div><div id="iaw27"><p>※振込ご希望の場合は必ず口座情報をご記入お願いいたします。</p><!-- <p>※新規の方、前回と口座の異なる方は、キャッシュカード表面のコピー、または銀行通帳のコピーの提示をお願いいたします。</p> --></div><table id="uinfo" cellpadding="0" cellspacing="0"><tbody><tr id="izodpk"><td bgcolor="#bfceff" id="igi6wh">
+						銀行名</td><td id="i8uk6j">
+						{$order.bank}</td><td bgcolor="#bfceff" id="ic4jmi">
+						支店番号</td><td id="iyh3ro">
+					    {$order.bank_branch_no}
+						</td><td bgcolor="#bfceff" id="ihz44a">
+						支店名</td><td id="ip2eqd">
+						{$order.bank_branch}</td></tr><tr id="il1i5l"><td bgcolor="#bfceff" id="is0ag4">
+						口座種別</td><td id="irop9h"><!-- 標準 ・ 当座預金 -->
+						 {if $order.bank_account_type eq 1}標準  {/if}
+						 {if $order.bank_account_type eq 2}当座預金 {/if}
+
+						</td><td bgcolor="#bfceff" id="ip2jtu">
+						口座番号</td><td id="i0diro">{$order.bank_account}</td><td bgcolor="#bfceff" id="i658nx">
+						口座名義</td><td colspan="3" id="islq1r">{$order.bank_account_name}</td></tr><tr id="isatjr"><td bgcolor="#bfceff" id="idbd6f">
+						書類</td><td colspan="5" id="i40rd7"><div><div id="i6k9yz"><p>初回のみ下記いずれかの書類を11つ添付していただく必要があります。</p><!-- <p>ご注意の上、下記いずれか11点にチェックを入れてお願いいたします。</p> --></div><div id="i7g2cd"><p>
+								□ 住民票の写し(原本) 
+								□ 印鑑登録証明書(原本)  </p><!-- □住民票の写し(原本)　　□印鑑登録証明書(原本)　　□戸籍謄本(原本) ※現住所の記載があるもの 
+															</p>
+															<p>
+								□運転免許証のコピー (表裏) ※ご利用、 22回目以降のお客様に限ります --><p></p></div><div id="i7u2ml">※22回目以降のご利用の際は身分証のコピーのみの添付で振込対応が可能です。(振込の場合は振込手数料は当社負担となります※22回目以降に限ります)</div><div id="irkevm"><p>
+								□身分証明書のコピー(表裏) 　□マイナンバーカードのコピー(表面) □旅券(パスポート) のコピー(写真・住所記載)
+							</p><p>
+								□健康保険証のコピー(表裏) □ 在留カードのコピー(表裏)
+
+							</p><!--  □戸籍謄本(原本)  ※現住所の記載があるもの□運転免許証のコピー(表裏) </p>
+							□キャッシュカード表面のコピー 　　　　　□銀行通帳のコピー (口座番号とお名前が確認できるもの) --></div></div></td></tr></tbody></table><div id="iw21xf"><span id="io7yjq">・現金書留をご希望の場合</span></div><table id="uinfo-2" cellpadding="0" cellspacing="0"><tbody><tr id="i4mbfq"><td bgcolor="#ffc2c2" id="ir5vgr">
+						書類</td><td id="i9p80n"><div><div id="i09dh7"><p>※下記書類のコピーを1つ添付していただく必要があります。 </p><p>※5050万円毎の手数料は一律 2,000円はお客様負担となり、送金の際、査定金額より2,000円分を差し引いての送金となります。</p><p>※身分証記載の住所宛に現金書留での送金と なります。</p></div><div id="ikzind"><p>
+								□運転免許証の写し、 裏面に記載がない場合は表面のみ □日本国パスポート (写真面+住所記 載面)
+							</p><p>
+								□マイナンバーカードのコピー(表面) □官公庁発行の身分証の写し(住所の記載があるもの)
+							</p></div></div></td></tr></tbody></table>
+			
+				{volist name="order['details']" id='info'}
+				
+					{/volist}
+
+					<table id="ginfo" cellpadding="0" cellspacing="0"><tbody><tr id="i829oe"><td bgcolor="#ffc2c2" colspan="2" id="iaempg">
+					        商品名
+				    </td><!-- <td bgcolor="#ffc2c2" style="background: #ffc2c2;border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;"  >
+						状態
+					</td> --><td bgcolor="#ffc2c2" colspan="2" id="isk6oh">
+						仕様
+					</td><td bgcolor="#ffc2c2" id="ibp4yn">
+						査定金額
+					</td><td bgcolor="#ffc2c2" id="iqz1u4">
+						数
+					</td><td bgcolor="#ffc2c2" id="iuey29">
+						小計
+					</td></tr><tr id="ikmi5m"><td colspan="2" id="il2rkh">{$info.title}</td><!-- <td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+			
+						{if $info.type eq 1 }新品{/if}{if $info.type eq 2 }中古{/if}{if $info.type eq 3 }開封未使用{/if}				
+					</td> --><td colspan="2" id="ilpvvv">
+					        {$info['specs_name']}  {$info['color']}
+						</td><td id="iu3dt9">
+					{$info['price']|} 円</td><td id="ins7j7"><!--  -->
+						{$info.num}</td><td id="iriz2u"><!-- 0 -->
+						{$info['total_price']} 円
+					</td></tr><!--?php
+						for($i=count($order['details']);$i<5;$i++){
+					?--><tr id="i2v5uw"><td colspan="2" id="it0mta"> </td><td colspan="2" id="icphpt">
+						 
+					</td><!-- <td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+						
+					</td> --><td id="iknyye"></td><td id="ifuaec"><!--  --></td><td id="ixmnye"><!-- 0 --></td></tr><!--?php
+						}
+					?--><tr><td colspan="1" id="izl3hy">買取方法</td><td colspan="1" id="i30dsz">
+						{switch $order.type}
+						    {case 1}店頭買取{/case}
+						    {case 2}郵送買取{/case}
+						    {default /}default
+						{/switch}
+						</td><td colspan="2" id="i5ko7l">{$order.store_name}</td><td id="iuiuvj">合計</td><td id="ijwsmi">{$totalNum}</td><td id="i8r2s4">{$order['total_price']} 円</td></tr></tbody></table><div id="i544jk">
+				※書ききれない場合には、裏面へ記載して下さい。
+			</div><div><div id="i92ls9"><span id="iwhsut">・確認事項</span></div><div id="iw4w7q"><p>・18歳未満の方は、保者の方記入した保者同意書を同封する必要があります。</p><p>・ご本人確認のため、身分証を確認いたします(確認出来ない場合、お取引出来ません)。</p><p>・買取商品の当社到着時に生じた故障、破損、紛失に関しましては当社は一切の責任を負いません。</p><p>・不正転売目的にて入手した商品の買取を行うことはできかねます。 何卒ご了承ください。</p><p>・おまかせロック設定なとの携帯端末は、お取引出来ません。 USIMカード・FOMAカート·au-icカート等の各SIMカードを拭いて下さい。 </p><p>・強制解約、契約中、盗品、偽造等による不正契約、 割賦金販売の契約て残金か戻っている携帯端末は買取出来ません。 </p><p>・買取成立後(お振込書留送付後)のキャンセル・ ご返品はできませんのでご注意下さい。</p><p>・日本国内で免税購入された商品はお取引できません。</p></div></div><div id="ixkwyg"><span id="iicfaf">・店舗住所</span></div><!--  --><div id="impskf"><div id="iw7z15"><div id="ius90t"><img alt="" src="/img/logo.png" id="iq4hd2"/></div><div id="iy4gxi">
+						TEL：{$site.tel}
+					</div><div id="im3mtg"><p>
+					{if !empty($order['store'])}
+							{$order['store']['address']}
+					{/if}
+						</p></div><div id="if57hr">
+						古物商許可:   {$site.antique_license}
+
+					</div><div id="ic9edm"><p></p></div></div><div id="icguam"><div id="icpyhl">
+						確認事項にご同意いただける場合はご署名下さい。
+					</div><div id="ipiw5f"><img src="/s0912.jpg" alt="" id="incnvs"/></div></div></div><div><table cellpadding="0" cellspacing="0" id="ik60ez"><tbody><tr id="i66p1c"><td id="iy67ry">
+							社内用
+						</td><td id="i7n4vh">
+						追跡番号
+						</td><td id="iso6tw">
+						 </td><td id="igkp1k">
+						入力者
+						</td><td id="i4zcvi">
+						 							</td><td id="ipueop">
+						確認者
+						</td><td id="i606oe">
+						 						</td></tr></tbody></table></div><div id="ij3a9o">
+ </div>
+		{if $rt neq 1}
+	</div></body>
+
+		{if $rt neq 1}
+	</div>
+	</body>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+	<script>
+		$(document).ready(function() {
+			$(".dcClick").click(function(event) {
+				html2canvas(document.body, {
+					onrendered: function(canvas) {
+						var imgData = canvas.toDataURL();
+						var doc = new jspdf.jsPDF('p', 'pt', 'a4');
+						console.log(imgData)
+						doc.addImage(imgData, 'PNG', 0, 0, 210, 0);
+						doc.save('買取申込書.pdf');
+					}
+				});
+			});
+		});
+		setTimeout(doPrint(),1000);
+		function doPrint() {
+			bdhtml=window.document.body.innerHTML;
+			sprnstr="<!--startprint-->";
+			eprnstr="<!--endprint-->";
+			prnhtml=bdhtml.substr(bdhtml.indexOf(sprnstr)+0);
+			prnhtml=prnhtml.substring(0,prnhtml.indexOf(eprnstr));
+			window.document.body.innerHTML=prnhtml;
+			window.print();
+		}
+	</script>
+</html>
+{/if}

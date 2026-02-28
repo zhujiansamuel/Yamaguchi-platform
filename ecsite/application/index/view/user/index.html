@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+		<style>
+		.tab-menu-content { display:flex; justify-content:center; margin:20px 0; }
+		.tabMenu { flex:1; max-width:200px; padding:12px 16px; border:1px solid #ddd; background:#fff; cursor:pointer; font-size:14px; }
+		.tabMenu:first-child { border-radius:4px 0 0 4px; }
+		.tabMenu:last-child { border-radius:0 4px 4px 0; border-left:none; }
+		.tabMenu-active { background:#44a0e8; color:#fff; border-color:#44a0e8; }
+		.tabMenu:disabled, .tabMenu.tabMenu-disabled { opacity:0.6; cursor:not-allowed; }
+		.form-section { display:none; }
+		.form-section.form-section-active { display:block; }
+		</style>
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="inTop">
+			<div class="address mt20">
+				<div class="contain address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href=""> マイページ</a>
+				</div>
+			</div>
+			<div class="inTop1">
+				マイページ
+			</div>
+		</div>
+		<div class="reItemz">
+		    {include file="common/user_nav" /}
+		</div>
+		<div class="record">
+		<div class="tab-menu-content">
+			<button type="button" class="tabMenu tabMenu-personal" id="tabPersonal">個人会員登録</button>
+			<button type="button" class="tabMenu tabMenu-corporate" id="tabCorporate">法人会員登録</button>
+		</div>
+		<form name="form" id="edituser-form" class="form-vertical" method="POST" action="">
+			<input type="hidden" name="persion_type" id="persion_type" value="{$userInfo->persion_type|default=1}" />
+			<div class="vipMess_d">
+				<div class="vipMess12">
+					*個人情報をご入力の上、ご注文を行ってください。
+				</div>
+				<div class="vipMess">
+					会員番号 <br>
+					{$userInfo->id} <br>
+					メールアドレス <br>
+					{$userInfo->email}
+				</div>
+
+				<!-- 個人フォーム -->
+				<div class="form-section form-section-personal" id="formPersonal">
+					<div class="vipMess">氏名 <span>*</span></div>
+					<div class="vipMess2">
+						<input placeholder="例）中山太郎" type="text" name="name" autocomplete="name" value="{$userInfo->name}">
+					</div>
+					<div class="vipMess">氏名（フリガナ）<code>（カナ）</code> <span>*</span></div>
+					<div class="vipMess2">
+						<input placeholder="例）ナカヤマタロウ" type="text" name="katakana" autocomplete="off" value="{$userInfo->katakana}">
+					</div>
+					<div class="vipMess">お電話番号 <span>*</span></div>
+					<div class="vipMess3">
+						<input placeholder="" type="text" name="mobile" autocomplete="tel" value="{$userInfo->mobile}">
+					</div>
+					<div class="vipMess">郵便番号 <span>*</span></div>
+					<div class="vipMess3">
+						<input placeholder="" type="text" name="zip_code" id="zipcode" autocomplete="postal-code" value="{$userInfo->zip_code}">
+					</div>
+					<div class="vipMess">ご住所 <span>*</span></div>
+					<div class="vipMess2">
+						<input type="text" name="address" autocomplete="street-address" value="{$userInfo->address}" class="text" placeholder="">
+					</div>
+					<div class="vipMess">職業 <span>*</span></div>
+					<div class="vipMess1">
+						<select name="occupation" id="personal_occupation">
+							<option value="">職業 *</option>
+							{volist name="$occupation" id="item"}
+							<option {if $userInfo->occupation == $item['id']} selected {/if} value="{$item['id']}">{$item['name']}</option>
+							{/volist}
+						</select>
+					</div>
+					<div class="vipMess">性別 <span>*</span></div>
+					<div class="vipMess8">
+						<select name="gender" id="personal_gender">
+							<option value="">指定なし</option>
+							<option value="1" {if $userInfo->gender == 1} selected {/if}>男性</option>
+							<option value="2" {if $userInfo->gender == 2} selected {/if}>女性</option>
+						</select>
+					</div>
+					<div class="vipMess">生年月日 <span>*</span></div>
+					<div class="vipMess8">
+						<select name="year" id="personal_year">
+						{for start="1" end="50"}
+							<option {if $year == date('Y', strtotime('-'.$i.' year'))} selected {/if} value="{:date('Y', strtotime('-'.$i.' year'))}">{:date('Y', strtotime('-'.$i.' year'))}</option>
+						{/for}
+						</select>
+						<span>/</span>
+						<select name="month" id="personal_month">
+						{for start="1" end="13"}
+							<option {if $month == $i} selected {/if} value="{$i}">{$i}</option>
+						{/for}
+						</select>
+						<span>/</span>
+						<select name="day" id="personal_day">
+						{for start="1" end="32"}
+							<option {if $days == $i} selected {/if} value="{$i}">{$i}</option>
+						{/for}
+						</select>
+					</div>
+					<div class="vipMess">個人書類種別 <span>*</span></div>
+					<div class="vipMess4">
+					{volist name="$szb" id="item"}
+						<label for="szb{$i}">
+							<input id="szb{$i}" {if $userInfo->szb == $item['id']} checked {/if} type="radio" value="{$item['id']}" name="szb" />
+							{$item['name']}
+						</label>
+					{/volist}
+					</div>
+					<div class="vipMess">個人書類アップロード <span>*</span></div>
+					<div class="orderLeft14" id="personal_szb_images">
+					{if !empty($userInfo->szb_image)}
+					{foreach $szb_image as $key=>$vo }
+					    <span>
+					        <img style="opacity:1;" src="{$vo}" alt="アップロード済み書類画像" />
+					        <img class="newclose" alt="削除" src="/img/close.png">
+					        <input type="hidden" name="szb_image[]" value="{$vo}"/>
+					    </span>
+					{/foreach}
+					{/if}
+					</div>
+					<div class="vipMess7">
+						書類を追加する
+						<input type="file" class="img-upload" data-target="szb_image" data-container="personal_szb_images" />
+					</div>
+				</div>
+
+				<!-- 法人フォーム -->
+				<div class="form-section form-section-corporate" id="formCorporate">
+					<div class="vipMess">会社名 <span>*</span></div>
+					<div class="vipMess2">
+						<input type="text" name="corporate_name" placeholder="例）株式会社〇〇" value="{$userInfo->corporate_name}">
+					</div>
+					<div class="vipMess">事業者登録番号 <span>*</span></div>
+					<div class="vipMess2">
+						<input type="text" name="business_number" value="{$userInfo->business_number}">
+					</div>
+					<div class="vipMess">担当者名 <span>*</span></div>
+					<div class="vipMess2">
+						<input placeholder="例）中山太郎" type="text" name="name" autocomplete="name" value="{$userInfo->name}">
+					</div>
+					<div class="vipMess">担当者名（フリガナ）<code>（カナ）</code> <span>*</span></div>
+					<div class="vipMess2">
+						<input placeholder="例）ナカヤマタロウ" type="text" name="katakana" autocomplete="off" value="{$userInfo->katakana}">
+					</div>
+					<div class="vipMess">お電話番号 <span>*</span></div>
+					<div class="vipMess3">
+						<input placeholder="" type="text" name="mobile" autocomplete="tel" value="{$userInfo->mobile}">
+					</div>
+					<div class="vipMess">郵便番号 <span>*</span></div>
+					<div class="vipMess3">
+						<input placeholder="" type="text" name="zip_code" autocomplete="postal-code" value="{$userInfo->zip_code}">
+					</div>
+					<div class="vipMess">ご住所 <span>*</span></div>
+					<div class="vipMess2">
+						<input type="text" name="address" autocomplete="street-address" value="{$userInfo->address}" class="text" placeholder="">
+					</div>
+					<div class="vipMess">ご担当者様の本人確認書類(いずれか) <span>*</span></div>
+					<div class="vipMess4">
+					{volist name="$corporate_szb" id="item"}
+						<label for="corporate_szb_{$i}">
+							<input id="corporate_szb_{$i}" {if $userInfo->corporate_szb_1 == $item['id']} checked {/if} type="radio" value="{$item['id']}" name="corporate_szb_1" />
+							{$item['name']}
+						</label>
+					{/volist}
+					</div>
+					<div class="vipMess">ご担当者様の本人確認書類 アップロード <span>*</span></div>
+					<div class="orderLeft14" id="corporate_szb_images_1">
+					{if !empty($userInfo->corporate_szb_image_1)}
+					{foreach $corporate_szb_image_1 as $key=>$vo }
+					    <span>
+					        <img style="opacity:1;" src="{$vo}" alt="アップロード済み" />
+					        <img class="newclose" alt="削除" src="/img/close.png">
+					        <input type="hidden" name="corporate_szb_image_1[]" value="{$vo}"/>
+					    </span>
+					{/foreach}
+					{/if}
+					</div>
+					<div class="vipMess7">
+						書類を追加する
+						<input type="file" class="img-upload" data-target="corporate_szb_image_1" data-container="corporate_szb_images_1" />
+					</div>
+					<div class="vipMess">適格請求書(インボイス) <span>*</span></div>
+					<div class="orderLeft14" id="corporate_szb_images_2">
+					{if !empty($userInfo->corporate_szb_image_2)}
+					{foreach $corporate_szb_image_2 as $key=>$vo }
+					    <span>
+					        <img style="opacity:1;" src="{$vo}" alt="アップロード済み" />
+					        <img class="newclose" alt="削除" src="/img/close.png">
+					        <input type="hidden" name="corporate_szb_image_2[]" value="{$vo}"/>
+					    </span>
+					{/foreach}
+					{/if}
+					</div>
+					<div class="vipMess7">
+						書類を追加する
+						<input type="file" class="img-upload" data-target="corporate_szb_image_2" data-container="corporate_szb_images_2" />
+					</div>
+					<div class="vipMess">ご担当者様の名刺 <span>*</span></div>
+					<div class="orderLeft14" id="corporate_szb_images_3">
+					{if !empty($userInfo->corporate_szb_image_3)}
+					{foreach $corporate_szb_image_3 as $key=>$vo }
+					    <span>
+					        <img style="opacity:1;" src="{$vo}" alt="アップロード済み" />
+					        <img class="newclose" alt="削除" src="/img/close.png">
+					        <input type="hidden" name="corporate_szb_image_3[]" value="{$vo}"/>
+					    </span>
+					{/foreach}
+					{/if}
+					</div>
+					<div class="vipMess7">
+						書類を追加する
+						<input type="file" class="img-upload" data-target="corporate_szb_image_3" data-container="corporate_szb_images_3" />
+					</div>
+				</div>
+
+				<div class="vipMess10">
+					<input type="checkbox" value="1" required="" id="agree1">
+					<a class="qbButt1 qbButtc" href="javascript:void(0)">買取利用規約</a>
+					に同意する
+				</div>
+				<div class="vipMess10">
+					<input type="checkbox" value="2" required="" id="agree2">
+					<a href="javascript:void(0)">プライバシーポリシー</a>
+					に同意する
+				</div>
+				<div class="vipMess11">
+					<input type="submit" class="edituser" value="登　録">
+				</div>
+			</div>
+			</form>
+		</div>
+		
+		{include file="common/foot" /}
+		<script>
+		(function(){
+			var profileTypeLocked = {if $profile_type_locked}true{else/}false{/if};
+			var currentType = parseInt('{$userInfo->persion_type|default=1}', 10) || 1;
+			if(currentType !== 1 && currentType !== 2) currentType = 1;
+
+			var tabPersonal = document.getElementById('tabPersonal');
+			var tabCorporate = document.getElementById('tabCorporate');
+			var formPersonal = document.getElementById('formPersonal');
+			var formCorporate = document.getElementById('formCorporate');
+			var persionInput = document.getElementById('persion_type');
+
+			function setActiveTab(type){
+				currentType = type;
+				persionInput.value = type;
+				if(type === 1){
+					tabPersonal.classList.add('tabMenu-active');
+					tabCorporate.classList.remove('tabMenu-active');
+					formPersonal.classList.add('form-section-active');
+					formCorporate.classList.remove('form-section-active');
+				} else {
+					tabCorporate.classList.add('tabMenu-active');
+					tabPersonal.classList.remove('tabMenu-active');
+					formCorporate.classList.add('form-section-active');
+					formPersonal.classList.remove('form-section-active');
+				}
+			}
+
+			tabPersonal.onclick = function(){
+				if(profileTypeLocked){ return; }
+				if(currentType === 1) return;
+				if(!confirm('切り替えすると入力内容が消去されます。続行しますか？')) return;
+				document.getElementById('edituser-form').reset();
+				setActiveTab(1);
+			};
+			tabCorporate.onclick = function(){
+				if(profileTypeLocked){ return; }
+				if(currentType === 2) return;
+				if(!confirm('切り替えすると入力内容が消去されます。続行しますか？')) return;
+				document.getElementById('edituser-form').reset();
+				setActiveTab(2);
+			};
+
+			if(profileTypeLocked){
+				tabPersonal.classList.add('tabMenu-disabled');
+				tabCorporate.classList.add('tabMenu-disabled');
+			}
+
+			setActiveTab(currentType);
+		})();
+		</script>
+	</body>
+</html>

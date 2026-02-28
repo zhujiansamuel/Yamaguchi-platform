@@ -1,0 +1,257 @@
+<!-- 確認ポップアップ -->
+<!-- <div class="tips_tc">
+	<div class="tips_tc1">
+		告知
+	</div>
+	<div class="tips_tc2">
+		<div class="tips_tc3">
+			お申込みのキャンセルを確定されますか？
+		</div>
+		<div class="tips_tc4">
+			<a class="tips_tc4a" href="javascript:void(0)">キャンセル</a>
+			<a class="tips_tc4b" href="javascript:void(0)">確　　認</a>
+		</div>
+	</div>
+</div> -->
+<div class="footer">
+			<div class="contain">
+				<div class="footer1">
+					<div class="footer2">
+						<div class="footer3">
+							<img src="/uploads/20251029/a0480341e272cdcb79c34cfcf78c3007.png" alt="Mobile Zone 買取 ロゴ" />
+						</div>
+						<div class="footer4">
+							〒{$site.zip_code} <br />
+							{$site.address} <br />
+							TEL：{$site.tel}
+						</div>
+						<div class="footer5">
+						{volist name="sns" id="item"}
+							<a href="{$item['url'] ?: 'javascript:;'}"><img src="{$item['image']}" alt="ソーシャルメディアリンク" /></a>
+						{/volist}
+						</div>
+					</div>
+					<div class="footer6 pc">
+						<a href="/">ホーム</a>
+						<a href="/goods">商品一覧</a>
+						<a href="/news">お知らせ</a>
+						<a href="/shop">店舗紹介</a>
+						<a href="/buy_way">買取方法</a>
+						<a href="/guide">ご利用ガイド</a>
+						<a href="/faq">よくある質問</a>
+						<a href="/contactus">お問い合わせ</a>
+						<!-- <a href="">ご注意事項</a> -->
+						<a href="/use_terms">ご利用規約</a>
+						<a href="/privacy_policy">プライバシー</a>
+						<a href="/trading_law">特定商取引法</a>
+					</div>
+					<div class="footer6 wap">
+						<a href="/guide">ご利用ガイド</a>
+						<a href="/shop">店舗紹介</a>
+						<a href="/buy_way">買取方法</a>
+						<a href="/contactus">お問い合わせ</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="beian">
+			<div class="beian1">
+				<!-- <a href="">ご注意事項</a> -->
+				<a href="/use_terms">ご利用規約</a>
+				<a href="/privacy_policy">プライバシー</a>
+				<a href="/trading_law">特定商取引法</a>
+			</div>
+			{$site.copyright}
+		</div>
+		<div class="goTop">
+			<a href="javascript:void(0)"><img src="/img/goTop.png" alt="ページトップへ戻る" /></a>
+		</div>
+		<div class="login_tc">
+			<div class="login_tc1">
+			<form name="form" id="login-form" class="form-vertical" method="POST" action="">
+				<div class="login_tc2">
+					<div class="close">
+						<img alt="閉じる" src="/img/close.png"/>
+					</div>
+					<div class="login_tc3">
+						<img alt="Mobile Zone 買取 ロゴ" src="/img/logo.png"/>
+					</div>
+					<div class="login_tc4">
+						ログイン
+					</div>
+					<div class="login_tc5">
+						<div class="login_tc6">
+							メールアドレス *
+						</div>
+						<div class="login_tc7">
+							<input type="text" name="account" id="username"/>
+						</div>
+						<div class="login_tc6">
+							パスワード *
+						</div>
+						<div class="login_tc7">
+							<input type="password" name="password" id="password"/>
+							<img alt="パスワードを表示" class="eye" src="/img/eye.png"/>
+							<img alt="パスワードを非表示" class="eye1" src="/img/eye1.png"/>
+						</div>
+					</div>
+					<div class="login_tc8">
+						<input type="submit" class="submitlogin" value="ログイン"/>
+					</div>
+					<div class="login_tc9" style="line-height:2;">
+						<a class="forget" >パスワードをお忘れですか？</a>
+					</div>
+					<div class="login_tc10">
+						<a class="register" >新規会員登録</a>
+					</div>
+					<div class="login_tc11">
+						<a href="/use_terms">買取利用規約</a>
+						<a href="/privacy_policy">プライバシー</a>
+						<a href="/shop">店舗紹介</a>
+					</div>
+					<div class="login_tc12">
+						 {$site.copyright}
+					</div>
+		        </div>
+		      </form>
+		    </div>
+		</div>
+		<div class="register_tc">
+			<div class="login_tc1">
+			<form name="form" id="register-form" class="form-vertical" method="POST" action="">
+				<div class="login_tc2">
+					<div class="close">
+						<img alt="閉じる" src="/img/close.png"/>
+					</div>
+					<div class="login_tc3">
+						<img alt="Mobile Zone 買取 ロゴ" src="/img/logo.png"/>
+					</div>
+					<div class="register_tc1">
+						新規会員登録
+					</div>
+					<div class="register_tc2">
+						認証コードを配信するため、メールアドレスをご入力ください。
+					</div>
+					<div class="login_tc5">
+						<div class="login_tc6">
+							メールアドレス  *
+						</div>
+						<div class="login_tc7">
+							<input type="text" name="username" class="email" placeholder="your@email.com"/>
+						</div>
+						<div class="login_tc6">
+							認証コード *
+						</div>
+						<div class="login_tc7">
+							<input placeholder="認証コードを入力してください。" id="email2" name="captcha" value="" type="text"/>
+							<a data-event="register" class="sendEms" href="javascript:;">配信</a>
+						</div>
+						<div class="login_tc6">
+							パスワード *
+						</div>
+						<div class="login_tc7">
+							<input type="password" name="password" id="zpass1"/>
+							<img alt="パスワードを表示" class="eye" src="/img/eye.png"/>
+							<img alt="パスワードを非表示" class="eye1" src="/img/eye1.png"/>
+						</div>
+						<div class="login_tc6">
+							パスワードを再入力 *
+						</div>
+						<div class="login_tc7">
+							<input type="password" name="repassword" id="zpass2"/>
+							<img alt="パスワードを表示" class="eye" src="/img/eye.png"/>
+							<img alt="パスワードを非表示" class="eye1" src="/img/eye1.png"/>
+						</div>
+					</div>
+					<div class="login_tc8">
+						<input type="submit" class="submitregister" value="新規会員登録"/>
+					</div>
+					<div class="login_tc11">
+						<a href="/use_terms">買取利用規約</a>
+						<a href="/privacy_policy">プライバシーポリシー</a>
+						<a href="">店舗紹介</a>
+					</div>
+					<div class="login_tc12">
+						 {$site.copyright}
+					</div>
+		        </div>
+		       </form>
+		    </div>
+		</div>
+		<div class="forget_tc">
+			<div class="login_tc1">
+			<form name="form" id="resetpwd-form" class="form-vertical" method="POST" action="">
+				<div class="login_tc2">
+					<div class="close">
+						<img alt="閉じる" src="/img/close.png"/>
+					</div>
+					<div class="login_tc3">
+						<img alt="Mobile Zone 買取 ロゴ" src="/img/logo.png"/>
+					</div>
+					<div class="register_tc1">
+						パスワード再設定
+					</div>
+					<div class="register_tc2">
+						認証コードを配信するため、登録されたメールアドレスをご入力ください。
+					</div>
+					<div class="login_tc5">
+						<div class="login_tc6">
+							メールアドレス *
+						</div>
+						<div class="login_tc7">
+							<input type="text" name="username" class="email" placeholder="your@email.com"/>
+						</div>
+						<div class="login_tc6">
+							認証コード *
+						</div>
+						<div class="login_tc7">
+							<input placeholder="認証コードを入力してください。" type="text" name="captcha" id="zhcode" />
+							<a data-event="resetpwd" class="sendEms" href="javascript:;">配信</a>
+						</div>
+						<div class="login_tc6">
+							パスワード *
+						</div>
+						<div class="login_tc7">
+							<input type="password" name="password" id="zhpass1"/>
+							<img alt="パスワードを表示" class="eye" src="/img/eye.png"/>
+							<img alt="パスワードを非表示" class="eye1" src="/img/eye1.png"/>
+						</div>
+						<div class="login_tc6">
+							パスワードを再入力 *
+						</div>
+						<div class="login_tc7">
+							<input type="password" name="repassword" id="zhpass2">
+							<img alt="パスワードを表示" class="eye" src="/img/eye.png"/>
+							<img alt="パスワードを非表示" class="eye1" src="/img/eye1.png"/>
+						</div>
+					</div>
+					<div class="login_tc8">
+						<input type="submit" class="submitresetpwd" value="パスワード変更" />
+					</div>
+					<div class="login_tc11">
+						<a href="/use_terms">買取利用規約</a>
+						<a href="/privacy_policy">プライバシー</a>
+						<a href="/shop">店舗紹介</a>
+					</div>
+					<div class="login_tc12">
+						{$site.copyright}
+					</div>
+		        </div>
+		      </form>
+		    </div>
+		</div>
+		<!-- 共通ポップアップ -->
+		<div class="tips_tc">
+			<div class="tips_tc1">
+				
+			</div>
+			<div class="tips_tc2">
+				<div class="tips_tc3">
+					お申込みをキャンセルしました。
+				</div>
+				<div class="tips_tc4 querenbox" style="display:none;">
+					<a href="javascript:;" class="tips_tc4a yesCancel">はい</a>
+					<a href="javascript:;" class="tips_tc4b noCancel">いいえ</a>
+				</div>
+			</div>
+		</div>

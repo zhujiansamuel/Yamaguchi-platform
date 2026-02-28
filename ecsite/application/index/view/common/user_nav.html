@@ -1,0 +1,17 @@
+<div class="contain reItemz1">
+	<a {if $webController == 'User' && ($webAction == 'order' || $webAction == 'order_details')} class="on" {/if} href="/user/order">
+		<img alt="予約履歴アイコン" class="reImg" src="/img/reImg.png">
+		<img alt="予約履歴アイコン選択中" class="reImg1" src="/img/reImga.png">
+		予約履歴
+	</a>
+	<a {if $webController == 'User' && $webAction == 'index'} class="on" {/if} href="/user/index">
+		<img alt="会員登録情報アイコン" class="reImg" src="/img/reImg1.png">
+		<img alt="会員登録情報アイコン選択中" class="reImg1" src="/img/reImg1a.png">
+		会員登録情報
+	</a>
+	<a href="/logout">
+		<img alt="ログアウトアイコン" class="reImg" src="/img/reImg2.png">
+		<img alt="ログアウトアイコン選択中" class="reImg1" src="/img/reImg2a.png">
+		ログアウト
+	</a>
+</div>

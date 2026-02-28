@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- スタイルおよびMETA情報 -->
+        {include file="common/meta" /}
+    </head>
+    <body class="hold-transition {$Think.config.fastadmin.adminskin|default='skin-black-blue'} sidebar-mini {:$Think.cookie.sidebar_collapse?'sidebar-collapse':''} fixed {:$Think.config.fastadmin.multipletab?'multipletab':''} {:$Think.config.fastadmin.multiplenav?'multiplenav':''}" id="tabs">
+
+        <div class="wrapper">
+
+            <!-- ヘッダーエリア -->
+            <header id="header" class="main-header">
+                {if preg_match('/\/admin\/|\/admin\.php|\/admin_d75KABNWt\.php/i', url())}
+                <div class="alert alert-danger-light text-center" style="margin-bottom:0;border:none;">
+                    {:__('Security tips')}
+                </div>
+                {/if}
+
+                {include file='common/header' /}
+            </header>
+
+            <!-- 左側メニュー -->
+            <aside class="main-sidebar">
+                {include file='common/menu' /}
+            </aside>
+
+            <!-- メインコンテンツエリア -->
+            <div class="content-wrapper tab-content tab-addtabs">
+                {if $fixedmenu}
+                <div role="tabpanel" class="tab-pane {:$referermenu?'':'active'}" id="con_{$fixedmenu.id|htmlentities}">
+                    <iframe src="{$fixedmenu.url|htmlentities}{:stripos($fixedmenu.url, '?') !== false ? '&' : '?'}addtabs=1" width="100%" height="100%" frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling-x="no" scrolling-y="auto" allowtransparency="yes"></iframe>
+                </div>
+                {/if}
+                {if $referermenu}
+                <div role="tabpanel" class="tab-pane active" id="con_{$referermenu.id|htmlentities}">
+                    <iframe src="{$referermenu.url|htmlentities}{:stripos($referermenu.url, '?') !== false ? '&' : '?'}addtabs=1" width="100%" height="100%" frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling-x="no" scrolling-y="auto" allowtransparency="yes"></iframe>
+                </div>
+                {/if}
+            </div>
+
+            <!-- フッターリンク,デフォルトで非表示 -->
+            <footer class="main-footer hide">
+                <div class="pull-right hidden-xs">
+                </div>
+                <strong>Copyright &copy; 2017-{:date("Y")} <a href="__PUBLIC__">{$site.name|htmlentities}</a>.</strong> All rights reserved.
+            </footer>
+
+            <!-- 右側コントロールバー -->
+            <div class="control-sidebar-bg"></div>
+            {include file="common/control" /}
+        </div>
+
+        <!-- ロードJSスクリプト -->
+        {include file="common/script" /}
+    </body>
+</html>

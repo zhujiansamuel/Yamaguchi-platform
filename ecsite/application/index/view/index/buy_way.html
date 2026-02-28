@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="inTop">
+			<div class="address mt20">
+				<div class="contain address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href="/buy_way"> 買取方法</a>
+				</div>
+			</div>
+			<div class="inTop1">
+				買取方法
+			</div>
+		</div>
+		<div class="mqff">
+			<div class="contain">
+				<div class="mqff1">
+				{volist name="buy_way_type" id="item"}
+					<div class="mqff2" id="bw{$item['id']}">
+						<div class="mqff3">
+							{$item['name']}
+						</div>
+						<div class="mqff4">
+						{if isset($buy_way_list[$item['id']])}
+						{volist name="$buy_way_list[$item['id']]" id="item2"}
+							<div class="mqff5">
+								<div class="mqff6">
+									0{$i}
+								</div>
+								<div class="mqff7">
+									<div class="mqff8">
+										<img src="{$item2['image']}" alt="{$item2['title']}" />
+									</div>
+									<div class="mqff9">
+										<div class="mqff10">
+											{$item2['title']}
+										</div>
+										<div class="mqff11">
+											{$item2['content']}
+										</div>
+									</div>
+								</div>
+							</div>
+						{/volist}
+						{/if}	
+						</div>
+					</div>
+				{/volist}
+					
+				</div>
+			</div>
+		</div>
+		
+		
+		{include file="common/foot" /}
+		
+	</body>
+</html>

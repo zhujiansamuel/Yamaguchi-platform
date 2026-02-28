@@ -1,0 +1,117 @@
+<div class="header">
+	<div class="header1 contain">
+		<div class="logo">
+			<a href="/"><img src="/uploads/20251029/a0480341e272cdcb79c34cfcf78c3007.png" alt="Mobile Zone 買取 ロゴ" /></a>
+		</div>
+		{include file="common/nav" /}
+		<div class="pdf">
+			<div>
+				<a class="pdf1" target="_blank" href="{$site.protector_consent_form}">保護者同意書(PDF)</a>
+				<a class="pdf2" target="_blank" href="{$site.buy_application_form}">買取申し込み書(PDF)</a>
+			</div>
+		</div>
+		<div class="icon_m">
+			<a href="javascript:void(0)">
+				<img src="/img/menu.png" alt="メニューを開く" />
+				<img class="hide" src="/img/heclose.png" alt="メニューを閉じる" />
+			</a>
+		</div>
+		<div class="butt">
+		{if empty($userInfo->id)}
+			<div class="butt1 login">
+				<a href="javascript:void(0)">
+					<img src="/img/login.png" alt="ログインアイコン" />
+					ログイン
+				</a>
+			</div>
+			<div class="butt2 login">
+				<a href="javascript:;">
+					<img src="/img/cart.png" alt="カートアイコン" />
+					カート
+				</a>
+			</div>
+		{else /}
+			<div class="butt1">
+				<a href="/user">
+					<img src="/img/login.png" alt="マイページアイコン" />
+					マイページ
+				</a>
+			</div>
+			<div class="butt2">
+				<a href="/user/shopping">
+					<img src="/img/cart.png" alt="カートアイコン" />
+					カート
+				</a>
+			</div>
+		{/if}
+
+			
+		</div>
+	</div>
+</div>
+<div class="menu_m">
+	<div class="menu_m1">
+		<div class="menu_m2">
+			<ul>
+				<li><a href="/">ホーム</a></li>
+				<li>
+					<a href="javascript:;">
+						商品一覧
+						<img src="/img/hearrow.png" alt="展開する" />
+					</a>
+				{volist name="goodsCategoryTree" id="item"}
+					<div class="menu_msub">
+						<div class="menu_msub1">
+							<a href="javascript:;">{$item['name']}
+							{if !empty($item['children'])}
+							    <img src="/img/hearrow.png" onclick="event.preventDefault();" alt="サブメニューを展開" />
+							{/if}
+							</a>
+						{if !empty($item['children'])}
+							<div class="menu_msub">
+							{volist name="item['children']" id="item2"}
+								<a href="/goods/{$item['id']}/{$item2['id']}">
+								    {$item2['name']}
+
+								{if !empty($item2['children'])}
+    							    <img src="/img/hearrow.png" onclick="event.preventDefault();" alt="サブメニューを展開" />
+    							{/if}
+								</a>
+								
+    							{if !empty($item2['children'])}
+        							<div class="menu_msub">
+        							    {volist name="item2['children']" id="item3"}
+        							        <a href="/goods/{$item['id']}/{$item2['id']}/{$item3['id']}">{$item3['name']}</a>
+        							    {/volist}
+        							</div>
+    							{/if}
+							{/volist}
+							</div>
+						{/if}
+						</div>
+					</div>
+			    {/volist}
+				</li>
+				<li><a href="/news">お知らせ</a></li>
+    			<li><a href="/shop">店舗紹介</a></li>
+				<li><a href="/buy_way">買取方法</a></li>
+				<li><a href="/guide">ご利用ガイド</a></li>
+    			<li><a href="/faq">よくある質問</a></li>
+				<li><a href="/contactus">お問い合わせ</a></li>
+			</ul>
+		</div>
+		<div class="menu_m3">
+		{if empty($userInfo->id)}
+			<a href="javascript:;">
+				ログイン
+				<img src="/img/hearrow1.png" alt="移動する" />
+			</a>
+		{else/}
+		    <a href="/user">
+				マイページ
+				<img src="/img/hearrow1.png" alt="移動する" />
+			</a>
+		{/if}
+		</div>
+	</div>
+</div>

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>買取申込書模板编辑器</title>
+
+    <!-- GrapesJS CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/grapesjs/dist/css/grapes.min.css">
+
+    <!-- Custom CSS for Editor -->
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        #editor-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #editor-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #editor-header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        #editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d68910;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+        #gjs {
+            flex: 1;
+            border: 3px solid #444;
+        }
+
+        /* GrapesJS Panel customization */
+        .gjs-cv-canvas {
+            background: #f5f5f5;
+        }
+
+        /* Loading overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Success message */
+        .message {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 10000;
+            animation: slideIn 0.3s;
+        }
+
+        .message.success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .message.error {
+            background: #e74c3c;
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="editor-container">
+        <!-- Header -->
+        <div id="editor-header">
+            <h1>📝 買取申込書 模板编辑器</h1>
+            <div id="editor-actions">
+                <button class="btn btn-info" onclick="loadTemplate()">
+                    🔄 重新加载
+                </button>
+                <button class="btn btn-warning" onclick="previewTemplate()">
+                    👁️ 预览
+                </button>
+                <button class="btn btn-success" onclick="saveTemplate()">
+                    💾 保存模板
+                </button>
+                <button class="btn btn-primary" onclick="exportCode()">
+                    📤 导出代码
+                </button>
+            </div>
+        </div>
+
+        <!-- GrapesJS Editor -->
+        <div id="gjs"></div>
+    </div>
+
+    <!-- GrapesJS JS -->
+    <script src="https://unpkg.com/grapesjs"></script>
+
+    <!-- GrapesJS Preset Webpage Plugin -->
+    <script src="https://unpkg.com/grapesjs-preset-webpage"></script>
+
+    <!-- jQuery for AJAX -->
+    <script src="/js/jquery.js"></script>
+
+    <script>
+        let editor;
+
+        // 初始化编辑器
+        function initEditor(content = '') {
+            editor = grapesjs.init({
+                container: '#gjs',
+                height: '100%',
+                width: 'auto',
+                storageManager: false,
+                plugins: ['gjs-preset-webpage'],
+                pluginsOpts: {
+                    'gjs-preset-webpage': {
+                        blocksBasicOpts: {
+                            blocks: ['column1', 'column2', 'column3', 'column3-7', 'text', 'link', 'image', 'video', 'map'],
+                            flexGrid: 1,
+                        },
+                        blocks: ['link-block', 'quote', 'text-basic'],
+                    }
+                },
+                canvas: {
+                    styles: [],
+                    scripts: [],
+                },
+                deviceManager: {
+                    devices: [{
+                        name: 'Desktop',
+                        width: '',
+                    }, {
+                        name: 'Tablet',
+                        width: '768px',
+                        widthMedia: '992px',
+                    }, {
+                        name: 'Mobile',
+                        width: '320px',
+                        widthMedia: '480px',
+                    }]
+                },
+                panels: {
+                    defaults: [{
+                        id: 'basic-actions',
+                        el: '.panel__basic-actions',
+                        buttons: [{
+                            id: 'visibility',
+                            active: true,
+                            className: 'btn-toggle-borders',
+                            label: '<i class="fa fa-clone"></i>',
+                            command: 'sw-visibility',
+                        }],
+                    }, {
+                        id: 'panel-devices',
+                        el: '.panel__devices',
+                        buttons: [{
+                            id: 'device-desktop',
+                            label: '💻',
+                            command: 'set-device-desktop',
+                            active: true,
+                            togglable: false,
+                        }, {
+                            id: 'device-tablet',
+                            label: '📱',
+                            command: 'set-device-tablet',
+                            togglable: false,
+                        }, {
+                            id: 'device-mobile',
+                            label: '📞',
+                            command: 'set-device-mobile',
+                            togglable: false,
+                        }],
+                    }]
+                },
+            });
+
+            // 设置命令
+            editor.Commands.add('set-device-desktop', {
+                run: editor => editor.setDevice('Desktop')
+            });
+            editor.Commands.add('set-device-tablet', {
+                run: editor => editor.setDevice('Tablet')
+            });
+            editor.Commands.add('set-device-mobile', {
+                run: editor => editor.setDevice('Mobile')
+            });
+
+            // 加载内容
+            if (content) {
+                editor.setComponents(content);
+            }
+        }
+
+        // 加载模板
+        function loadTemplate() {
+            showLoading();
+            $.ajax({
+                url: '/index/template_editor/get_template',
+                method: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    hideLoading();
+                    if (response.code === 1) {
+                        // 提取模板内容（去除外层HTML结构）
+                        let content = extractTemplateContent(response.data);
+
+                        if (editor) {
+                            editor.setComponents(content);
+                            showMessage('模板加载成功', 'success');
+                        } else {
+                            initEditor(content);
+                        }
+                    } else {
+                        showMessage('加载失败: ' + response.msg, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideLoading();
+                    showMessage('加载失败: ' + error, 'error');
+                }
+            });
+        }
+
+        // 提取模板内容
+        function extractTemplateContent(html) {
+            // 提取 <body> 标签内的内容
+            let bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+            if (bodyMatch) {
+                return bodyMatch[1];
+            }
+            return html;
+        }
+
+        // 保存模板
+        function saveTemplate() {
+            let html = editor.getHtml();
+            let css = editor.getCss();
+
+            // 重新组装完整的模板
+            let fullTemplate = buildFullTemplate(html, css);
+
+            showLoading();
+            $.ajax({
+                url: '/index/template_editor/save_template',
+                method: 'POST',
+                data: {
+                    content: fullTemplate
+                },
+                dataType: 'json',
+                success: function(response) {
+                    hideLoading();
+                    if (response.code === 1) {
+                        showMessage('保存成功！备份文件: ' + response.backup, 'success');
+                    } else {
+                        showMessage('保存失败: ' + response.msg, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideLoading();
+                    showMessage('保存失败: ' + error, 'error');
+                }
+            });
+        }
+
+        // 构建完整模板
+        function buildFullTemplate(html, css) {
+            // 使用字符串拼接避免模板字符串语法冲突
+            var template = '{if $rt neq 1}\n';
+            template += '<!DOCTYPE html>\n';
+            template += '<html lang="zh-CN">\n';
+            template += '<head>\n';
+            template += '\t\t<meta charset="utf-8">\n';
+            template += '\t\t<meta http-equiv="X-UA-Compatible" content="IE=edge">\n';
+            template += '\t\t<meta name="viewport" content="width=device-width, initial-scale=1">\n';
+            template += '\t\t<script src="/js/jquery.js"><\/script>\n';
+            template += '\t</head>\n';
+            template += '\t\n';
+            template += '\t<body style="padding:40px 30px 0;width:774px;" id="content">\n';
+            template += '\t\t<!--startprint-->\n';
+            template += '\t\t<div  id="content1" style="width:100%;">\n';
+            template += '\t\t<div class="dcClick2">\n';
+            template += '\t\t\t\t<button class="dcClick" id="doxt" style="opacity:0;">ダウンロード</button>\n';
+            template += '\t\t\t</div>\n';
+            template += '\t\t\t{/if}\n';
+            template += '\t\t<style>\n';
+            template += css + '\n';
+            template += '\t\t</style>\n';
+            template += '\t\t\t\n';
+            template += html + '\n';
+            template += '\n';
+            template += '\t\t{if $rt neq 1}\n';
+            template += '\t</div>\n';
+            template += '\t</body>\n';
+            template += '\t<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>\n';
+            template += '\t<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>\n';
+            template += '\t<script>\n';
+            template += '\t\t$(document).ready(function() {\n';
+            template += '\t\t\t$(".dcClick").click(function(event) {\n';
+            template += '\t\t\t\thtml2canvas(document.body, {\n';
+            template += '\t\t\t\t\tonrendered: function(canvas) {\n';
+            template += '\t\t\t\t\t\tvar imgData = canvas.toDataURL();\n';
+            template += '\t\t\t\t\t\tvar doc = new jspdf.jsPDF(\'p\', \'pt\', \'a4\');\n';
+            template += '\t\t\t\t\t\tconsole.log(imgData)\n';
+            template += '\t\t\t\t\t\tdoc.addImage(imgData, \'PNG\', 0, 0, 210, 0);\n';
+            template += '\t\t\t\t\t\tdoc.save(\'買取申込書.pdf\');\n';
+            template += '\t\t\t\t\t}\n';
+            template += '\t\t\t\t});\n';
+            template += '\t\t\t});\n';
+            template += '\t\t});\n';
+            template += '\t\tsetTimeout(doPrint(),1000);\n';
+            template += '\t\tfunction doPrint() {\n';
+            template += '\t\t\tbdhtml=window.document.body.innerHTML;\n';
+            template += '\t\t\tsprnstr="<!--startprint-->";\n';
+            template += '\t\t\teprnstr="<!--endprint-->";\n';
+            template += '\t\t\tprnhtml=bdhtml.substr(bdhtml.indexOf(sprnstr)+0);\n';
+            template += '\t\t\tprnhtml=prnhtml.substring(0,prnhtml.indexOf(eprnstr));\n';
+            template += '\t\t\twindow.document.body.innerHTML=prnhtml;\n';
+            template += '\t\t\twindow.print();\n';
+            template += '\t\t}\n';
+            template += '\t<\/script>\n';
+            template += '</html>\n';
+            template += '{/if}';
+
+            return template;
+        }
+
+        // 预览模板
+        function previewTemplate() {
+            let html = editor.getHtml();
+            let css = '<style>' + editor.getCss() + '</style>';
+
+            let previewWindow = window.open('', '_blank');
+            previewWindow.document.write(css + html);
+            previewWindow.document.close();
+        }
+
+        // 导出代码
+        function exportCode() {
+            let html = editor.getHtml();
+            let css = editor.getCss();
+            let fullTemplate = buildFullTemplate(html, css);
+
+            // 创建下载链接
+            let blob = new Blob([fullTemplate], { type: 'text/html' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'ylindex.html';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showMessage('代码已导出', 'success');
+        }
+
+        // 显示加载动画
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        // 隐藏加载动画
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // 显示消息
+        function showMessage(text, type = 'success') {
+            let message = document.createElement('div');
+            message.className = 'message ' + type;
+            message.textContent = text;
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                message.remove();
+            }, 3000);
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            loadTemplate();
+        });
+    </script>
+</body>
+</html>

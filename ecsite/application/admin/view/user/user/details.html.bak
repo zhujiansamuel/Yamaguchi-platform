@@ -1,0 +1,101 @@
+<div style="width: 100%;display: inline-flex;">
+    <div style="float:left;width: 40%;"> 
+        <h4 style="text-align: center;">お客様の情報 </h4>
+        <table class="table table-striped" >
+            <!-- <thead>
+            <tr>
+                <th>{:__('打卡位置')}</th>
+                <th>{:__('拍照图片')}</th>
+                <th>{:__('时间')}</th>
+            </tr>
+            </thead> -->
+            <tbody>
+        {if $user}
+            <tr>
+                <th width="30%">お名前</th>
+                <td>{$user['name']}</td>
+            </tr>
+            <tr>
+                <th width="30%">氏名（フリガナ）（カナ）</th>
+                <td>{$user['katakana']}</td>
+            </tr>
+            <tr>
+                <th width="30%">メールアドレス</th>
+                <td>{$user['email']}</td>
+            </tr>
+            <tr>
+                <th width="30%">個人法人区分</th>
+                <td>{:getConfigOther('persion_type_list', $user['persion_type'])}</td>
+            </tr>
+            <tr>
+                <th width="30%">郵便番号</th>
+                <td>{$user['zip_code']}</td>
+            </tr>
+            <tr>
+                <th width="30%">お電話番号</th>
+                <td>{$user['mobile']}</td>
+            </tr>
+            <tr>
+                <th width="30%">ご住所</th>
+                <td>{$user['address']}</td>
+            </tr>
+            <tr>
+                <th width="30%">性別</th>
+                <td>{$user['gender'] == 1 ? '男性' : '女性'}</td>
+            </tr>
+            <tr>
+                <th width="30%">生年月日</th>
+                <td>{$user['birthday']}</td>
+            </tr>
+            <tr>
+                <th width="30%">職業</th>
+                <td>{:getCategoryName($user['occupation'])}</td>
+            </tr>
+            <tr>
+                <th width="30%">個人書類種別</th>
+                <td>{:getCategoryName($user['szb'])}</td>
+            </tr>
+            
+        {else /}
+            暂无数据
+        {/if}  
+
+            </tbody>
+        </table>
+
+    </div>
+    <div class="" style="float:left;width: 30%;margin-left: 20px;">
+    
+        <h4 style="text-align: center;">個人書類アップロード</h4>
+        <table class="table table-striped" >
+            <tbody>
+                {volist name="$user['szb_image']" id="item"}
+                <tr>
+                    <th width="50%"></th>
+                    <td>
+                        <img data-width="60%" data-tips-image src="{$item}" width="100">
+                    </td>
+                </tr>
+                {/volist}
+            </tbody>
+        </table>
+        
+    </div>
+
+</div>
+
+<div style="width: 100%;display: inline-flex;">
+    <div style="float:left;width: 50%;"> 
+        
+        
+    </div>
+    
+</div>
+
+<div class="hide layer-footer">
+    <label class="control-label col-xs-12 col-sm-2"></label>
+    <div class="col-xs-12 col-sm-8">
+        <button type="reset" class="btn btn-primary btn-embossed btn-close" onclick="Layer.closeAll();">{:__('Close')}</button>
+    
+    </div>
+</div>

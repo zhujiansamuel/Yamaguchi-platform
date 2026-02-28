@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+		{include file="common/schema_website" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		
+		<div class="banner">
+			<div class="swiper">
+				<div class="swiper-wrapper">
+				{volist name="lunbo" id="item"}
+					<div class="swiper-slide">
+						<a href="{$item['url'] ?: 'javascript:;'}"><img src="{$item['image']}"/></a>
+					</div>
+				{/volist}
+				</div>
+				<div class="swiper-pagination"></div>
+			</div>
+			<div class="left">
+				<img src="img/left.png" alt="前へ" />
+			</div>
+			<div class="right">
+				<img src="img/right.png" alt="次へ" />
+			</div>
+		</div>
+		<div class="synews">
+			<div class="contain">
+				<div class="synews1">
+					<div class="synews2">
+						NEWS
+					</div>
+					<div class="synews3">
+					{volist name="news" id="item"}
+						<div class="synews4">
+							<a href="/ndetails/{$item['id']}">
+								<span>{$item['createtime']|date='Y-m-d',###}</span>
+								<code>{$item['title']}</code>
+							</a>
+						</div>
+					{/volist}
+						
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="sysearch">
+			<div class="contain">
+				<div class="sysearch1">
+				<form name="form" id="search-form" class="form-vertical" method="POST" action="">
+					<div class="sysearch2">
+						<input class="sysearch2i keywords" type="text" placeholder="商品名を入力して検索ください" />
+						<input class="sysearch2ii searchbutton" type="button" value="検索" />
+					</div>
+				</form>
+					<div class="sysearch3">
+					{volist name="goodsCategory" id="item"}
+						<div class="sysearch4">
+							<a href="/goods/{$item['id']}">
+								<div class="sysearch5">
+									<img src="{$item['image']}" alt="{$item['name']}カテゴリアイコン" />
+								</div>
+								<div class="sysearch6">
+									{$item['name']}
+								</div>
+							</a>
+						</div>
+					{/volist}
+						
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="syproduct">
+			<div class="contain">
+				<div class="syproduct1">
+					<div class="syproduct2">
+						強化買取商品
+					</div>
+					<div class="syproduct3">
+						<ul>
+						{volist name="goods" id="item"}
+							<li>
+								<div class="syproduct4">
+									<div class="syproduct5">
+										<a href="/gdetails/{$item['id']}"><img src="{$item['image']}" alt="{$item['title']}" /></a>
+									</div>
+									<div class="syproduct6">
+										{$item['title']}
+									</div>
+									<!-- <div class="syproduct6">
+										(多言語対応)
+									</div> -->
+									<div class="syproduct7">
+									{if !empty($item['memo'])}
+										備考：{$item['memo']}
+									{/if}
+									</div>
+									<!-- <div class="syproduct8">
+										中古
+										<span>¥{$item['price_zg']}</span>
+									</div> -->
+									<div class="syproduct8">
+										買取価格
+										<span>¥{$item['price']}</span>
+									</div>
+								</div>
+								<div class="syproduct9">
+									<a href="/gdetails/{$item['id']}">買取申込</a>
+								</div>
+							</li>
+						{/volist}
+							
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="sytype">
+			<div class="contain">
+				<div class="sytype1">
+					<div class="syproduct2">
+						選べる買取方法
+					</div>
+					<div class="sytype2">
+					{volist name="buy_way" id="item"}
+						<div class="sytype3">
+							<a href="/buy_way#bw{$item['id']}"><img src="{$item['image']}" alt="{$item['name']}" /></a>
+						</div>
+					{/volist}
+						<div class="sytype3">
+							<a href="/guide"><img src="/uploads/20251024/68d6fc79aec9cde78d97ee2e59e0b508.png" alt="ご利用ガイド" /></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="syproduct mt100">
+			<div class="contain">
+				<div class="syproduct1">
+					<div class="syproduct2">
+						選べる理由
+					</div>
+					<div class="syreason">
+						<ul>
+						{volist name="select_reason" id="item"}
+							<li>
+								<div class="syreason1">
+									<img src="{$item['image']}" alt="{$item['name']}" />
+								</div>
+								<div class="syreason2">
+									{$item['name']}
+								</div>
+								<div class="syreason3">
+									{$item['description']}
+								</div>
+							</li>
+						{/volist}
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+		{include file="common/foot" /}
+		
+	</body>
+</html>

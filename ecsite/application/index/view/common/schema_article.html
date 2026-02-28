@@ -1,0 +1,29 @@
+<!-- Article Schema (News Details Page) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  "headline": "{$news.title|htmlentities}",
+  "image": "{$Request.domain}{$news.image|default='/uploads/20251029/a0480341e272cdcb79c34cfcf78c3007.png'}",
+  "datePublished": "{$news.createtime|date='c',###}",
+  "dateModified": "{$news.updatetime|default=$news.createtime|date='c',###}",
+  "author": {
+    "@type": "Organization",
+    "name": "{$site.name|htmlentities}",
+    "url": "{$Request.domain}"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "{$site.name|htmlentities}",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{$Request.domain}/uploads/20251029/a0480341e272cdcb79c34cfcf78c3007.png"
+    }
+  },
+  "description": "{$news.desc|default=$news.title|htmlentities}",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{$Request.domain}/ndetails/{$news.id}"
+  }
+}
+</script>

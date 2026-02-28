@@ -1,0 +1,314 @@
+<div class="panel panel-default panel-intro">
+    <div class="panel-heading">
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="#one" data-toggle="tab"><i class="fa fa-list"></i> {:__('批量价格管理')}</a></li>
+        </ul>
+    </div>
+
+    <div class="panel-body">
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade active in" id="one">
+                <!-- 筛选表单 -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">筛选条件</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form id="filter-form" class="form-inline">
+                            <div class="form-group">
+                                <label>商品分类：</label>
+                                <select name="category_id" class="form-control">
+                                    <option value="">全部分类</option>
+                                    {volist name="categoryList" id="category"}
+                                    <option value="{$category.id}">{$category.name}</option>
+                                    {/volist}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>商品名称：</label>
+                                <input type="text" name="title" class="form-control" placeholder="输入商品名称">
+                            </div>
+
+                            <div class="form-group">
+                                <label>状态：</label>
+                                <select name="status" class="form-control">
+                                    <option value="">全部状态</option>
+                                    <option value="normal">正常</option>
+                                    <option value="hidden">隐藏</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary" id="btn-filter">
+                                    <i class="fa fa-search"></i> 筛选
+                                </button>
+                                <button type="button" class="btn btn-default" id="btn-reset">
+                                    <i class="fa fa-refresh"></i> 重置
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 价格表格 -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            价格列表
+                            <span class="pull-right">
+                                <button type="button" class="btn btn-success btn-sm" id="btn-save-all">
+                                    <i class="fa fa-save"></i> 批量保存
+                                </button>
+                            </span>
+                        </h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="table-responsive">
+                            <table id="price-table" class="table table-striped table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th width="60">选择</th>
+                                        <th width="80">图片</th>
+                                        <th width="80">商品ID</th>
+                                        <th width="120">JAN码</th>
+                                        <th>商品名称</th>
+                                        <th width="200">规格</th>
+                                        <th width="150">价格</th>
+                                        <th width="100">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="price-tbody">
+                                    <tr>
+                                        <td colspan="8" class="text-center">
+                                            <i class="fa fa-spin fa-spinner"></i> 加载中...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(function() {
+    var priceData = []; // 存储价格数据
+    var changedPrices = {}; // 存储修改过的价格
+
+    // 加载价格数据
+    function loadPriceData() {
+        var formData = $('#filter-form').serializeArray();
+        var filter = {};
+
+        $.each(formData, function(i, field) {
+            if (field.value) {
+                filter[field.name] = field.value;
+            }
+        });
+
+        $.ajax({
+            url: '{:url("goods/batch_price")}',
+            type: 'GET',
+            data: {
+                filter: JSON.stringify(filter)
+            },
+            dataType: 'json',
+            success: function(res) {
+                if (res.code == 1) {
+                    priceData = res.data;
+                    renderPriceTable(res.data);
+                } else {
+                    Toastr.error(res.msg || '加载失败');
+                }
+            },
+            error: function() {
+                Toastr.error('网络错误');
+            }
+        });
+    }
+
+    // 渲染价格表格
+    function renderPriceTable(data) {
+        var tbody = $('#price-tbody');
+        tbody.empty();
+
+        if (data.length == 0) {
+            tbody.append('<tr><td colspan="8" class="text-center text-muted">暂无数据</td></tr>');
+            return;
+        }
+
+        $.each(data, function(index, item) {
+            var imageHtml = item.image ?
+                '<img src="' + item.image + '" style="max-width:60px;max-height:60px;" />' :
+                '<span class="text-muted">无图片</span>';
+
+            var priceInputId = 'price-' + item.id;
+            var originalPrice = parseFloat(item.price) || 0;
+
+            var row = '<tr data-id="' + item.id + '">' +
+                '<td><input type="checkbox" class="price-checkbox" data-id="' + item.id + '" /></td>' +
+                '<td>' + imageHtml + '</td>' +
+                '<td>' + item.goods_id + '</td>' +
+                '<td>' + (item.jan || '-') + '</td>' +
+                '<td>' + item.title + '</td>' +
+                '<td>' + item.spec_name + '</td>' +
+                '<td>' +
+                    '<input type="number" ' +
+                        'id="' + priceInputId + '" ' +
+                        'class="form-control price-input" ' +
+                        'data-id="' + item.id + '" ' +
+                        'data-goods-id="' + item.goods_id + '" ' +
+                        'data-price-type="' + item.price_type + '" ' +
+                        'data-spec-index="' + item.spec_index + '" ' +
+                        'data-original-price="' + originalPrice + '" ' +
+                        'value="' + originalPrice + '" ' +
+                        'step="1" ' +
+                        'min="0" ' +
+                        'style="width:120px;" />' +
+                '</td>' +
+                '<td>' +
+                    '<button type="button" class="btn btn-xs btn-primary btn-save-single" data-id="' + item.id + '">' +
+                        '<i class="fa fa-save"></i> 保存' +
+                    '</button>' +
+                '</td>' +
+            '</tr>';
+
+            tbody.append(row);
+        });
+
+        // 绑定价格输入框变化事件
+        $('.price-input').on('input', function() {
+            var $input = $(this);
+            var id = $input.data('id');
+            var originalPrice = parseFloat($input.data('original-price'));
+            var newPrice = parseFloat($input.val()) || 0;
+
+            if (newPrice != originalPrice) {
+                $input.closest('tr').addClass('warning');
+                changedPrices[id] = {
+                    id: id,
+                    goods_id: $input.data('goods-id'),
+                    price_type: $input.data('price-type'),
+                    spec_index: $input.data('spec-index'),
+                    price: newPrice
+                };
+            } else {
+                $input.closest('tr').removeClass('warning');
+                delete changedPrices[id];
+            }
+        });
+    }
+
+    // 筛选按钮
+    $('#btn-filter').click(function() {
+        changedPrices = {};
+        loadPriceData();
+    });
+
+    // 重置按钮
+    $('#btn-reset').click(function() {
+        $('#filter-form')[0].reset();
+        changedPrices = {};
+        loadPriceData();
+    });
+
+    // 全选/全不选
+    $('#price-table').on('change', 'thead input[type="checkbox"]', function() {
+        $('.price-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
+    // 保存单个价格
+    $('#price-table').on('click', '.btn-save-single', function() {
+        var id = $(this).data('id');
+        var priceItem = changedPrices[id];
+
+        if (!priceItem) {
+            Toastr.warning('价格未修改');
+            return;
+        }
+
+        savePrices([priceItem]);
+    });
+
+    // 批量保存
+    $('#btn-save-all').click(function() {
+        var prices = [];
+
+        // 获取所有修改的价格
+        for (var id in changedPrices) {
+            prices.push(changedPrices[id]);
+        }
+
+        if (prices.length == 0) {
+            Toastr.warning('没有修改的价格');
+            return;
+        }
+
+        Layer.confirm('确定要保存 ' + prices.length + ' 个修改的价格吗？', function(index) {
+            savePrices(prices);
+            Layer.close(index);
+        });
+    });
+
+    // 保存价格到服务器
+    function savePrices(prices) {
+        Layer.load();
+
+        $.ajax({
+            url: '{:url("goods/batch_update_price")}',
+            type: 'POST',
+            data: {
+                prices: prices
+            },
+            dataType: 'json',
+            success: function(res) {
+                Layer.closeAll();
+
+                if (res.code == 1) {
+                    Toastr.success(res.msg);
+
+                    // 更新原始价格并移除高亮
+                    $.each(prices, function(i, item) {
+                        var $input = $('#price-' + item.id);
+                        $input.data('original-price', item.price);
+                        $input.closest('tr').removeClass('warning');
+                        delete changedPrices[item.id];
+                    });
+                } else {
+                    Toastr.error(res.msg || '保存失败');
+                }
+            },
+            error: function() {
+                Layer.closeAll();
+                Toastr.error('网络错误');
+            }
+        });
+    }
+
+    // 初始加载
+    loadPriceData();
+});
+</script>
+
+<style>
+.table > tbody > tr.warning {
+    background-color: #fcf8e3 !important;
+}
+
+.price-input {
+    font-weight: bold;
+}
+
+.panel-title .pull-right {
+    margin-top: -5px;
+}
+
+.form-inline .form-group {
+    margin-right: 15px;
+    margin-bottom: 10px;
+}
+</style>

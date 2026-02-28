@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		{include file="common/meta" /}
+	</head>
+	<body>
+		{include file="common/head" /}
+		<div class="inTop">
+			<div class="address mt20">
+				<div class="contain address1">
+					<a href="/">ホーム</a>
+					&gt;
+					<a href="/shop"> 店舗紹介</a>
+				</div>
+			</div>
+			<div class="inTop1">
+				店舗紹介
+			</div>
+		</div>
+		<div class="intro">
+			<div class="contain">
+				<div class="intro1">
+					<div class="intro2">
+						<img src="{$site.shop_banner}" alt="店舗画像" />
+					</div>
+					<div class="intro3">
+						{$site.shop_intro}
+					</div>
+					<div class="inAbout1">
+						<div class="inAbout2">
+						{foreach $site.shop_info as $key=>$vo } 
+							<div class="inAbout3">
+								<div class="inAbout4">{$key}</div>
+								<div class="inAbout5">{$vo}</div>
+							</div>
+						{/foreach}	
+						</div>
+					</div>
+					<div class="intro4">
+						アクセス
+					</div>
+					<div class="intro5">
+						{$site.shop_address}
+						<!-- <iframe allowfullscreen="" height="304" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="" style="border:0;width:100%"></iframe> -->
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		
+		{include file="common/foot" /}
+		
+	</body>
+</html>

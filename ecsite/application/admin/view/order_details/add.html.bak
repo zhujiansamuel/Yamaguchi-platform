@@ -1,0 +1,93 @@
+<form id="add-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    
+    <input type="hidden" name="row[order_id]" value="{$order_id}">
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Goods_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-goods_id" data-rule="required" min="0" data-field="title" data-source="goods/index" class="form-control selectpage" name="row[goods_id]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Title')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input type="hidden" name="extend[extendOther]" value="handleDbOther">
+            <input type="hidden" name="row[extendParams]" value="handleParams">
+            <input id="c-title" data-rule="required" class="form-control" name="row[title]" type="text">
+        </div>
+    </div>
+    <div class="form-group hidden">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Jan')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-jan" class="form-control" name="row[jan]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('IMEI')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-imei" class="form-control" name="row[imei]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Image')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-image" data-rule="required" class="form-control" size="50" name="row[image]" type="text">
+                <div class="input-group-addon no-border no-padding">
+                    <span><button type="button" id="faupload-image" class="btn btn-danger faupload" data-input-id="c-image" data-mimetype="image/gif,image/jpeg,image/png,image/jpg,image/bmp,image/webp" data-multiple="false" data-preview-id="p-image"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                    <span><button type="button" id="fachoose-image" class="btn btn-primary fachoose" data-input-id="c-image" data-mimetype="image/*" data-multiple="false"><i class="fa fa-list"></i> {:__('Choose')}</button></span>
+                </div>
+                <span class="msg-box n-right" for="c-image"></span>
+            </div>
+            <ul class="row list-inline faupload-preview" id="p-image"></ul>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('产品规格')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-color" class="form-control" name="row[color]">
+                <option value="">选择</option>
+            </select>
+            <!-- <input id="c-color"  data-rule="required" min="0" class="form-control" name="row[color]" type="text" value=""> -->
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('规格/颜色等')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <select id="c-specs_name" class="form-control" name="row[specs_name]">
+                <option value="">选择</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Num')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-num" data-rule="required" class="form-control" name="row[num]" type="number" value="1">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Price')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-price" data-rule="required" class="form-control" name="row[price]" type="number" value="0">
+        </div>
+    </div>
+    <div class="form-group hidden">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Type')}:</label>
+        <div class="col-xs-12 col-sm-8">
+                        
+            <select  id="c-type" data-rule="required" class="form-control selectpicker" name="row[type]">
+                {foreach name="typeList" item="vo"}
+                    <option value="{$key}" {in name="key" value="0"}selected{/in}>{$vo}</option>
+                {/foreach}
+            </select>
+
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>

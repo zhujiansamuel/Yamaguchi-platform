@@ -1,0 +1,32 @@
+<form id="edit-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('备注')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+        <textarea id="c-memo" class="form-control" rows="5" name="row[memo]" cols="50">{$row['memo']}</textarea>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('查定备注')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+        <textarea id="c-determine_memo" class="form-control" rows="5" name="row[determine_memo]" cols="50">{$row['determine_memo']}</textarea>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('取消订单备注')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+        <textarea id="c-cancel_memo" class="form-control" rows="5" name="row[cancel_memo]" cols="50">{$row['cancel_memo']}</textarea>
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-success btn-embossed" >{:__('OK')}</button>
+            <button type="reset" class="btn btn-default btn-embossed">{:__('Reset')}</button>
+        </div>
+    </div>
+</form>
+

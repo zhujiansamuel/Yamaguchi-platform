@@ -1,0 +1,331 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>cxSelect cxSelect 連動ドロップダウンメニュー &raquo; オンラインデモ - フロントエンド開発リポジトリ</title>
+<style>
+body{background:#ddd;font:14px/1.7 tahoma,'\5fae\8f6f\96c5\9ed1',sans-serif;}
+h1,h2,h3{font-size:36px;line-height:1;}
+h2{font-size:24px;}
+h3{font-size:18px;}
+fieldset{margin:2em 0;}
+fieldset legend{font-weight:bold;font-size:16px;line-height:2;}
+select,button{padding:0.5em;}
+a{color:#06f;text-decoration:none;}
+a:hover{color:#00f;}
+.wrap{width:900px;margin:0 auto;padding:20px 50px;border-radius:8px;background:#fff;box-shadow:0 0 10px rgba(0,0,0,0.2);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>cxSelect cxSelect 連動ドロップダウンメニュー</h1>
+
+  <h2>サンプル</h2>
+  <p>AJAX でデータを取得できない場合は AJAX データを取得，サーバー環境で実行してください。</p>
+
+  <fieldset id="city_china">
+    <legend>デフォルト</legend>
+    <p>省：<select class="province other">
+      <option>選択してください</option>
+    </select></p>
+    <p>市区町村：<select class="city">
+      <option>選択してください</option>
+    </select></p>
+    <p>地域：<select class="area">
+      <option>選択してください</option>
+    </select></p>
+  </fieldset>
+
+  <fieldset id="city_china_val">
+    <legend>デフォルト値と項目タイトルの設定</legend>
+    <p>所在地：
+      <select class="province other" data-first-title="省を選択">
+        <option value="">選択してください</option>
+        <option value="浙江省" selected>浙江省</option>
+      </select>
+      <select class="city" data-first-title="市を選択">
+        <option value="">選択してください</option>
+        <option value="杭州市" selected>杭州市</option>
+      </select>
+      <select class="area" data-first-title="地域を選択">
+        <option value="">選択してください</option>
+        <option value="西湖区" selected>西湖区</option>
+      </select>
+    </p>
+  </fieldset>
+
+  <!-- <fieldset id="city_china_val">
+    <legend>デフォルト値を設定するさまざまな方法</legend>
+
+    <p>方法1：使用 option の value と selected 属性</p>
+    <p><select class="province">
+      <option>浙江省</option>
+    </select></p>
+
+    <p>複数の option がある場合は option ，selected を使用して selected 選択項目を指定する必要があります</p>
+    <p><select class="city">
+      <option>選択してください</option>
+      <option value="杭州市" selected>杭州市</option>
+    </select></p>
+
+    <p>方法2：使用 select の data-value 属性</p>
+    <p><select class="area" data-value="西湖区">
+      <option>選択してください</option>
+    </select></p>
+  </fieldset> -->
+      
+  <fieldset id="global_location">
+    <legend>世界主要国・都市の連動</legend>
+    <p>所在地：
+      <select class="country" data-first-title="国を選択"></select>
+      <select class="state" data-required="true"></select>
+      <select class="city" data-required="true"></select>
+      <select class="region" data-required="true"></select>
+    </p>
+  </fieldset>
+  
+  <fieldset id="custom_data">
+    <legend>カスタムオプション</legend>
+    <p>月：<select class="first"></select></p>
+    <p>火：<select class="second"></select></p>
+    <p>水：<select class="third"></select></p>
+    <p>木：<select class="fourth"></select></p>
+    <p>金：<select class="fifth"></select></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>API インターフェース</legend>
+    <div id="api_data">
+      <dl>
+        <dt>セレクターグループ A</dt>
+        <dd>
+          <select class="province select"></select>
+          <select class="city select"></select>
+          <select class="area select"></select>
+        </dd>
+      </dl>
+      <dl>
+        <dt>セレクターグループ B</dt>
+        <dd>
+          <select class="first select"></select>
+          <select class="second select"></select>
+          <select class="third select"></select>
+          <select class="fourth select"></select>
+          <select class="fifth select"></select>
+        </dd>
+      </dl>
+    </div>
+
+    <p>
+      <button type="button" class="button green" name="attach" value="">attach</button>
+      <button type="button" class="button green" name="detach" value="">detach</button>
+      <button type="button" class="button green" name="clear" value="">clear</button>
+    </p>
+    <p>
+      <button type="button" class="button green" name="setSelect" value="b">切り替え select グループ</button>
+      <button type="button" class="button green" name="setData" value="china">データを切り替え：国内データ</button>
+      <button type="button" class="button green" name="setData" value="global">データを切り替え：グローバルデータ</button>
+      <button type="button" class="button green" name="setData" value="custom">データを切り替え：カスタムデータ</button>
+    </p>
+    <p>
+      <button type="button" class="button green" name="required" value="0">変更 required</button>
+      <button type="button" class="button green" name="emptyStyle" value="">変更 emptyStyle</button>
+      <button type="button" class="button green" name="firstTitle" value="選択してください">変更 firstTitle</button>
+    </p>
+  </fieldset>
+
+  <h2>ドキュメント</h2>
+  <ul>
+    <li><a target="_blank" href="https://github.com/ciaoca/cxSelect">Github</a></li>
+    <li><a target="_blank" href="http://code.ciaoca.com/jquery/cxSelect/">中国語ドキュメント</a></li>
+  </ul>
+  
+  <h2>作者</h2>
+  <p><a target="_blank" href="http://ciaoca.com/">http://ciaoca.com/</a></p>
+  <p>Released under the MIT license</p>
+</div>
+
+<script src="http://cdn.staticfile.org/jquery/1.11.3/jquery.min.js"></script>
+<!-- <script src="http://cdn.staticfile.org/zepto/1.0/zepto.min.js"></script> -->
+<script src="js/jquery.cxselect.js"></script>
+<script>
+(function() {
+  var urlChina = 'js/cityData.min.json';
+  var urlGlobal = 'js/globalData.min.json';
+  var dataCustom = [
+    {'v': '1', 'n': '第1階層 >', 's': [
+      {'v': '2', 'n': '第2階層 >', 's': [
+        {'v': '3', 'n': '第3階層 >', 's': [
+          {'v': '4', 'n': '第4階層 >', 's': [
+            {'v': '5', 'n': '第5階層 >', 's': [
+              {'v': '6', 'n': '第6階層 >'}
+            ]}
+          ]}
+        ]}
+      ]}
+    ]},
+    {'v': 'test number', 'n': 'テスト数値', 's': [
+      {'v': 'text', 'n': 'テキスト型', 's': [
+        {'v': '4', 'n': '4'},
+        {'v': '5', 'n': '5'},
+        {'v': '6', 'n': '6'},
+        {'v': '7', 'n': '7'},
+        {'v': '8', 'n': '8'},
+        {'v': '9', 'n': '9'},
+        {'v': '10', 'n': '10'}
+      ]},
+      {'v': 'number', 'n': '数値型', 's': [
+        {'v': 11, 'n': 11},
+        {'v': 12, 'n': 12},
+        {'v': 13, 'n': 13},
+        {'v': 14, 'n': 14},
+        {'v': 15, 'n': 15},
+        {'v': 16, 'n': 16},
+        {'v': 17, 'n': 17}
+      ]}
+    ]},
+    {'v': 'test boolean','n': 'テスト Boolean タイプ', 's': [
+      {'v': true ,'n': true},
+      {'v': false ,'n': false}
+    ]},
+    {v: 'test quotes', n: '属性を引用符なしでテスト', s: [
+      {v: 'quotes', n: '引用符'}
+    ]},
+    {v: 'test other', n: '変わった値をテスト', s: [
+      {v: '[]', n: '配列（空）'},
+      {v: [1,2,3], n: '配列（数値）'},
+      {v: ['a','b','c'], n: '配列（テキスト）'},
+      {v: new Date(), n: '日付'},
+      {v: new RegExp('\\d+'), n: '正規表現オブジェクト'},
+      {v: /\d+/, n: '正規表現リテラル'},
+      {v: {}, n: 'オブジェクト'},
+      {v: document.getElementById('custom_data'), n: 'DOM'},
+      {v: null, n: 'Null'},
+      {n: '未設定 value'}
+    ]},
+    {'v': '' , 'n': '子階層なし'}
+  ];
+
+  $.cxSelect.defaults.url = urlChina;
+
+  // デフォルト
+  $('#city_china').cxSelect({
+    selects: ['province', 'city', 'area']
+  });
+
+  // デフォルト値と項目タイトルの設定
+  $('#city_china_val').cxSelect({
+    selects: ['province', 'city', 'area'],
+    emptyStyle: 'none'
+  });
+
+  // 世界主要国・都市の連動
+  $('#global_location').cxSelect({
+    url: urlGlobal,
+    selects: ['country', 'state', 'city', 'region'],
+    emptyStyle: 'none'
+  });
+
+  // カスタムオプション
+  $('#custom_data').cxSelect({
+    selects: ['first', 'second', 'third', 'fourth', 'fifth'],
+    // required: true,
+    jsonValue: 'v',
+    data: dataCustom
+  });
+
+  // API インターフェース
+  var apiBox = $('#api_data');
+  var cxSelectApi;
+
+  apiBox.cxSelect({
+    selects: ['province', 'city', 'area']
+  }, function(api) {
+    cxSelectApi = api;
+  });
+
+  // cxSelectApi = $.cxSelect(apiBox, {
+  //   selects: ['province', 'city', 'area']
+  // });
+
+  $('body').on('click', 'button', function() {
+    var _name = this.name;
+    var _value = this.value;
+
+    switch (_name) {
+      case 'attach':
+        cxSelectApi.attach();
+        break;
+
+      case 'detach':
+        cxSelectApi.detach();
+        break;
+
+      case 'clear':
+        cxSelectApi.clear();
+        break;
+
+      case 'required':
+        cxSelectApi.setOptions({
+          required: _value == 1 ? false : true
+        });
+        this.value = _value == 1 ? 0 : 1;
+        break;
+
+      case 'emptyStyle':
+        if (_value === 'none') {
+          _value = 'hidden';
+        } else if (_value === 'hidden') {
+          _value = '';
+        } else {
+          _value = 'none';
+        };
+        cxSelectApi.setOptions({
+          emptyStyle: _value
+        });
+        this.value = _value;
+        break;
+
+      case 'firstTitle':
+        _value = _value === '選択してください' ? '選んでみて' : '選択してください';
+        cxSelectApi.setOptions({
+          firstTitle: _value
+        });
+        this.value = _value;
+        break;
+
+      case 'setSelect':
+        cxSelectApi.setOptions({
+          selects: _value === 'a' ? ['province', 'city', 'area'] : ['first', 'second', 'third', 'fourth', 'fifth']
+        });
+        this.value = _value === 'a' ? 'b' : 'a';
+        break;
+
+      case 'setData':
+        if (_value === 'china' || _value === 'global') {
+          // $.ajax({
+          //   url: this.value === 'china' ? urlChina : urlGlobal,
+          //   type: 'GET',
+          //   dataType: 'json'
+          // }).done(function(data, textStatus, jqXHR) {
+            cxSelectApi.setOptions({
+              url: this.value === 'china' ? urlChina : urlGlobal,
+              // data: data
+            });
+          // }).fail(function(jqXHR, textStatus, errorThrown) {
+          // });
+
+        } else if (this.value === 'custom') {
+          cxSelectApi.setOptions({
+            data: dataCustom
+          });
+        };
+        break;
+
+      // not default
+    };
+  });
+})();
+</script>
+</body>
+</html>

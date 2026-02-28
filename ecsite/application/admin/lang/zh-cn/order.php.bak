@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'Id'                  => 'ID',
+    'User_id'             => '所属用户',
+    'No'                  => '单号',
+    'Bank_account_type'   => '银行账户类型',
+    'Bank_account_type 1' => '普通预金',
+    'Bank_account_type 2' => '活期存款',
+    'Bank_account_name'   => '开通银行账户姓名',
+    'Bank_account'        => '银行账户',
+    'Bank'                => '银行名称',
+    'Bank_branch'         => '银行支行',
+    'Store_name'          => '来店場所',
+    'Go_store_date'       => '来店日時',
+    'Go_store_time'       => '来店時間',
+    'Price'               => '商品金额',
+    'Procedures'          => '手续费',
+    'Total_price'         => '总价',
+    'Status'              => '用户端状态',
+    'Admin_status'        => '管理员状态',
+    'Pay_mode'            => '支付方式',
+    'Pay_mode 1'          => '现金',
+    'Pay_mode 2'          => '银行',
+    'Type'                => '类型',
+    'Type 1'              => '门店',
+    'Type 2'              => '邮寄',
+    'Createtime'          => '创建时间',
+    'Deletetime'          => '删除时间'
+];

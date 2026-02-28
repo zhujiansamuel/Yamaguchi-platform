@@ -1,0 +1,26 @@
+<!-- WebSite Schema (Homepage) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "{$site.name|htmlentities}",
+  "url": "{$Request.domain}",
+  "description": "東京都中央区でスマートフォン、パソコン、デジタル機器の高価買取を行っています。店頭買取・郵送買取に対応。",
+  "publisher": {
+    "@type": "Organization",
+    "name": "{$site.name|htmlentities}",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{$Request.domain}/uploads/20251029/a0480341e272cdcb79c34cfcf78c3007.png"
+    }
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "{$Request.domain}/goods?keywords={literal}{search_term_string}{/literal}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>

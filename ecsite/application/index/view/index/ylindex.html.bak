@@ -1,0 +1,601 @@
+{if $rt neq 1}
+<!DOCTYPE html> 
+<html lang="zh-CN"> 
+<head> 
+		<meta charset="utf-8"> 
+		<meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- <meta charset="utf-8" />
+		<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+			name="divport">
+		<title></title>
+		
+		
+		-->
+		<script src="/js/jquery.js"></script>
+		
+		
+	</head>
+
+	<!-- "padding:15px 10px;width:794px;height:1123px; -->
+	
+	<body style="padding:40px 30px 0;width:774px;" id="content">
+		<!--startprint-->
+		<div  id="content1" style="width:100%;">
+		<div class="dcClick2">
+				<button class="dcClick" id="doxt" style="opacity:0;">ダウンロード</button>
+			</div>
+			{/if}
+		<style>
+
+				body {
+					margin: 0;
+					padding: 0;
+					font: 12px "Tahoma";
+				
+				}
+				tr,td{margin: 0;
+					padding: 0;
+					height:10px;
+					font-size:12px;
+					
+					}
+				/*
+				
+				.page {
+				width: 21cm;
+				min-height: 29.7cm;
+				padding: 2cm;
+				
+				margin: 1cm auto;
+				border: 1px #D3D3D3 solid;
+				border-radius: 5px;
+				background: white;
+				box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+				}
+				.subpage {
+				padding: 1cm;
+				border: 5px red solid;
+				height: 256mm;
+				outline: 2cm #FFEAEA solid;
+				}
+				*/
+				@page {
+				size: A4;
+				margin: 0;
+				}
+				@media print {
+				.page {
+				margin: 0;
+				border: initial;
+				border-radius: initial;
+				width: initial;
+				min-height: initial;
+				box-shadow: initial;
+				background: initial;
+				page-break-after: always;
+				}
+				
+				}
+				
+				a {
+					text-decoration: none;
+					color: inherit;
+				}
+				ul {
+					margin: 0;
+					padding: 0;
+				}
+				p {
+					margin: 0;
+				}
+				ul li {
+					list-style-type: none;
+				}
+				input {
+					background: none;
+				}
+				input[type="button"] {
+					cursor: pointer;
+				}
+				button {
+					cursor: pointer;
+				}
+				.dcClick {
+					border: none;
+					outline: none;
+					width: 124px;
+					border-radius: 5px;
+					background: #235AA7;
+					text-align: center;
+					font-size: 14px;
+					float: right;
+				}
+				tr{ } 
+				.dcClick2 {
+					width: 100%;
+					display:None;
+					
+				}
+				#uinfo *{font-size:12px;}
+				#ginfo *{font-size:12px;}
+			</style>
+			
+			<!--  -->
+			<div style="width: 100%;text-align: center;font-size: 24px;color: #000000;">
+			    <img style="float:left;height:50px" alt="" src="/img/logo.png">
+			    買取申込書 <span style="font-size: 14px;color: #000000;"></span>
+			    <div style="float: right;border: 1px solid #000000;">
+			        <span style="font-size: 14px;color: #000000;line-height:24px;background-color:#dcdcdc;display:block;border-bottom: 1px solid #000000;">予約番号</span>
+			        <span style="font-size: 14px;color: #000000;line-height:24px;display:block;padding: 0 9px;">
+			           {$order.no}
+			        </span>
+			    </div>
+			</div>
+			<div style="width: 100%;margin-top:30px">
+				<div style="float: right;font-size: 14px;color: #000000;text-align:right;">
+					記入日   	{$order.createtime|date="Y年m月d日",###}
+				</div>
+			</div>
+			<!--  -->
+			<!--<div style="width: 100%;text-align: center;font-size: 14px;color: #FF0000;font-weight: bold;">ご記入の際には、黒インクまたは黒ボールペンを使用し全ての項目をご記入下さい。-->
+			<!--</div>-->
+			<!--  -->
+			
+			<!--  -->
+			<table  cellpadding="0" cellspacing="0"
+				style="border: 1px solid #000000;width: 100%;text-align: center;font-size: 14px;color: #000000;">
+				<tr style="width: 100%;">
+					<td
+						style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;width: 10%;" bgcolor="#dcdcdc">
+						フリガナ</td>
+					<td
+						style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;width: 32%;">						&nbsp;{$user.katakana}</td>
+					<td
+						style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;width: 10%;" bgcolor="#dcdcdc">
+						性別</td>
+					<td
+						style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;width: 14%;">
+							{if $user.gender eq 1}男{/if}{if $user.gender eq 2}女{/if}		<!-- 男  ・  女 -->
+						<!-- ・ -->
+						<!-- 男性 -->
+						
+						</td>
+					<td  bgcolor="#dcdcdc"
+						style="border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;" colspan="2">
+						生年月日</td>
+						
+				</tr>
+				<tr style="">
+					<td  bgcolor="#dcdcdc"
+						style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;">
+						お名前</td>
+					<td
+						style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;">  {$user.name}
+					</td>
+					<td bgcolor="#dcdcdc"
+						style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;width: 10%;">
+						年齢</td>
+					<td
+						style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;">
+						{$age}
+						</td>
+					<td style="border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2">
+					<!-- 	昭和 ・平成       --> 
+						{$user.birthday}
+					</td>
+				</tr>
+				<tr style="">
+				    <td  bgcolor="#dcdcdc"
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;">
+				    	電話番号</td>
+				    <td
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2">{$user.mobile}</td>
+				    <td bgcolor="#dcdcdc"
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;width: 10%;" rowspan="3">
+				    	住所</td>
+				    <td
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2">
+				    	〒{$user.zip_code} {$user.address}</td>
+				</tr>
+				<tr style="">
+				    <td  bgcolor="#dcdcdc"
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;">
+				    	E-mail</td>
+				    <td
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2">{$user.username}</td>
+				    <td
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" rowspan="" colspan="2">{$user.address}</td>
+				</tr>
+				<tr style="">
+				    <td  bgcolor="#dcdcdc"
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;">
+				    	職業</td>
+				    <td style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2">
+    				    {:getCategoryName($user['occupation'])}
+    				</td>
+				   <td
+				    	style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2" ></td>
+				</tr>
+				<tr style="">
+					<td  bgcolor="#dcdcdc" style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;">会員番号</td>
+					<td style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;">{:substr(1000000+$user.id,1,6)}</td>
+					<td style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;" colspan="2">当店のご利用回数</td>
+					<td style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2">
+					    <!-- 今回が初めて(新規)    ・　　2回目以降 --><!-- {if isset($ornum) and $ornum eq 1}今回が初めて(新規){else}2回目以降{/if} -->
+					</td>
+				</tr>
+				<tr style="display:none;">
+					<td  bgcolor="#dcdcdc" style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;background: #dcdcdc;" colspan="2">適格請求書発行事業者に該当します</td>
+					<td style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2">{if true}いいえ{else}はい{/if}</td>
+					<!-- <td style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;">はい</td> -->
+					<td style="border-right: 1px solid #000000;border-bottom: 1px solid #000000;border: 1px solid #000000;" colspan="2">T</td>
+									</tr>
+				<!-- <tr style="">
+					<td style="border-right: 1px solid #000000;border: 1px solid #000000;font-size: 12px;" colspan="3">
+					    ※ご記入がない場合は 「いいえ」 とみなします。
+					</td>
+					<td style="border: 1px solid #000000;font-size: 12px;" colspan="2">
+					    「はい」の場合はT+13桁の事業者登録番号をご記入ください。
+					</td>
+				</tr> -->
+			</table>
+			<!--  -->
+			<div style="font-size: 14px;color: #000000;margin-top: 5px;">
+				<span style="background: #bfceff;display: inline-block;width: 300px;line-height: 24px;padding-left: 10px;">・振込ご希望の場合</span>
+			</div>
+			<div style="font-size: 12px;color: #ff0000;margin-bottom: 5;">
+				<p>※振込ご希望の場合は必ずロ座情報をご記入お願いいたします。</p>
+                <!-- <p>※新規の方、前回と口座の異なる方は、キャッシュカード表面のコピー、または銀行通帳のコピーの提示をお願いいたします。</p> -->
+			</div>
+			<table id="uinfo"  cellpadding="0" cellspacing="0"
+				style="border: 1px solid #000000;width: 100%;text-align: center;font-size: 14px;color: #000000;">
+				<tr style="height:12px;width: 99%;">
+					<td  bgcolor="#bfceff"
+						style="background: #bfceff;border: 1px solid #000000;border-right: 1px solid #000000;width:80px">
+						銀行名</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;width:100px;">
+						{$order.bank}</td>
+					<td  bgcolor="#bfceff"
+						style="background: #bfceff;border: 1px solid #000000;border-right: 1px solid #000000;">
+						支店番号</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;width:100px;">
+					    {$order.bank_branch_no}
+						</td>
+					<td  bgcolor="#bfceff"
+						style="background: #bfceff;border: 1px solid #000000;border-right: 1px solid #000000;">
+						支店名</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;width:100px;">
+						{$order.bank_branch}</td>
+
+					
+				</tr>
+				<tr style="height:12px;width: 99%;">
+					<td  bgcolor="#bfceff"
+						style="background: #bfceff;border: 1px solid #000000;border-right: 1px solid #000000;">
+						口座種別</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;width:100px;">
+						 <!-- 普通 ・ 当座 -->
+						 {if $order.bank_account_type eq 1}普通 &nbsp;{/if}
+						 {if $order.bank_account_type eq 2}当座&nbsp;{/if}
+
+						</td>
+					<td  bgcolor="#bfceff"
+						style="background: #bfceff;border: 1px solid #000000;border-right: 1px solid #000000;width:80px">
+						口座番号</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;width:80px;">{$order.bank_account}</td>
+					<td  bgcolor="#bfceff"
+						style="background: #bfceff;border: 1px solid #000000;border-right: 1px solid #000000;">
+						口座名義</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;width:80px;" colspan="3">{$order.bank_account_name}</td>
+				</tr>
+				<tr style="height:12px;width: 99%;">
+					<td  bgcolor="#bfceff"
+						style="background: #bfceff;border: 1px solid #000000;border-right: 1px solid #000000;width:80px">
+						書類</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;" colspan="5">
+					<div>
+						<div style="font-size: 12px;color: #ff0000;text-align: left;">
+						    <p>初回のみ下記書類がどちらを1つ添付必要となります。</p>
+						    <!-- <p>ご注意の上、下記いずれか1点にチェックを入れてお願いいたします。</p> -->
+						</div>
+						<div style="font-size: 12px;color: #000000;text-align: left;">
+							<p>
+								□ 住民票の写し(原本) 
+								□ 印鑑登録証明書(原本)  </p>
+								
+								<!-- □住民票の写し(原本)　　□印鑑登録証明書(原本)　　□戸籍謄本(原本) ※現住所の入ったもの 
+															</p>
+															<p>
+								□運転免許証のコピー (表裏) ※ご利用、 2回目の以降のお客様に限ります -->
+							</p>
+						</div>
+						<div style="font-size: 12px;color: #ff0000;text-align: left;">※2回目以降のご利用の際は身分証のコピーのみ添付で振込対応できます。(振込の場合は振込手数料当社負担※2回目以降限り)</div>
+						<div style="font-size: 12px;color: #000000;text-align: left;">
+							<p>
+								□身分証明書のコピー(表裏) 　□マイナンバーカードのコピー(表面) □旅券(パスポート) のコピー(写真・住所記載)
+							</p>
+							<p>
+								□健康保険書証のコピー(表裏) □ 在留カードのコピー(表裏)
+
+							</p>
+							<!--  □戸籍謄本(原本)  ※現住所の入ったもの□運転免許証のコピー(表裏) </p>
+							□キャッシュカード表面のコピー 　　　　　□銀行通帳のコピー (口座番号とお名前がわかるもの) -->
+						</div>
+					</div>	
+					</td>
+				</tr>
+			</table>
+			<div style="font-size: 14px;color: #000000;margin-top: 5px;margin-bottom: 6px;">
+				<span style="background: #ffc2c2;display: inline-block;width: 300px;line-height: 24px;padding-left: 10px;">・現金書留をご希望の場合</span>
+			</div>
+			<table id="uinfo"  cellpadding="0" cellspacing="0"
+				style="border: 1px solid #000000;width: 100%;text-align: center;font-size: 14px;color: #000000;">
+				<tr style="height:12px;width: 99%;">
+					<td  bgcolor="#ffc2c2"
+						style="background: #ffc2c2;border: 1px solid #000000;border-right: 1px solid #000000;width:100px">
+						書類</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;">
+					<div>
+						<div style="font-size: 12px;color: #ff0000;text-align: left;">
+							<p>※下記書類のコピーを一つ添付必要となります。 </p>
+							<p>※50万円毎手数料一律 2,000円お客様負担となり、送金の際査定金額より2,000円分を引いて送金となります。</p> 
+							<p>※身分証記載の住所に現金書留送金とな ります。</p>
+						</div>
+						<div style="font-size: 12px;color: #000000;text-align: left;">
+							<p>
+								□運転免許証の写し、 裏印字ない場合表のみ □日本国パスポート (写真面+住所記 載面)
+							</p>
+							<p>
+								□マイナンバーカードのコピー(表面) □官公庁発行身分証の写し(住所あるもの)
+							</p>
+						</div>
+					</div>	
+					</td>
+				</tr>
+			</table>
+			<table id="ginfo"  cellpadding="0" cellspacing="0"
+				style="border-bottom:0;border: 1px solid #000000;width: 100%;text-align: center;font-size: 14px;color: #000000;margin-top: 5px;">
+				<tr style="width: 100%;">
+					<td  bgcolor="#ffc2c2" style="background: #ffc2c2;border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;" colspan="2">
+					        商品名
+				    </td>
+					<!-- <td bgcolor="#ffc2c2" style="background: #ffc2c2;border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;"  >
+						状態
+					</td> -->
+					<td bgcolor="#ffc2c2" style="background: #ffc2c2;border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;" colspan="2">
+						仕様
+					</td>
+					<td bgcolor="#ffc2c2" style="background: #ffc2c2;border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+						査定金額
+					</td>
+					<td bgcolor="#ffc2c2" style="background: #ffc2c2;border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+						数量
+					</td>
+					<td bgcolor="#ffc2c2" style="background: #ffc2c2;border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+						小計
+					</td>
+				</tr>
+				{volist name="order['details']" id='info'}
+				</tr>
+								<tr style="border:none;">
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;" colspan="2">{$info.title}</td>
+					<!-- <td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+			
+						{if $info.type eq 1 }新品{/if}{if $info.type eq 2 }中古{/if}{if $info.type eq 3 }開封未使用{/if}				
+					</td> -->
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;" colspan="2">
+					        {$info['specs_name']}&nbsp;&nbsp;{$info['color']}
+						</td>
+				
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+					{$info['price']|} 円</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+						<!--  -->
+						{$info.num}</td>
+					<td
+						style="border-bottom: 1px solid #000000;border: 1px solid #000000;">
+						<!-- 0 -->
+						{$info['total_price']} 円
+					</td>
+
+
+				</tr>
+					{/volist}
+
+					<?php
+						for($i=count($order['details']);$i<5;$i++){
+					?>
+
+				<tr style="border:none;">
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;" colspan="2">&nbsp;</td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;" colspan="2">
+						&nbsp;
+					</td>
+					
+					
+					<!-- <td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+						
+					</td> -->
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;"></td>
+					<td
+						style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;">
+						<!--  --></td>
+					<td
+						style="border-bottom: 1px solid #000000;border: 1px solid #000000;">
+						<!-- 0 --> 
+					</td>
+				</tr>
+
+					<?php
+						}
+					?>
+
+				<tr style="">
+					<td style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;background: #ffc2c2;" colspan="1">買取方法</td>
+					<td style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;" colspan="1">
+						{switch $order.type}
+						    {case 1}店頭買取{/case}
+						    {case 2}郵送買取{/case}
+						    {default /}default
+						{/switch}
+						</td>
+					<td style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;" colspan="2">{$order.store_name}</td>
+					
+					<td style="border: 1px solid #000000;border-right: 1px solid #000000;border-bottom: 1px solid #000000;background: #ffc2c2;">合計</td>
+					<td style="border: 1px solid #000000;border-bottom: 1px solid #000000;">{$totalNum}</td>
+					<td style="border: 1px solid #000000;border-bottom: 1px solid #000000;">{$order['total_price']} 円</td>
+				</tr>
+			</table>
+			<div style="font-size: 12px;color: #ff0000;padding-top: 5px">
+				※書ききれない場合には、裏面へ記載して下さい。
+			</div>
+			<div style="">
+				<div style="font-size: 14px;color: #000000;margin-top: 5px;margin-bottom: 6px;">
+					<span style="background: #dcdcdc;display: inline-block;width: 300px;line-height: 24px;padding-left: 10px;">・確認事項</span>
+				</div>
+				<div style="font-size: 12px;color: #000000;border: 2px solid #000000;padding: 5px;">
+					<p>・18歳未満の方は、保者の方記入した保者同意書を同封する必要があります。</p>
+					<p>・ご本人確認のため、身分証を確認いたします(確認出来ない場合、お取引出来ません)。</p>
+					<p>・買取商品の当社到着時に生じた故障、破損、紛失に関しましては当社は一切の責任を負いません。</p>
+					<p>・不正転売目的にて入手した商品の買取を行うことはできかねます。 何卒ご了承ください。</p>
+					<p>・おまかせロック設定なとの携帯端末は、お取引出来ません。 USIMカード・FOMAカート·au-icカート等の各SIMカードを拭いて下さい。 </p>
+					<p>・強制解約、契約中、盗品、偽造等による不正契約、 割賦金販売の契約て残金か戻っている携帯端末は買取出来ません。 </p>
+					<p>・買取成立後(お振込書留送付後)のキャンセル・ ご返品はできませんのでご注意下さい。</p>
+					<p>・日本国内で免税購入された商品はお取引できません。</p>
+				</div>
+			</div>
+			<div style="font-size: 14px;color: #000000;margin-top: 5px;margin-bottom: 6px;">
+				<span style="background: #dcdcdc;display: inline-block;width: 300px;line-height: 24px;padding-left: 10px;">・店舗住所</span>
+			</div>
+			
+			<!--  -->
+			<div style="overflow: hidden;">
+				<div style="float: left;">
+					<div style="font-size: 14px;color: #000000;">
+						<img style="height:30px" alt="" src="/img/logo.png">
+					</div>
+					<div style="font-size: 12px;color: #000000;margin-top: 5px;float:left;width: 100%;">
+						TEL：{$site.tel}
+					</div>
+					<div style="font-size: 12px;color: #000000;display: block;float:left;width: 100%;">
+						<p style=";;">
+					{if !empty($order['store'])}
+							{$order['store']['address']}
+					{/if}
+						</p>
+					</div>
+					<div style="font-size: 12px;color: #000000;line-height:20px; margin-bottom: 18px;">
+						古物商許可:   {$site.antique_license}
+
+					</div>
+					<div style="font-size: 12px;">
+						<p style=";;"></p>
+					</div>
+				</div>	
+
+				<div style="float: right;width: 280px;">
+					<div style="font-size: 12px;color: #ff0000;">
+						確認事項にご同意いただける場合はご署名下さい。
+					</div>
+					<div style="border: 2px solid #ff0000;height: 60px;margin-bottom: 5px;">
+						<img style="float: right;margin-right: 10px;width: 30px;margin-top: 5px;" src="/s0912.jpg" alt="" />
+					</div>
+					
+				</div>
+			</div>
+			<div style="">
+				<table cellpadding="0" cellspacing="0" style="border: 1px solid #000000;width: 100%;text-align: center;font-size: 14px;color: #000000;">
+					<tr style="height:12px;width: 99%;">
+						<td style="border: 1px solid #000000;border-right: 1px solid #000000;background-color:#e7e6e6">
+							社内用
+						</td>
+						<td style="border: 1px solid #000000;border-right: 1px solid #000000;">
+						追跡番号
+						</td>
+						<td style="border: 1px solid #000000;border-right: 1px solid #000000;width:160px;">
+						&nbsp;</td>
+						<td style="border: 1px solid #000000;border-right: 1px solid #000000;">
+						入力者
+						</td>
+						<td style="border: 1px solid #000000;border-right: 1px solid #000000;width:160px;">
+						&nbsp;							</td>
+						<td style="border: 1px solid #000000;border-right: 1px solid #000000;">
+						確認者
+						</td>
+						<td style="border: 1px solid #000000;border-right: 1px solid #000000;width:160px;">
+						&nbsp;						</td>
+					</tr>
+				</table>
+			</div>
+        
+
+
+<div style="width: 100%;margin-top:10px;font-size: 14px;text-align:left;padding:10px;">
+&nbsp;</div>
+		{if $rt neq 1}
+	</div>
+	</body>
+	<script src="/js/jspdf.debug.js"></script>
+	<script src="/js/html2canvas.min.js"></script>
+	<script>
+		$(document).ready(function() {
+			$(".dcClick").click(function(event) {
+				html2canvas(document.body, {
+					onrendered: function(canvas) {
+						var imgData = canvas.toDataURL();
+						var doc = new jsPDF('p', 'pt', 'a4');
+						console.log(imgData)
+						var doc = new jsPDF();
+						// 第一列 左右边距  第二列上下边距  第三列是图片左右拉伸  第四列 图片上下拉伸 
+						doc.addImage(imgData, 'png', 0, 0, 210, 0);
+						doc.save('買取申込書.pdf');
+					}
+				});
+			});
+		});
+		
+//  	setTimeout(stzz(),500);
+ 		function stzz(){
+ 			html2canvas(document.body, {
+ 					onrendered: function(canvas) {
+ 						var imgData = canvas.toDataURL();
+ 						var doc = new jsPDF('p', 'pt', 'a4');
+ 						console.log(imgData)
+ 						var doc = new jsPDF();
+ 					//	 第一列 左右边距  第二列上下边距  第三列是图片左右拉伸  第四列 图片上下拉伸 
+ 						doc.addImage(imgData, 'png', 0, 0, 210, 0);
+ 						doc.save('買取申込書.pdf');
+ 					}
+ 				});
+ 		}
+  	setTimeout(doPrint(),1000);
+ 		function doPrint() {   
+ 			bdhtml=window.document.body.innerHTML;   
+ 			sprnstr="<!--startprint-->";   
+ 			eprnstr="<!--endprint-->";   
+ 			prnhtml=bdhtml.substr(bdhtml.indexOf(sprnstr)+0);   
+ 			prnhtml=prnhtml.substring(0,prnhtml.indexOf(eprnstr));   
+ 			window.document.body.innerHTML=prnhtml;  
+ 			window.print();   
+ 		}
+	</script>
+</html>
+{/if}

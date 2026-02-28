@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>tag-demo</title>
+<script src="../../dist/template-native.js"></script>
+</head>
+
+<body>
+<h1>カスタムデリミタ</h1>
+<script id="test" type="text/html">
+<!--[if (title) {]-->
+    <h3><!--[= title]--></h3>
+<!--[} else {]-->
+    <h3>タイトルなし</h3>
+<!--[}]-->
+<ul>
+    <!--[for (var i = 0; i < list.length; i ++) {]-->
+        <li>インデックス <!--[= i + 1 ]--> ：<!--[= list[i]]--></li>
+    <!--[}]-->
+</ul>
+
+</script>
+
+<script>
+template.defaults.openTag = '<!--[';
+template.defaults.closeTag = ']-->';
+
+
+var html = '';
+var data = {
+    title: 'マイタグ',
+	list: ['アート', 'ブログ', '写真撮影', '映画', 'フォークソング', '旅行', 'ギター']
+};
+
+
+html = template('test', data);
+document.write(html);
+
+</script>
+</body>
+</html>

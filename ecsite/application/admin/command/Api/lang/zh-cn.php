@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'Info'             => '基本情報',
+    'Sandbox'          => 'オンラインテスト',
+    'Sampleoutput'     => 'レスポンス例',
+    'Headers'          => 'Headers',
+    'Parameters'       => 'パラメーター',
+    'Body'             => '本文',
+    'Name'             => '名称',
+    'Type'             => 'タイプ',
+    'Required'         => '必須',
+    'Description'      => '説明',
+    'Send'             => '送信',
+    'Reset'            => 'リセット',
+    'Tokentips'        => 'Token会員登録またはログイン後に必ず返されます,WEB端でも同時に存在しますCookie中',
+    'Apiurltips'       => 'APIインターフェースURL',
+    'Savetips'         => '保存をクリックするとTokenとApi urlすべてローカルに保存されますLocalstorage中',
+    'Authorization'    => '権限',
+    'NeedLogin'        => 'ログイン',
+    'NeedRight'        => '認証',
+    'ReturnHeaders'    => 'レスポンスヘッダー',
+    'ReturnParameters' => '返却パラメーター',
+    'Response'         => 'レスポンス出力',
+];

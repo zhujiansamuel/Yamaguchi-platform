@@ -1,0 +1,152 @@
+<form id="add-form" class="form-horizontal" role="form" data-toggle="validator" method="POST" action="">
+
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Category_id')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-category_id" data-order-by="weigh desc"  data-rule="required" min="0" data-source="category/selectpage" data-params='{"custom[type]":"goods","custom[pid]":0}' class="form-control selectpage" name="row[category_id]" type="text" value="">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Category_second')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-category_second" data-order-by="weigh desc"  min="0" class="form-control selectpage" data-source="category/selectpage" name="row[category_second]" type="text" value="0">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Category_three')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-category_three" data-order-by="weigh desc"  min="0" class="form-control selectpage" data-source="category/selectpage" name="row[category_three]" type="text" value="0">
+        </div>
+    </div>
+    <div class="form-group hidden">
+        <label class="control-label col-xs-12 col-sm-2">{:__('IMEI')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-imei" class="form-control" name="row[imei]" type="text">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('備考')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-memo" data-rule="required" class="form-control" name="row[memo]" type="text">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Title')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input type="hidden" name="row[extendParams]" value="handleParams">
+            <input id="c-title" data-rule="required" class="form-control" name="row[title]" type="text">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Image')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <div class="input-group">
+                <input id="c-image" data-rule="required" class="form-control" size="50" name="row[image]" type="text">
+                <div class="input-group-addon no-border no-padding">
+                    <span><button type="button" id="faupload-image" class="btn btn-danger faupload" data-input-id="c-image" data-mimetype="image/gif,image/jpeg,image/png,image/jpg,image/bmp,image/webp" data-multiple="false" data-preview-id="p-image"><i class="fa fa-upload"></i> {:__('Upload')}</button></span>
+                    <span><button type="button" id="fachoose-image" class="btn btn-primary fachoose" data-input-id="c-image" data-mimetype="image/*" data-multiple="false"><i class="fa fa-list"></i> {:__('Choose')}</button></span>
+                </div>
+                <span class="msg-box n-right" for="c-image"></span>
+            </div>
+            <ul class="row list-inline faupload-preview" id="p-image"></ul>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('产品规格')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <dl class="list-unstyled fieldlist" data-name="row[color]" data-template="row[color]tpl">
+                <dd>
+                    <ins>{:__('名称')}</ins>
+                </dd>
+                <dd>
+                    <ins><a href="javascript:;" class="btn btn-sm btn-success btn-append"><i class="fa fa-plus"></i> {:__('Append')}</a></ins>
+                </dd>
+            </dl>
+
+            <textarea name="row[color]" class="form-control hide" cols="30" rows="5"></textarea>
+            <script id="row[color]tpl" type="text/html">
+                <dd class="form-inline">
+                    <ins><input type="text" name="<%=name%>[<%=index%>][value]" class="form-control" size="15" value="<%=row%>"/></ins>
+                    <ins>
+                        <span class="btn btn-sm btn-danger btn-remove"><i class="fa fa-times"></i></span>
+                        <span class="btn btn-sm btn-primary btn-dragsort"><i class="fa fa-arrows"></i></span>
+                    </ins>
+                </dd>
+            </script>
+            <!-- <input id="c-color_id" data-order-by="weigh desc" data-source="category/selectpage" data-params='{"custom[type]":"color","custom[pid]":0}' data-multiple="true" class="form-control selectpage" name="row[color_id]" type="text" value=""> -->
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('规格/颜色等')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <table class="table fieldlist" data-name="row[spec_info]" data-template="row[spec_info]tpl">
+                <tr>
+                    <td>{:__('规格/颜色等')}</td>
+                    <td>{:__('价格')}</td>
+                    <td width="90">{:__('Operate')}</td>
+                </tr>
+                <tr><td colspan="5">
+                <a href="javascript:;" class="btn btn-sm btn-success btn-append"><i class="fa fa-plus"></i> {:__('Append')}</a>
+                <textarea name="row[spec_info]" class="form-control hide" cols="30" rows="5"></textarea>
+                </td></tr>
+            </table>
+            <script type="text/html" id="row[spec_info]tpl">
+                <tr>
+                    <td><input type="text" name="<%=name%>[<%=index%>][name]" class="form-control" value="<%=row.name%>"/></td>
+                    <td><input type="text" name="<%=name%>[<%=index%>][price]" class="form-control" value="<%=row.price%>"/></td>
+                    <td width="90">
+                        <span class="btn btn-sm btn-danger btn-remove"><i class="fa fa-times"></i></span>
+                        <span class="btn btn-sm btn-primary btn-dragsort"><i class="fa fa-arrows"></i></span>
+                    </td>
+                </tr>
+            </script>
+        </div>
+    </div>
+    <div class="form-group hidden">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Price')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-price"  min="0" class="form-control" step="0.01" name="row[price]" type="number" value="0.00">
+        </div>
+    </div>
+    <div class="form-group hidden">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Price_zg')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-price_zg"  min="0" class="form-control" step="0.01" name="row[price_zg]" type="number" value="0.00">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('Status')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+            <div class="radio">
+            {foreach name="statusList" item="vo"}
+            <label for="row[status]-{$key}"><input id="row[status]-{$key}" name="row[status]" type="radio" value="{$key}" {in name="key" value="1"}checked{/in} /> {$vo}</label> 
+            {/foreach}
+            </div>
+
+        </div>
+    </div>
+    <div class="form-group hidden">
+        <label class="control-label col-xs-12 col-sm-2">{:__('type')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            
+            <div class="radio">
+            <label for="row[type]-1"><input id="row[type]-1" name="row[type]" type="radio" value="1" {in name="1" value="1"}checked{/in} /> 新品</label> 
+            <label for="row[type]-2"><input id="row[type]-2" name="row[type]" type="radio" value="2" /> 中古</label> 
+            </div>
+
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-xs-12 col-sm-2">{:__('权重排序')}:</label>
+        <div class="col-xs-12 col-sm-8">
+            <input id="c-weigh" data-rule="required" class="form-control" name="row[weigh]" type="number" value="0">
+        </div>
+    </div>
+    <div class="form-group layer-footer">
+        <label class="control-label col-xs-12 col-sm-2"></label>
+        <div class="col-xs-12 col-sm-8">
+            <button type="submit" class="btn btn-primary btn-embossed disabled">{:__('OK')}</button>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,27 @@
+node_modules/
+vendor/
+.env
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime files
+runtime/cache/*
+runtime/log/*
+runtime/temp/*
+!runtime/cache/.gitkeep
+!runtime/log/.gitkeep
+!runtime/temp/.gitkeep
+
+# Uploaded files
+public/uploads/
+!public/uploads/.gitkeep
+
+# Composer
+composer.lock
+composer.json.backup
+
+thinkphp/
+
+# Auto-generated config from database
+application/extra/site.php
