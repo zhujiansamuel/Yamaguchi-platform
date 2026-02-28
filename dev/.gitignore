@@ -1,0 +1,22 @@
+# Elasticsearch data
+elasticsearch_data/
+
+# Logstash data directory (not the mappings)
+logstash/data/*.log
+logstash/data/queue/
+
+# Docker volumes
+volumes/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
