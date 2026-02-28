@@ -1,0 +1,13 @@
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+*.user
+*.pro.user
+*.qmlc
+*.jsc
+*.o
+*.obj
+*.log
+*.tmp
+.DS_Store
