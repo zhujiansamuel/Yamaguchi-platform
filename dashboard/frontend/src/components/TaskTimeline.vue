@@ -77,105 +77,182 @@
               <a-badge :status="groupBadgeStatus(group)" style="flex-shrink: 0" />
             </div>
 
-            <!-- Mini block track -->
+            <!-- Chart area: sync markers or mini blocks -->
             <div :style="{ ...chartColStyle, position: 'relative' }">
               <div v-for="mark in timeMarks" :key="'g1-' + group.id + mark.pos" :style="gridLineStyle(mark.pos)"></div>
-              <span
-                v-if="group.batches.length === 0"
-                style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 11px; color: #d9d9d9; white-space: nowrap; pointer-events: none"
-              >暂无记录</span>
-              <div
-                v-for="batch in group.batches"
-                :key="'mini-' + batch.id"
-                :style="miniBlockStyle(batch)"
-              ></div>
+
+              <!-- Sync group: triangle point markers -->
+              <template v-if="isSyncGroup(group)">
+                <span
+                  v-if="group.events.length === 0"
+                  style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 11px; color: #d9d9d9; white-space: nowrap; pointer-events: none"
+                >暂无记录</span>
+                <div
+                  v-for="event in group.events"
+                  :key="'mkr-' + event.id"
+                  :style="syncMarkerStyle(event)"
+                  @click.stop="openSyncDetail(event, group)"
+                ></div>
+              </template>
+
+              <!-- Batch group: mini blocks -->
+              <template v-else>
+                <span
+                  v-if="group.batches.length === 0"
+                  style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 11px; color: #d9d9d9; white-space: nowrap; pointer-events: none"
+                >暂无记录</span>
+                <div
+                  v-for="batch in group.batches"
+                  :key="'mini-' + batch.id"
+                  :style="miniBlockStyle(batch)"
+                ></div>
+              </template>
             </div>
           </div>
 
           <!-- L2 rows (expandable) -->
           <Transition name="expand">
             <div v-if="isExpanded(group.id)">
-              <div v-if="group.batches.length === 0" :style="rowStyle('l2')">
-                <div :style="{ ...labelColStyle, paddingLeft: '24px' }"></div>
-                <div :style="chartColStyle" style="display: flex; align-items: center">
-                  <span style="font-size: 12px; color: #bfbfbf">该任务暂无批次记录</span>
-                </div>
-              </div>
 
-              <div
-                v-for="(batch, bIdx) in group.batches"
-                :key="'l2-' + batch.id"
-                :style="{
-                  ...rowStyle('l2'),
-                  background: bIdx % 2 === 0 ? '#fafafa' : 'transparent',
-                }"
-              >
-                <!-- Label col -->
-                <div :style="{ ...labelColStyle, paddingLeft: '22px', display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', paddingRight: '8px' }">
-                  <a-tag
-                    :color="sourceColor(batch.source)"
-                    style="font-size: 10px; flex-shrink: 0; margin: 0; padding: 0 4px; line-height: 16px"
-                  >{{ sourceLabel(batch.source) }}</a-tag>
-                  <span
-                    :title="batch.detail"
-                    style="font-size: 11px; color: #595959; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1"
-                  >{{ batch.detail }}</span>
+              <!-- ── Sync event list ── -->
+              <template v-if="isSyncGroup(group)">
+                <div v-if="group.events.length === 0" :style="rowStyle('l2')">
+                  <div :style="{ ...labelColStyle, paddingLeft: '24px' }"></div>
+                  <div :style="chartColStyle" style="display: flex; align-items: center">
+                    <span style="font-size: 12px; color: #bfbfbf">暂无同步事件</span>
+                  </div>
                 </div>
 
-                <!-- Chart col -->
-                <div :style="{ ...chartColStyle, position: 'relative' }">
-                  <div v-for="mark in timeMarks" :key="'g2-' + batch.id + mark.pos" :style="gridLineStyle(mark.pos)"></div>
+                <div
+                  v-for="(event, eIdx) in group.events"
+                  :key="'l2e-' + event.id"
+                  :style="{
+                    ...rowStyle('l2'),
+                    background: eIdx % 2 === 0 ? '#fafafa' : 'transparent',
+                    cursor: 'pointer',
+                  }"
+                  @click="openSyncDetail(event, group)"
+                >
+                  <!-- Label col -->
+                  <div :style="{ ...labelColStyle, paddingLeft: '22px', display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', paddingRight: '8px' }">
+                    <span :style="{ color: eventColor(event), fontSize: '12px', flexShrink: 0, fontWeight: 700, lineHeight: 1 }">
+                      {{ event.direction === 'in' ? '▼' : '▲' }}
+                    </span>
+                    <a-tag
+                      :color="event.trigger === 'webhook' ? 'blue' : 'default'"
+                      style="font-size: 10px; flex-shrink: 0; margin: 0; padding: 0 4px; line-height: 16px"
+                    >{{ event.trigger === 'webhook' ? 'hook' : '定时' }}</a-tag>
+                    <span style="font-size: 11px; color: #595959; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1">
+                      {{ event.record_count }} 条 · {{ formatTime(event.timestamp) }}
+                    </span>
+                  </div>
 
-                  <!-- Batch has no start time yet (pipeline waiting) -->
-                  <span
-                    v-if="!batch.created_at"
-                    style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); font-size: 11px; color: #bfbfbf"
-                  >等待触发</span>
-
-                  <!-- Progress bar -->
-                  <a-tooltip v-else :disabled="isMobile" placement="top">
-                    <template #title>
-                      <div style="font-weight: 500">{{ group.label }}</div>
-                      <div style="color: #aaa; font-size: 11px; margin-top: 2px">
-                        {{ formatTime(batch.created_at) }} →
-                        {{ batch.completed_at ? formatTime(batch.completed_at) : '进行中' }}
-                      </div>
-                      <div style="margin-top: 4px">{{ batch.completed_jobs }} / {{ batch.total_jobs }} 完成</div>
-                      <div v-if="batch.failed_jobs > 0" style="color: #ff7875; font-size: 11px">
-                        {{ batch.failed_jobs }} 失败
-                      </div>
-                    </template>
+                  <!-- Chart col -->
+                  <div :style="{ ...chartColStyle, position: 'relative' }">
+                    <div v-for="mark in timeMarks" :key="'g2e-' + event.id + mark.pos" :style="gridLineStyle(mark.pos)"></div>
+                    <!-- Vertical indicator at timestamp -->
                     <div
-                      :style="batchBarContainerStyle(batch)"
-                      style="
-                        position: absolute;
-                        top: 50%;
-                        transform: translateY(-50%);
-                        height: 22px;
-                        border-radius: 4px;
-                        overflow: hidden;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        z-index: 1;
-                        min-width: 6px;
-                      "
-                      @click="openDetail(batch, group)"
-                    >
-                      <!-- Unfilled overlay -->
-                      <div :style="batchUnfilledStyle(batch)" style="position: absolute; right: 0; top: 0; bottom: 0;"></div>
-                      <!-- Label -->
-                      <span style="position: relative; z-index: 2; font-size: 11px; color: white; padding: 0 8px; white-space: nowrap; overflow: hidden; text-shadow: 0 1px 2px rgba(0,0,0,0.25)">
-                        <span
-                          v-if="batch.status === 'running'"
-                          style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: white; margin-right: 4px; vertical-align: middle; animation: pulse 1.5s infinite"
-                        ></span>
-                        {{ batch.completed_jobs }}/{{ batch.total_jobs }}
-                      </span>
-                    </div>
-                  </a-tooltip>
+                      :style="{
+                        position: 'absolute',
+                        left: toPercent(event.timestamp) + '%',
+                        top: '15%',
+                        bottom: '15%',
+                        width: '2px',
+                        background: eventColor(event),
+                        transform: 'translateX(-50%)',
+                        borderRadius: '1px',
+                        zIndex: 1,
+                      }"
+                    ></div>
+                  </div>
                 </div>
-              </div>
+              </template>
+
+              <!-- ── Batch progress bars ── -->
+              <template v-else>
+                <div v-if="group.batches.length === 0" :style="rowStyle('l2')">
+                  <div :style="{ ...labelColStyle, paddingLeft: '24px' }"></div>
+                  <div :style="chartColStyle" style="display: flex; align-items: center">
+                    <span style="font-size: 12px; color: #bfbfbf">该任务暂无批次记录</span>
+                  </div>
+                </div>
+
+                <div
+                  v-for="(batch, bIdx) in group.batches"
+                  :key="'l2-' + batch.id"
+                  :style="{
+                    ...rowStyle('l2'),
+                    background: bIdx % 2 === 0 ? '#fafafa' : 'transparent',
+                  }"
+                >
+                  <!-- Label col -->
+                  <div :style="{ ...labelColStyle, paddingLeft: '22px', display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', paddingRight: '8px' }">
+                    <a-tag
+                      :color="sourceColor(batch.source)"
+                      style="font-size: 10px; flex-shrink: 0; margin: 0; padding: 0 4px; line-height: 16px"
+                    >{{ sourceLabel(batch.source) }}</a-tag>
+                    <span
+                      :title="batch.detail"
+                      style="font-size: 11px; color: #595959; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1"
+                    >{{ batch.detail }}</span>
+                  </div>
+
+                  <!-- Chart col -->
+                  <div :style="{ ...chartColStyle, position: 'relative' }">
+                    <div v-for="mark in timeMarks" :key="'g2-' + batch.id + mark.pos" :style="gridLineStyle(mark.pos)"></div>
+
+                    <!-- Batch has no start time yet (pipeline waiting) -->
+                    <span
+                      v-if="!batch.created_at"
+                      style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); font-size: 11px; color: #bfbfbf"
+                    >等待触发</span>
+
+                    <!-- Progress bar -->
+                    <a-tooltip v-else :disabled="isMobile" placement="top">
+                      <template #title>
+                        <div style="font-weight: 500">{{ group.label }}</div>
+                        <div style="color: #aaa; font-size: 11px; margin-top: 2px">
+                          {{ formatTime(batch.created_at) }} →
+                          {{ batch.completed_at ? formatTime(batch.completed_at) : '进行中' }}
+                        </div>
+                        <div style="margin-top: 4px">{{ batch.completed_jobs }} / {{ batch.total_jobs }} 完成</div>
+                        <div v-if="batch.failed_jobs > 0" style="color: #ff7875; font-size: 11px">
+                          {{ batch.failed_jobs }} 失败
+                        </div>
+                      </template>
+                      <div
+                        :style="batchBarContainerStyle(batch)"
+                        style="
+                          position: absolute;
+                          top: 50%;
+                          transform: translateY(-50%);
+                          height: 22px;
+                          border-radius: 4px;
+                          overflow: hidden;
+                          cursor: pointer;
+                          display: flex;
+                          align-items: center;
+                          z-index: 1;
+                          min-width: 6px;
+                        "
+                        @click="openDetail(batch, group)"
+                      >
+                        <!-- Unfilled overlay -->
+                        <div :style="batchUnfilledStyle(batch)" style="position: absolute; right: 0; top: 0; bottom: 0;"></div>
+                        <!-- Label -->
+                        <span style="position: relative; z-index: 2; font-size: 11px; color: white; padding: 0 8px; white-space: nowrap; overflow: hidden; text-shadow: 0 1px 2px rgba(0,0,0,0.25)">
+                          <span
+                            v-if="batch.status === 'running'"
+                            style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: white; margin-right: 4px; vertical-align: middle; animation: pulse 1.5s infinite"
+                          ></span>
+                          {{ batch.completed_jobs }}/{{ batch.total_jobs }}
+                        </span>
+                      </div>
+                    </a-tooltip>
+                  </div>
+                </div>
+              </template>
+
             </div>
           </Transition>
 
@@ -184,7 +261,7 @@
 
     </div><!-- end min-width wrapper -->
 
-    <!-- Detail modal -->
+    <!-- Batch detail modal -->
     <a-modal
       v-model:open="modalOpen"
       :title="selectedGroup?.label"
@@ -215,6 +292,47 @@
         <div style="color: #595959; font-size: 13px; word-break: break-all">{{ selectedBatch.detail }}</div>
       </div>
     </a-modal>
+
+    <!-- Sync event detail modal -->
+    <a-modal
+      v-model:open="syncModalOpen"
+      :title="selectedEventGroup?.label"
+      :footer="null"
+      :centered="true"
+      :width="isMobile ? '92%' : 420"
+    >
+      <div v-if="selectedEvent">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
+          <span :style="{ color: eventColor(selectedEvent), fontSize: '20px', fontWeight: 700, lineHeight: 1 }">
+            {{ selectedEvent.direction === 'in' ? '▼' : '▲' }}
+          </span>
+          <span style="font-size: 14px; font-weight: 500">
+            {{ selectedEvent.direction === 'in' ? '写入（Nextcloud → DB）' : '写出（DB → Nextcloud）' }}
+          </span>
+          <a-tag :color="pipelineColor(selectedEventGroup?.pipeline)">{{ selectedEventGroup?.pipeline }}</a-tag>
+          <a-badge :status="badgeStatus(selectedEvent.status)" :text="statusLabel(selectedEvent.status)" />
+        </div>
+        <div style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap">
+          <div>
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">时间</div>
+            <div style="font-size: 13px">{{ formatTime(selectedEvent.timestamp) }}</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">记录数</div>
+            <div style="font-size: 13px">{{ selectedEvent.record_count }} 条</div>
+          </div>
+          <div v-if="selectedEvent.conflict_count > 0">
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">冲突</div>
+            <div style="font-size: 13px; color: #fa8c16">{{ selectedEvent.conflict_count }} 处</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">触发方式</div>
+            <div style="font-size: 13px">{{ selectedEvent.trigger === 'webhook' ? 'Webhook' : '定时任务' }}</div>
+          </div>
+        </div>
+        <div style="color: #595959; font-size: 13px; word-break: break-all">{{ selectedEvent.detail }}</div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -236,7 +354,7 @@ const expandedGroups = ref({})
 function toggle(id) { expandedGroups.value[id] = !expandedGroups.value[id] }
 function isExpanded(id) { return !!expandedGroups.value[id] }
 
-// ── Modal ────────────────────────────────────────────────────────────────────
+// ── Batch detail modal ────────────────────────────────────────────────────────
 const modalOpen = ref(false)
 const selectedBatch = ref(null)
 const selectedGroup = ref(null)
@@ -246,15 +364,31 @@ function openDetail(batch, group) {
   modalOpen.value = true
 }
 
+// ── Sync event modal ──────────────────────────────────────────────────────────
+const syncModalOpen = ref(false)
+const selectedEvent = ref(null)
+const selectedEventGroup = ref(null)
+function openSyncDetail(event, group) {
+  selectedEvent.value = event
+  selectedEventGroup.value = group
+  syncModalOpen.value = true
+}
+
 // ── Reactive now (running bar right edge only) ───────────────────────────────
 const now = ref(Date.now())
 let timer
 onMounted(() => { timer = setInterval(() => { now.value = Date.now() }, 1000) })
 onUnmounted(() => { clearInterval(timer) })
 
-// ── All batches (flat) ───────────────────────────────────────────────────────
+// ── Sync group detection ──────────────────────────────────────────────────────
+function isSyncGroup(group) { return Array.isArray(group.events) }
+
+// ── All batches and events (flat) ─────────────────────────────────────────────
 const allBatches = computed(() =>
-  props.sections.flatMap((s) => s.task_groups.flatMap((g) => g.batches))
+  props.sections.flatMap((s) => s.task_groups.flatMap((g) => g.batches || []))
+)
+const allEvents = computed(() =>
+  props.sections.flatMap((s) => s.task_groups.flatMap((g) => g.events || []))
 )
 
 // ── Time range (stable, no reactive now) ─────────────────────────────────────
@@ -263,6 +397,9 @@ const timeRange = computed(() => {
   allBatches.value.forEach((b) => {
     if (b.created_at) times.push(new Date(b.created_at).getTime())
     if (b.completed_at) times.push(new Date(b.completed_at).getTime())
+  })
+  allEvents.value.forEach((e) => {
+    if (e.timestamp) times.push(new Date(e.timestamp).getTime())
   })
   const hasRunning = allBatches.value.some((b) => b.status === 'running')
   if (hasRunning) times.push(Date.now() + 10 * 60 * 1000)
@@ -332,18 +469,42 @@ const STATUS_COLORS = {
 }
 
 function pipelineColor(pipeline) {
-  return { excel: 'green', db: 'geekblue', email: 'purple' }[pipeline] ?? 'default'
+  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan' }[pipeline] ?? 'default'
 }
 
 function sourceColor(source) {
-  return { excel: 'green', db: 'geekblue', email: 'purple' }[source] ?? 'default'
+  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan' }[source] ?? 'default'
 }
 
 function sourceLabel(source) {
   return { excel: 'Excel', db: 'DB', email: 'Email' }[source] ?? source
 }
 
-// ── Mini block (L1) ──────────────────────────────────────────────────────────
+function eventColor(event) {
+  if (event.status === 'error') return '#ff4d4f'
+  return event.direction === 'in' ? '#1677ff' : '#52c41a'
+}
+
+// ── Sync marker (L1 triangle) ─────────────────────────────────────────────────
+function syncMarkerStyle(event) {
+  const pos = toPercent(event.timestamp)
+  const color = eventColor(event)
+  const isIn = event.direction === 'in'
+  return {
+    position: 'absolute',
+    left: pos + '%',
+    top: '50%',
+    width: '10px',
+    height: '9px',
+    background: color,
+    transform: 'translate(-50%, -50%)',
+    clipPath: isIn ? 'polygon(0% 0%, 100% 0%, 50% 100%)' : 'polygon(50% 0%, 100% 100%, 0% 100%)',
+    cursor: 'pointer',
+    zIndex: 2,
+  }
+}
+
+// ── Mini block (L1 for batch groups) ─────────────────────────────────────────
 function miniBlockStyle(batch) {
   if (!batch.created_at) return { display: 'none' }
   const left = toPercent(batch.created_at)
@@ -400,6 +561,10 @@ function progressAntStatus(batch) {
 
 // ── Group badge ──────────────────────────────────────────────────────────────
 function groupBadgeStatus(group) {
+  if (isSyncGroup(group)) {
+    if (!group.events.length) return 'default'
+    return group.events.some((e) => e.status === 'error') ? 'error' : 'success'
+  }
   if (group.batches.some((b) => b.status === 'running')) return 'processing'
   if (!group.batches.length) return 'default'
   const last = group.batches.reduce((a, b) =>

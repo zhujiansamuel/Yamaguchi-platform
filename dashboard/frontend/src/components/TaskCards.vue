@@ -59,77 +59,129 @@
           </div>
           <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 8px">
             <span style="font-size: 11px; color: #8c8c8c">
-              {{ group.batches.length ? group.batches.length + ' 批次' : '暂无记录' }}
+              {{ isSyncGroup(group)
+                ? (group.events.length ? group.events.length + ' 次同步' : '暂无记录')
+                : (group.batches.length ? group.batches.length + ' 批次' : '暂无记录') }}
             </span>
             <a-badge :status="groupBadgeStatus(group)" />
           </div>
         </div>
 
-        <!-- L2: Batch list -->
+        <!-- L2: Expanded content -->
         <Transition name="slide">
           <div v-if="isExpanded(group.id)">
-            <div v-if="group.batches.length === 0" style="padding: 12px 16px; color: #bfbfbf; font-size: 13px">
-              该任务暂无批次记录
-            </div>
 
-            <div
-              v-for="(batch, bIdx) in group.batches"
-              :key="batch.id"
-              :style="{
-                padding: '10px 16px 10px 32px',
-                borderTop: '1px solid #f0f0f0',
-                background: bIdx % 2 === 0 ? '#fff' : '#fafafa',
-                cursor: 'pointer',
-                transition: 'background 0.15s',
-              }"
-              @click="openDetail(batch, group)"
-              @mouseenter="(e) => (e.currentTarget.style.background = '#f0f5ff')"
-              @mouseleave="(e) => (e.currentTarget.style.background = bIdx % 2 === 0 ? '#fff' : '#fafafa')"
-            >
-              <!-- Batch header -->
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap">
-                <a-tag
-                  :color="sourceColor(batch.source)"
-                  style="margin: 0; font-size: 10px; padding: 0 5px; line-height: 16px"
-                >{{ sourceLabel(batch.source) }}</a-tag>
-                <a-badge :status="badgeStatus(batch.status)" :text="statusLabel(batch.status)" />
-                <span style="font-size: 11px; color: #8c8c8c; margin-left: auto">
-                  {{ batch.created_at ? formatTime(batch.created_at) : '—' }} →
-                  {{ batch.completed_at ? formatTime(batch.completed_at) : (batch.created_at ? '进行中' : '等待触发') }}
-                </span>
+            <!-- ── Sync event list ── -->
+            <template v-if="isSyncGroup(group)">
+              <div v-if="group.events.length === 0" style="padding: 12px 16px; color: #bfbfbf; font-size: 13px">
+                暂无同步事件
               </div>
 
-              <!-- Detail -->
               <div
-                style="font-size: 12px; color: #595959; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
-                :title="batch.detail"
-              >{{ batch.detail }}</div>
-
-              <!-- Progress bar -->
-              <div v-if="batch.total_jobs > 0" style="display: flex; align-items: center; gap: 8px">
-                <div style="flex: 1; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden">
-                  <div
-                    :style="{
-                      width: progressPct(batch) + '%',
-                      height: '100%',
-                      background: STATUS_COLORS[batch.status] || '#bfbfbf',
-                      borderRadius: '3px',
-                      transition: 'width 0.5s ease',
-                    }"
-                  ></div>
+                v-for="(event, eIdx) in group.events"
+                :key="event.id"
+                :style="{
+                  padding: '10px 16px 10px 32px',
+                  borderTop: '1px solid #f0f0f0',
+                  background: eIdx % 2 === 0 ? '#fff' : '#fafafa',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }"
+                @click="openSyncDetail(event, group)"
+                @mouseenter="(e) => (e.currentTarget.style.background = '#f0f5ff')"
+                @mouseleave="(e) => (e.currentTarget.style.background = eIdx % 2 === 0 ? '#fff' : '#fafafa')"
+              >
+                <!-- Event header row -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                  <span :style="{ color: eventColor(event), fontSize: '14px', fontWeight: 700, lineHeight: 1 }">
+                    {{ event.direction === 'in' ? '▼' : '▲' }}
+                  </span>
+                  <span style="font-size: 12px; font-weight: 500; color: #262626">
+                    {{ event.direction === 'in' ? '写入' : '写出' }}
+                  </span>
+                  <a-tag
+                    :color="event.trigger === 'webhook' ? 'blue' : 'default'"
+                    style="margin: 0; font-size: 10px; padding: 0 5px; line-height: 16px"
+                  >{{ event.trigger === 'webhook' ? 'webhook' : '定时' }}</a-tag>
+                  <a-badge :status="badgeStatus(event.status)" :text="statusLabel(event.status)" />
+                  <span style="font-size: 11px; color: #8c8c8c; margin-left: auto">
+                    {{ formatTime(event.timestamp) }}
+                  </span>
                 </div>
-                <span style="font-size: 11px; color: #8c8c8c; white-space: nowrap; flex-shrink: 0">
-                  {{ batch.completed_jobs }}/{{ batch.total_jobs }}
-                </span>
+                <!-- Record info -->
+                <div style="font-size: 12px; color: #595959; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" :title="event.detail">
+                  {{ event.record_count }} 条记录{{ event.conflict_count > 0 ? ' · ' + event.conflict_count + ' 处冲突' : '' }}
+                  {{ event.detail ? ' · ' + event.detail : '' }}
+                </div>
               </div>
-            </div>
+            </template>
+
+            <!-- ── Batch list ── -->
+            <template v-else>
+              <div v-if="group.batches.length === 0" style="padding: 12px 16px; color: #bfbfbf; font-size: 13px">
+                该任务暂无批次记录
+              </div>
+
+              <div
+                v-for="(batch, bIdx) in group.batches"
+                :key="batch.id"
+                :style="{
+                  padding: '10px 16px 10px 32px',
+                  borderTop: '1px solid #f0f0f0',
+                  background: bIdx % 2 === 0 ? '#fff' : '#fafafa',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }"
+                @click="openDetail(batch, group)"
+                @mouseenter="(e) => (e.currentTarget.style.background = '#f0f5ff')"
+                @mouseleave="(e) => (e.currentTarget.style.background = bIdx % 2 === 0 ? '#fff' : '#fafafa')"
+              >
+                <!-- Batch header -->
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap">
+                  <a-tag
+                    :color="sourceColor(batch.source)"
+                    style="margin: 0; font-size: 10px; padding: 0 5px; line-height: 16px"
+                  >{{ sourceLabel(batch.source) }}</a-tag>
+                  <a-badge :status="badgeStatus(batch.status)" :text="statusLabel(batch.status)" />
+                  <span style="font-size: 11px; color: #8c8c8c; margin-left: auto">
+                    {{ batch.created_at ? formatTime(batch.created_at) : '—' }} →
+                    {{ batch.completed_at ? formatTime(batch.completed_at) : (batch.created_at ? '进行中' : '等待触发') }}
+                  </span>
+                </div>
+
+                <!-- Detail -->
+                <div
+                  style="font-size: 12px; color: #595959; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+                  :title="batch.detail"
+                >{{ batch.detail }}</div>
+
+                <!-- Progress bar -->
+                <div v-if="batch.total_jobs > 0" style="display: flex; align-items: center; gap: 8px">
+                  <div style="flex: 1; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden">
+                    <div
+                      :style="{
+                        width: progressPct(batch) + '%',
+                        height: '100%',
+                        background: STATUS_COLORS[batch.status] || '#bfbfbf',
+                        borderRadius: '3px',
+                        transition: 'width 0.5s ease',
+                      }"
+                    ></div>
+                  </div>
+                  <span style="font-size: 11px; color: #8c8c8c; white-space: nowrap; flex-shrink: 0">
+                    {{ batch.completed_jobs }}/{{ batch.total_jobs }}
+                  </span>
+                </div>
+              </div>
+            </template>
+
           </div>
         </Transition>
       </div>
 
     </div><!-- end section loop -->
 
-    <!-- Detail modal -->
+    <!-- Batch detail modal -->
     <a-modal
       v-model:open="modalOpen"
       :title="selectedGroup?.label"
@@ -159,6 +211,46 @@
         <div style="color: #595959; font-size: 13px; word-break: break-all">{{ selectedBatch.detail }}</div>
       </div>
     </a-modal>
+
+    <!-- Sync event detail modal -->
+    <a-modal
+      v-model:open="syncModalOpen"
+      :title="selectedEventGroup?.label"
+      :footer="null"
+      :centered="true"
+    >
+      <div v-if="selectedEvent">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
+          <span :style="{ color: eventColor(selectedEvent), fontSize: '20px', fontWeight: 700, lineHeight: 1 }">
+            {{ selectedEvent.direction === 'in' ? '▼' : '▲' }}
+          </span>
+          <span style="font-size: 14px; font-weight: 500">
+            {{ selectedEvent.direction === 'in' ? '写入（Nextcloud → DB）' : '写出（DB → Nextcloud）' }}
+          </span>
+          <a-tag :color="pipelineColor(selectedEventGroup?.pipeline)">{{ selectedEventGroup?.pipeline }}</a-tag>
+          <a-badge :status="badgeStatus(selectedEvent.status)" :text="statusLabel(selectedEvent.status)" />
+        </div>
+        <div style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap">
+          <div>
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">时间</div>
+            <div style="font-size: 13px">{{ formatTime(selectedEvent.timestamp) }}</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">记录数</div>
+            <div style="font-size: 13px">{{ selectedEvent.record_count }} 条</div>
+          </div>
+          <div v-if="selectedEvent.conflict_count > 0">
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">冲突</div>
+            <div style="font-size: 13px; color: #fa8c16">{{ selectedEvent.conflict_count }} 处</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">触发方式</div>
+            <div style="font-size: 13px">{{ selectedEvent.trigger === 'webhook' ? 'Webhook' : '定时任务' }}</div>
+          </div>
+        </div>
+        <div style="color: #595959; font-size: 13px; word-break: break-all">{{ selectedEvent.detail }}</div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -174,6 +266,10 @@ const expandedGroups = ref({})
 function toggle(id) { expandedGroups.value[id] = !expandedGroups.value[id] }
 function isExpanded(id) { return !!expandedGroups.value[id] }
 
+// ── Sync group detection ──────────────────────────────────────────────────────
+function isSyncGroup(group) { return Array.isArray(group.events) }
+
+// ── Batch detail modal ────────────────────────────────────────────────────────
 const modalOpen = ref(false)
 const selectedBatch = ref(null)
 const selectedGroup = ref(null)
@@ -181,6 +277,16 @@ function openDetail(batch, group) {
   selectedBatch.value = batch
   selectedGroup.value = group
   modalOpen.value = true
+}
+
+// ── Sync event modal ──────────────────────────────────────────────────────────
+const syncModalOpen = ref(false)
+const selectedEvent = ref(null)
+const selectedEventGroup = ref(null)
+function openSyncDetail(event, group) {
+  selectedEvent.value = event
+  selectedEventGroup.value = group
+  syncModalOpen.value = true
 }
 
 const STATUS_COLORS = {
@@ -191,15 +297,20 @@ const STATUS_COLORS = {
 }
 
 function pipelineColor(pipeline) {
-  return { excel: 'green', db: 'geekblue', email: 'purple' }[pipeline] ?? 'default'
+  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan' }[pipeline] ?? 'default'
 }
 
 function sourceColor(source) {
-  return { excel: 'green', db: 'geekblue', email: 'purple' }[source] ?? 'default'
+  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan' }[source] ?? 'default'
 }
 
 function sourceLabel(source) {
   return { excel: 'Excel', db: 'DB', email: 'Email' }[source] ?? source
+}
+
+function eventColor(event) {
+  if (event.status === 'error') return '#ff4d4f'
+  return event.direction === 'in' ? '#1677ff' : '#52c41a'
 }
 
 function progressPct(batch) {
@@ -215,6 +326,10 @@ function progressAntStatus(batch) {
 }
 
 function groupBadgeStatus(group) {
+  if (isSyncGroup(group)) {
+    if (!group.events.length) return 'default'
+    return group.events.some((e) => e.status === 'error') ? 'error' : 'success'
+  }
   if (group.batches.some((b) => b.status === 'running')) return 'processing'
   if (!group.batches.length) return 'default'
   const last = group.batches.reduce((a, b) =>

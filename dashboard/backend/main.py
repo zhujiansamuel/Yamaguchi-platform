@@ -29,9 +29,184 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Mock data — three sections: Excel tracking / DB tracking / Email processing
+# Mock data — four sections: Nextcloud sync / Excel tracking / DB tracking / Email
 # Replace with real DB/API queries once dataapp event API is ready.
 # ---------------------------------------------------------------------------
+
+_NEXTCLOUD_SYNC = [
+    {
+        "id": "SYNC_PURCHASING",
+        "label": "Purchasing",
+        "pipeline": "nextcloud",
+        "events": [
+            {
+                "id": "sync-pur-in1",
+                "direction": "in",
+                "timestamp": "2026-03-02T07:00:00",
+                "record_count": 120,
+                "conflict_count": 2,
+                "trigger": "webhook",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 Purchasing 数据，120 条记录",
+            },
+            {
+                "id": "sync-pur-out1",
+                "direction": "out",
+                "timestamp": "2026-03-02T09:30:00",
+                "record_count": 95,
+                "conflict_count": 0,
+                "trigger": "scheduled",
+                "status": "success",
+                "detail": "写出 Purchasing 数据到 Nextcloud，95 条记录",
+            },
+            {
+                "id": "sync-pur-in2",
+                "direction": "in",
+                "timestamp": "2026-03-01T07:00:00",
+                "record_count": 108,
+                "conflict_count": 0,
+                "trigger": "webhook",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 Purchasing 数据，108 条记录",
+            },
+            {
+                "id": "sync-pur-out2",
+                "direction": "out",
+                "timestamp": "2026-03-01T09:30:00",
+                "record_count": 90,
+                "conflict_count": 0,
+                "trigger": "scheduled",
+                "status": "success",
+                "detail": "写出 Purchasing 数据到 Nextcloud，90 条记录",
+            },
+        ],
+    },
+    {
+        "id": "SYNC_OFFICIAL_ACCOUNT",
+        "label": "OfficialAccount",
+        "pipeline": "nextcloud",
+        "events": [
+            {
+                "id": "sync-oa-in1",
+                "direction": "in",
+                "timestamp": "2026-03-02T07:02:00",
+                "record_count": 45,
+                "conflict_count": 0,
+                "trigger": "webhook",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 OfficialAccount 数据，45 条记录",
+            },
+            {
+                "id": "sync-oa-in2",
+                "direction": "in",
+                "timestamp": "2026-03-01T07:02:00",
+                "record_count": 42,
+                "conflict_count": 0,
+                "trigger": "webhook",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 OfficialAccount 数据，42 条记录",
+            },
+        ],
+    },
+    {
+        "id": "SYNC_GIFT_CARD",
+        "label": "GiftCard",
+        "pipeline": "nextcloud",
+        "events": [
+            {
+                "id": "sync-gc-in1",
+                "direction": "in",
+                "timestamp": "2026-03-02T07:05:00",
+                "record_count": 30,
+                "conflict_count": 0,
+                "trigger": "scheduled",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 GiftCard 数据，30 条记录",
+            },
+            {
+                "id": "sync-gc-in2",
+                "direction": "in",
+                "timestamp": "2026-03-01T07:05:00",
+                "record_count": 28,
+                "conflict_count": 0,
+                "trigger": "scheduled",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 GiftCard 数据，28 条记录",
+            },
+        ],
+    },
+    {
+        "id": "SYNC_DEBIT_CARD",
+        "label": "DebitCard",
+        "pipeline": "nextcloud",
+        "events": [
+            {
+                "id": "sync-dc-in1",
+                "direction": "in",
+                "timestamp": "2026-03-02T07:08:00",
+                "record_count": 15,
+                "conflict_count": 0,
+                "trigger": "scheduled",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 DebitCard 数据，15 条记录",
+            },
+            {
+                "id": "sync-dc-in2",
+                "direction": "in",
+                "timestamp": "2026-03-01T07:08:00",
+                "record_count": 0,
+                "conflict_count": 0,
+                "trigger": "scheduled",
+                "status": "error",
+                "detail": "读取 DebitCard 失败：Nextcloud 连接超时",
+            },
+        ],
+    },
+    {
+        "id": "SYNC_CREDIT_CARD",
+        "label": "CreditCard",
+        "pipeline": "nextcloud",
+        "events": [
+            {
+                "id": "sync-cc-in1",
+                "direction": "in",
+                "timestamp": "2026-03-02T07:10:00",
+                "record_count": 22,
+                "conflict_count": 1,
+                "trigger": "webhook",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 CreditCard 数据，22 条记录",
+            },
+            {
+                "id": "sync-cc-out1",
+                "direction": "out",
+                "timestamp": "2026-03-02T09:35:00",
+                "record_count": 20,
+                "conflict_count": 0,
+                "trigger": "scheduled",
+                "status": "success",
+                "detail": "写出 CreditCard 数据到 Nextcloud，20 条记录",
+            },
+        ],
+    },
+    {
+        "id": "SYNC_TEMPORARY_CHANNEL",
+        "label": "TemporaryChannel",
+        "pipeline": "nextcloud",
+        "events": [
+            {
+                "id": "sync-tc-in1",
+                "direction": "in",
+                "timestamp": "2026-03-02T07:15:00",
+                "record_count": 8,
+                "conflict_count": 0,
+                "trigger": "scheduled",
+                "status": "success",
+                "detail": "从 Nextcloud 读取 TemporaryChannel 数据，8 条记录",
+            },
+        ],
+    },
+]
 
 _EXCEL_TRACKING = [
     {
@@ -332,6 +507,11 @@ _EMAIL_PROCESSING = [
 ]
 
 MOCK_SECTIONS = [
+    {
+        "id": "nextcloud_sync",
+        "label": "Nextcloud 数据同步",
+        "task_groups": _NEXTCLOUD_SYNC,
+    },
     {
         "id": "excel_tracking",
         "label": "追踪任务（Excel 驱动）",

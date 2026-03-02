@@ -2,7 +2,7 @@
   <div>
     <a-row :gutter="[16, 16]" style="margin-bottom: 16px">
       <a-col :xs="12" :sm="6">
-        <a-statistic title="全部批次" :value="allBatches.length" />
+        <a-statistic title="全部操作" :value="allBatches.length" />
       </a-col>
       <a-col :xs="12" :sm="6">
         <a-statistic
@@ -64,7 +64,7 @@ const viewOptions = [
 ]
 
 const allBatches = computed(() =>
-  sections.value.flatMap((s) => s.task_groups.flatMap((g) => g.batches))
+  sections.value.flatMap((s) => s.task_groups.flatMap((g) => g.events || g.batches || []))
 )
 
 function countStatus(status) {
