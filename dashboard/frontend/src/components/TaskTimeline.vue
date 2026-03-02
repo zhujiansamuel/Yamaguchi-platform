@@ -1,10 +1,10 @@
 <template>
   <div style="overflow-x: auto">
-    <div style="min-width: 500px">
+    <div :style="{ minWidth: isMobile ? '280px' : '500px' }">
 
       <!-- Time axis header -->
       <div style="display: flex; margin-bottom: 4px">
-        <div :style="{ width: LABEL_WIDTH + 'px', flexShrink: 0 }"></div>
+        <div :style="{ width: labelWidth + 'px', flexShrink: 0 }"></div>
         <div style="flex: 1; position: relative; height: 20px">
           <span
             v-for="mark in timeMarks"
@@ -22,7 +22,6 @@
         </div>
       </div>
 
-      <!-- Empty state -->
       <a-empty v-if="sortedTasks.length === 0" description="暂无任务数据" />
 
       <!-- Task rows -->
@@ -36,12 +35,14 @@
           borderRadius: '4px',
           background: idx % 2 === 0 ? '#fafafa' : 'transparent',
           padding: '3px 0',
+          borderLeft: isMobile ? `3px solid ${SOURCE_COLORS[task.source] || '#d9d9d9'}` : 'none',
+          paddingLeft: isMobile ? '6px' : '0',
         }"
       >
         <!-- Label column -->
         <div
           :style="{
-            width: LABEL_WIDTH + 'px',
+            width: labelWidth + 'px',
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
@@ -51,13 +52,20 @@
           }"
         >
           <a-tag
+            v-if="!isMobile"
             :color="sourceColor(task.source)"
             style="font-size: 10px; flex-shrink: 0; margin: 0; padding: 0 4px; line-height: 18px"
           >{{ task.source }}</a-tag>
           <a-tooltip :title="task.title">
-            <span style="font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1">
-              {{ task.title }}
-            </span>
+            <span
+              :style="{
+                fontSize: isMobile ? '11px' : '12px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+              }"
+            >{{ task.title }}</span>
           </a-tooltip>
         </div>
 
@@ -78,8 +86,8 @@
             }"
           ></div>
 
-          <!-- Task bar (tasks with a start time) -->
-          <a-tooltip v-if="task.started_at" placement="top">
+          <!-- Task bar — tooltip only on desktop -->
+          <a-tooltip v-if="task.started_at" placement="top" :disabled="isMobile">
             <template #title>
               <div>{{ task.title }}</div>
               <div style="color: #aaa; font-size: 11px">
@@ -103,8 +111,9 @@
                 cursor: pointer;
                 overflow: hidden;
                 white-space: nowrap;
-                zIndex: 1;
+                z-index: 1;
               "
+              @click="openDetail(task)"
             >
               <span
                 :style="{
@@ -122,8 +131,8 @@
             </div>
           </a-tooltip>
 
-          <!-- Pending marker (no start time) — diamond -->
-          <a-tooltip v-else placement="top">
+          <!-- Pending marker — tooltip only on desktop -->
+          <a-tooltip v-else placement="top" :disabled="isMobile">
             <template #title>
               <div>{{ task.title }}</div>
               <div style="color: #aaa; font-size: 11px">{{ formatTime(task.updated_at) }}</div>
@@ -138,21 +147,45 @@
                 height: 12px;
                 border-radius: 2px;
                 cursor: pointer;
-                zIndex: 1;
+                z-index: 1;
               "
+              @click="openDetail(task)"
             ></div>
           </a-tooltip>
         </div>
       </div>
-
     </div>
+
+    <!-- Task detail modal -->
+    <a-modal
+      v-model:open="modalOpen"
+      :title="selectedTask?.title"
+      :footer="null"
+      :centered="true"
+      :width="isMobile ? '92%' : 480"
+    >
+      <div v-if="selectedTask">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap">
+          <a-tag :color="sourceColor(selectedTask.source)">{{ selectedTask.source }}</a-tag>
+          <a-badge :status="badgeStatus(selectedTask.status)" :text="statusLabel(selectedTask.status)" />
+        </div>
+        <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 10px">
+          <template v-if="selectedTask.started_at">
+            {{ formatTime(selectedTask.started_at) }} → {{ formatTime(selectedTask.updated_at) }}
+          </template>
+          <template v-else>
+            {{ formatTime(selectedTask.updated_at) }}
+          </template>
+        </div>
+        <div style="color: #333; font-size: 14px; line-height: 1.6">{{ selectedTask.detail }}</div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
-const LABEL_WIDTH = 220
+import { ref, computed } from 'vue'
+import { useIsMobile } from '../composables/useIsMobile'
 
 const props = defineProps({
   tasks: {
@@ -161,7 +194,19 @@ const props = defineProps({
   },
 })
 
-// Sort tasks by start time ascending; pending (no start) sorted by updated_at
+const isMobile = useIsMobile()
+const labelWidth = computed(() => (isMobile.value ? 100 : 220))
+const markCount = computed(() => (isMobile.value ? 3 : 5))
+
+// Task detail modal
+const modalOpen = ref(false)
+const selectedTask = ref(null)
+function openDetail(task) {
+  selectedTask.value = task
+  modalOpen.value = true
+}
+
+// Sort tasks by start time ascending
 const sortedTasks = computed(() =>
   [...props.tasks].sort((a, b) => {
     const ta = a.started_at ? new Date(a.started_at).getTime() : new Date(a.updated_at || 0).getTime()
@@ -170,7 +215,7 @@ const sortedTasks = computed(() =>
   })
 )
 
-// Compute overall time range across all tasks
+// Overall time range with padding
 const timeRange = computed(() => {
   const times = []
   props.tasks.forEach((task) => {
@@ -183,7 +228,6 @@ const timeRange = computed(() => {
   }
   const min = Math.min(...times)
   const max = Math.max(...times)
-  // At least 5-minute padding on each side
   const padding = Math.max((max - min) * 0.08, 300_000)
   return { min: min - padding, max: max + padding }
 })
@@ -195,20 +239,24 @@ function toPercent(isoStr) {
   return ((new Date(isoStr).getTime() - timeRange.value.min) / totalMs.value) * 100
 }
 
-// Generate evenly-spaced time axis marks
-const timeMarks = computed(() => {
-  const count = 5
-  return Array.from({ length: count + 1 }, (_, i) => {
-    const t = new Date(timeRange.value.min + (totalMs.value * i) / count)
-    return { pos: (i / count) * 100, label: formatTime(t.toISOString()) }
+const timeMarks = computed(() =>
+  Array.from({ length: markCount.value + 1 }, (_, i) => {
+    const t = new Date(timeRange.value.min + (totalMs.value * i) / markCount.value)
+    return { pos: (i / markCount.value) * 100, label: formatTime(t.toISOString()) }
   })
-})
+)
 
 const STATUS_COLORS = {
   running: '#1677ff',
   success: '#52c41a',
   error: '#ff4d4f',
   pending: '#bfbfbf',
+}
+
+const SOURCE_COLORS = {
+  dataapp: '#1677ff',
+  ecsite: '#722ed1',
+  webapp: '#fa8c16',
 }
 
 function barStyle(task) {
@@ -247,6 +295,11 @@ function formatTime(iso) {
 function sourceColor(source) {
   const map = { dataapp: 'blue', ecsite: 'purple', webapp: 'orange' }
   return map[source] || 'default'
+}
+
+function badgeStatus(status) {
+  const map = { running: 'processing', success: 'success', error: 'error', pending: 'default' }
+  return map[status] || 'default'
 }
 
 function statusLabel(status) {
