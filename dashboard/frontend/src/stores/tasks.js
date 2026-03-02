@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useTaskStore = defineStore('tasks', () => {
-  const tasks = ref([])
+  const taskGroups = ref([])
   const connected = ref(false)
   const lastUpdated = ref(null)
   let eventSource = null
@@ -18,14 +18,13 @@ export const useTaskStore = defineStore('tasks', () => {
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data)
-      tasks.value = data.tasks
+      taskGroups.value = data.task_groups
       lastUpdated.value = data.timestamp
       connected.value = true
     }
 
     eventSource.onerror = () => {
       connected.value = false
-      // Browser automatically retries SSE on error; just update status
     }
   }
 
@@ -37,5 +36,5 @@ export const useTaskStore = defineStore('tasks', () => {
     }
   }
 
-  return { tasks, connected, lastUpdated, startStream, stopStream }
+  return { taskGroups, connected, lastUpdated, startStream, stopStream }
 })
