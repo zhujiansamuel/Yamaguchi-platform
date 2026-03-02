@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- Stats: count over all batches across all groups -->
     <a-row :gutter="[16, 16]" style="margin-bottom: 16px">
       <a-col :xs="12" :sm="6">
         <a-statistic title="全部批次" :value="allBatches.length" />
@@ -28,7 +27,7 @@
       </a-col>
     </a-row>
 
-    <a-card title="追踪任务时间线">
+    <a-card title="任务时间线">
       <template #extra>
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end">
           <a-segmented v-model:value="viewMode" :options="viewOptions" size="small" />
@@ -38,8 +37,8 @@
         </div>
       </template>
 
-      <TaskTimeline v-if="viewMode === 'gantt'" :task-groups="taskGroups" />
-      <TaskCards v-else :task-groups="taskGroups" />
+      <TaskTimeline v-if="viewMode === 'gantt'" :sections="sections" />
+      <TaskCards v-else :sections="sections" />
     </a-card>
   </div>
 </template>
@@ -52,7 +51,7 @@ import TaskTimeline from '../components/TaskTimeline.vue'
 import TaskCards from '../components/TaskCards.vue'
 
 const store = useTaskStore()
-const taskGroups = computed(() => store.taskGroups)
+const sections = computed(() => store.sections)
 const lastUpdated = computed(() => store.lastUpdated)
 const isMobile = useIsMobile()
 
@@ -64,7 +63,10 @@ const viewOptions = [
   { label: '卡片', value: 'card' },
 ]
 
-const allBatches = computed(() => taskGroups.value.flatMap((g) => g.batches))
+const allBatches = computed(() =>
+  sections.value.flatMap((s) => s.task_groups.flatMap((g) => g.batches))
+)
+
 function countStatus(status) {
   return allBatches.value.filter((b) => b.status === status).length
 }

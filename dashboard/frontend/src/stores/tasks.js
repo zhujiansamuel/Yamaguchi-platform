@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useTaskStore = defineStore('tasks', () => {
-  const taskGroups = ref([])
+  const sections = ref([])
   const connected = ref(false)
   const lastUpdated = ref(null)
   let eventSource = null
@@ -18,7 +18,7 @@ export const useTaskStore = defineStore('tasks', () => {
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data)
-      taskGroups.value = data.task_groups
+      sections.value = data.sections
       lastUpdated.value = data.timestamp
       connected.value = true
     }
@@ -36,5 +36,5 @@ export const useTaskStore = defineStore('tasks', () => {
     }
   }
 
-  return { taskGroups, connected, lastUpdated, startStream, stopStream }
+  return { sections, connected, lastUpdated, startStream, stopStream }
 })

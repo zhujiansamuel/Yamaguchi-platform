@@ -2,8 +2,13 @@
 Yamaguchi Dashboard — minimal FastAPI backend
 Provides:
   GET  /api/health          health check
-  GET  /api/tasks           snapshot of all task groups (JSON)
+  GET  /api/tasks           snapshot of all sections (JSON)
   GET  /api/tasks/stream    real-time SSE stream
+
+Data model:
+  sections[]
+    └── task_groups[]
+          └── batches[]
 """
 
 import asyncio
@@ -24,11 +29,11 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Mock data — 13 tracking task groups (Excel-driven + DB-driven)
-# Replace batches with real DB/API queries once dataapp event API is ready.
+# Mock data — three sections: Excel tracking / DB tracking / Email processing
+# Replace with real DB/API queries once dataapp event API is ready.
 # ---------------------------------------------------------------------------
-MOCK_TASK_GROUPS = [
-    # ── Excel-driven ─────────────────────────────────────────────────────────
+
+_EXCEL_TRACKING = [
     {
         "id": "OWRYT",
         "label": "官网 → Yamato 追踪",
@@ -153,7 +158,9 @@ MOCK_TASK_GROUPS = [
             },
         ],
     },
-    # ── DB-driven ─────────────────────────────────────────────────────────────
+]
+
+_DB_TRACKING = [
     {
         "id": "TNE",
         "label": "追踪号补全",
@@ -201,24 +208,9 @@ MOCK_TASK_GROUPS = [
             },
         ],
     },
-    {
-        "id": "CAE",
-        "label": "确认日期补全",
-        "pipeline": "db",
-        "batches": [],
-    },
-    {
-        "id": "SAE",
-        "label": "发货日期补全",
-        "pipeline": "db",
-        "batches": [],
-    },
-    {
-        "id": "EWAD",
-        "label": "预计到达日补全",
-        "pipeline": "db",
-        "batches": [],
-    },
+    {"id": "CAE", "label": "确认日期补全", "pipeline": "db", "batches": []},
+    {"id": "SAE", "label": "发货日期补全", "pipeline": "db", "batches": []},
+    {"id": "EWAD", "label": "预计到达日补全", "pipeline": "db", "batches": []},
     {
         "id": "TFC",
         "label": "灵活捕获",
@@ -239,11 +231,129 @@ MOCK_TASK_GROUPS = [
     },
 ]
 
+_EMAIL_PROCESSING = [
+    {
+        "id": "EMAIL_ANALYSIS",
+        "label": "邮件内容分析",
+        "pipeline": "email",
+        "batches": [
+            {
+                "id": "ea-b1",
+                "source": "email",
+                "status": "success",
+                "created_at": "2026-03-02T08:00:00",
+                "completed_at": "2026-03-02T08:03:00",
+                "total_jobs": 45,
+                "completed_jobs": 45,
+                "failed_jobs": 0,
+                "detail": "解析 45 封邮件，提取订单/商品/日期等结构化数据",
+            },
+            {
+                "id": "ea-b2",
+                "source": "email",
+                "status": "success",
+                "created_at": "2026-03-01T08:00:00",
+                "completed_at": "2026-03-01T08:02:00",
+                "total_jobs": 32,
+                "completed_jobs": 32,
+                "failed_jobs": 0,
+                "detail": "解析 32 封邮件，提取订单/商品/日期等结构化数据",
+            },
+        ],
+    },
+    {
+        "id": "EMAIL_INITIAL_ORDER",
+        "label": "初始订单确认",
+        "pipeline": "email",
+        "batches": [
+            {
+                # Today: still running (waiting for email analysis to propagate)
+                "id": "eio-b1",
+                "source": "email",
+                "status": "running",
+                "created_at": "2026-03-02T08:03:00",
+                "completed_at": None,
+                "total_jobs": 45,
+                "completed_jobs": 38,
+                "failed_jobs": 0,
+                "detail": "创建/更新 Purchasing 记录，关联 OfficialAccount",
+            },
+            {
+                "id": "eio-b2",
+                "source": "email",
+                "status": "success",
+                "created_at": "2026-03-01T08:02:00",
+                "completed_at": "2026-03-01T08:18:00",
+                "total_jobs": 32,
+                "completed_jobs": 32,
+                "failed_jobs": 0,
+                "detail": "创建/更新 Purchasing 记录，关联 OfficialAccount",
+            },
+        ],
+    },
+    {
+        "id": "EMAIL_NOTIFICATION",
+        "label": "订单确认通知",
+        "pipeline": "email",
+        # No batch today — waiting for initial order to finish
+        "batches": [
+            {
+                "id": "en-b1",
+                "source": "email",
+                "status": "success",
+                "created_at": "2026-03-01T08:18:00",
+                "completed_at": "2026-03-01T08:25:00",
+                "total_jobs": 28,
+                "completed_jobs": 28,
+                "failed_jobs": 0,
+                "detail": "更新 28 条 Purchasing 记录状态",
+            },
+        ],
+    },
+    {
+        "id": "EMAIL_SEND",
+        "label": "发送通知邮件",
+        "pipeline": "email",
+        # No batch today — waiting for notification step
+        "batches": [
+            {
+                "id": "es-b1",
+                "source": "email",
+                "status": "success",
+                "created_at": "2026-03-01T08:25:00",
+                "completed_at": "2026-03-01T08:30:00",
+                "total_jobs": 28,
+                "completed_jobs": 28,
+                "failed_jobs": 0,
+                "detail": "向用户发送确认通知邮件",
+            },
+        ],
+    },
+]
+
+MOCK_SECTIONS = [
+    {
+        "id": "excel_tracking",
+        "label": "追踪任务（Excel 驱动）",
+        "task_groups": _EXCEL_TRACKING,
+    },
+    {
+        "id": "db_tracking",
+        "label": "追踪任务（DB 驱动）",
+        "task_groups": _DB_TRACKING,
+    },
+    {
+        "id": "email",
+        "label": "邮件处理",
+        "task_groups": _EMAIL_PROCESSING,
+    },
+]
+
 
 def _snapshot() -> dict:
     return {
         "timestamp": datetime.datetime.now().isoformat(),
-        "task_groups": MOCK_TASK_GROUPS,
+        "sections": MOCK_SECTIONS,
     }
 
 
@@ -264,7 +374,7 @@ def get_tasks():
 
 @app.get("/api/tasks/stream")
 async def stream_tasks():
-    """Server-Sent Events endpoint — pushes task_groups snapshot every 10 seconds."""
+    """Server-Sent Events — pushes sections snapshot every 10 seconds."""
 
     async def event_generator():
         while True:
@@ -275,8 +385,5 @@ async def stream_tasks():
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
