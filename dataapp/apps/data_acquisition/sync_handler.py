@@ -34,7 +34,7 @@ class SyncHandler:
         'TemporaryChannel': 'data_aggregation',
     }
 
-    def __init__(self, file_path: str, event_user: str = '', celery_task_id: str = ''):
+    def __init__(self, file_path: str, event_user: str = '', celery_task_id: str = '', trigger: str = 'unknown'):
         """
         Initialize sync handler.
 
@@ -42,10 +42,12 @@ class SyncHandler:
             file_path: Nextcloud file path
             event_user: Nextcloud user who triggered the event
             celery_task_id: Celery task ID for logging
+            trigger: Trigger source (e.g., 'webhook', 'scheduled')
         """
         self.file_path = file_path
         self.event_user = event_user
         self.celery_task_id = celery_task_id
+        self.trigger = trigger
         self.webdav_client = NextcloudWebDAVClient()
 
         # Statistics
@@ -409,6 +411,10 @@ class SyncHandler:
                 details={
                     'stats': self.stats,
                     'duration_seconds': duration,
+                    'record_count': len(rows),
+                    'conflict_count': self.stats['conflicts'],
+                    'trigger': self.trigger,
+                    'detail': f"从 Nextcloud 同步 {model_name} 数据，{len(rows)} 条记录",
                 }
             )
 
@@ -473,6 +479,7 @@ class SyncHandler:
                     details={
                         'new_records_count': len(self.new_records),
                         'new_etag': new_etag,
+                        'detail': f"回写 {len(self.new_records)} 条新记录 ID 到 Excel",
                     }
                 )
                 logger.info(f"Successfully wrote back IDs, new etag: {new_etag}")

@@ -5,6 +5,7 @@ All tasks here will be processed by the email_content_analysis_queue.
 """
 
 import logging
+from django.utils import timezone
 from .celery_email_content_analysis import app
 from .email_content_analysis import EmailContentAnalysisWorker
 
@@ -20,33 +21,56 @@ logger = logging.getLogger(__name__)
 def process_email(self, **kwargs):
     """
     Process a single email for content analysis and routing.
-    
+
     This task fetches an email, analyzes its content, and creates
     the appropriate handler task.
-    
+
     Args:
         **kwargs: Additional parameters passed to the worker
-        
+
     Returns:
         Dictionary containing processing results
     """
+    from apps.data_aggregation.models import EmailProcessingLog
+
     task_id = self.request.id
     logger.info(f"[Task {task_id}] Starting email content analysis")
-    
+
+    log = EmailProcessingLog.objects.create(
+        stage='analysis',
+        status='running',
+        celery_task_id=task_id or '',
+        total_items=1,
+        detail='邮件内容分析',
+    )
+
     try:
         worker = EmailContentAnalysisWorker()
         result = worker.run(kwargs)
-        
+
         if result.get('status') == 'error':
             logger.error(f"[Task {task_id}] Processing failed: {result.get('error')}")
+            log.status = 'error'
+            log.error_message = str(result.get('error', ''))
+            log.completed_at = timezone.now()
+            log.save()
             if self.request.retries < self.max_retries:
                 raise self.retry(exc=Exception(result.get('error')))
-        
+
+        log.status = 'success'
+        log.completed_items = result.get('processed_count', 1)
+        log.completed_at = timezone.now()
+        log.save()
+
         logger.info(f"[Task {task_id}] Processing completed: {result}")
         return result
-        
+
     except Exception as exc:
         logger.error(f"[Task {task_id}] Task failed: {exc}", exc_info=True)
+        log.status = 'error'
+        log.error_message = str(exc)
+        log.completed_at = timezone.now()
+        log.save()
         if self.request.retries < self.max_retries:
             logger.info(f"[Task {task_id}] Retrying in {self.default_retry_delay}s...")
             raise self.retry(exc=exc)
@@ -60,20 +84,20 @@ def process_email(self, **kwargs):
 def process_batch(self, count: int = 10):
     """
     Queue multiple process_email tasks.
-    
+
     Args:
         count: Number of emails to process
-        
+
     Returns:
         List of queued task IDs
     """
     task_id = self.request.id
     logger.info(f"[Task {task_id}] Queuing {count} process_email tasks")
-    
+
     results = []
     for i in range(count):
         result = process_email.delay()
         results.append({'index': i, 'task_id': result.id})
-    
+
     logger.info(f"[Task {task_id}] Queued {len(results)} tasks")
     return results

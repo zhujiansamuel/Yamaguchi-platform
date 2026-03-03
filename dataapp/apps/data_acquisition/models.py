@@ -486,6 +486,20 @@ class TrackingBatch(models.Model):
         help_text='阶段二的 Celery 任务 ID'
     )
 
+    # 数据来源类型
+    SOURCE_TYPE_CHOICES = [
+        ('excel', 'Excel'),
+        ('db', 'DB'),
+    ]
+    source_type = models.CharField(
+        max_length=10,
+        choices=SOURCE_TYPE_CHOICES,
+        default='excel',
+        db_index=True,
+        verbose_name='Source Type',
+        help_text='数据来源类型：excel（文件驱动）或 db（数据库驱动）'
+    )
+
     # 进度统计
     total_jobs = models.IntegerField(
         default=0,

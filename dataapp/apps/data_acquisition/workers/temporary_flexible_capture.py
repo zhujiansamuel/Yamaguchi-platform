@@ -355,7 +355,8 @@ class TemporaryFlexibleCaptureWorker:
                 task_name=self.TASK_NAME,
                 batch_uuid=batch_uuid,
                 total_jobs=len(records),
-                status='pending'
+                status='pending',
+                source_type='db',
             )
 
             self.logger.info(

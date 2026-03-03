@@ -13,6 +13,7 @@ from .views import (
     create_legal_person_offline_with_inventory, export_iphone_inventory_dashboard,
     get_iphone_inventory_dashboard_data, batch_ingest_emails
 )
+from .dashboard_views import EmailTaskDashboardView
 
 app_name = 'data_aggregation'
 
@@ -42,4 +43,7 @@ urlpatterns = [
     path('export-iphone-inventory-dashboard/', export_iphone_inventory_dashboard, name='export-iphone-inventory-dashboard'),
     path('iphone-inventory-dashboard-data/', get_iphone_inventory_dashboard_data, name='iphone-inventory-dashboard-data'),
     path('emails/ingest/', batch_ingest_emails, name='batch-ingest-emails'),
+
+    # Dashboard endpoints
+    path('dashboard/email-tasks/', EmailTaskDashboardView.as_view(), name='dashboard-email-tasks'),
 ]

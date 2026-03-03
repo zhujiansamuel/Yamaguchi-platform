@@ -11,6 +11,10 @@ from .views import (
     order_planning,
     WebScraperTrackingViewSet
 )
+from .dashboard_views import (
+    NextcloudSyncDashboardView,
+    TrackingBatchDashboardView,
+)
 
 app_name = 'data_acquisition'
 
@@ -29,4 +33,8 @@ urlpatterns = [
 
     # Order planning endpoint
     path('order-planning/', order_planning, name='order_planning'),
+
+    # Dashboard endpoints
+    path('dashboard/nextcloud-sync/', NextcloudSyncDashboardView.as_view(), name='dashboard-nextcloud-sync'),
+    path('dashboard/tracking-batches/', TrackingBatchDashboardView.as_view(), name='dashboard-tracking-batches'),
 ] + router.urls

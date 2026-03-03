@@ -183,7 +183,8 @@ def sync_nextcloud_excel(self, file_path, event_user='', event_time=None):
         handler = SyncHandler(
             file_path=file_path,
             event_user=event_user,
-            celery_task_id=task_id
+            celery_task_id=task_id,
+            trigger='webhook',
         )
 
         # Execute sync
@@ -2159,7 +2160,8 @@ def process_yamato_tracking_10_tracking_number(self):
             file_path='',  # 该任务不基于文件
             celery_task_id=task_id,
             total_jobs=1,  # 只创建一个 job
-            status='pending'
+            status='pending',
+            source_type='db',
         )
 
         logger.info(

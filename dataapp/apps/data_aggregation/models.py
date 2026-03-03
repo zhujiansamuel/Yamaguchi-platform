@@ -3681,3 +3681,39 @@ class MailAttachment(models.Model):
             models.Index(fields=["mime_type"]),
             models.Index(fields=["sha256"]),
         ]
+
+
+class EmailProcessingLog(models.Model):
+    """
+    邮件处理日志模型
+
+    记录邮件处理 pipeline 各阶段的执行状态，供 Dashboard 展示。
+    四个阶段：分析 → 初始确认 → 通知生成 → 邮件发送
+    """
+    STAGE_CHOICES = [
+        ('analysis',      '邮件分析'),
+        ('initial_order', '初始确认'),
+        ('notification',  '通知生成'),
+        ('send',          '邮件发送'),
+    ]
+    STATUS_CHOICES = [
+        ('pending',  '待处理'),
+        ('running',  '进行中'),
+        ('success',  '成功'),
+        ('error',    '异常'),
+    ]
+
+    stage           = models.CharField(max_length=30, choices=STAGE_CHOICES)
+    status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    celery_task_id  = models.CharField(max_length=255, blank=True)
+    total_items     = models.IntegerField(default=0)
+    completed_items = models.IntegerField(default=0)
+    failed_items    = models.IntegerField(default=0)
+    error_message   = models.TextField(blank=True)
+    created_at      = models.DateTimeField(auto_now_add=True)
+    completed_at    = models.DateTimeField(null=True, blank=True)
+    detail          = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'email_processing_logs'
+        indexes = [models.Index(fields=['stage', 'created_at'])]
