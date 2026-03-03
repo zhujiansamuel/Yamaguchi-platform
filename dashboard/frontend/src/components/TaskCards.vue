@@ -60,7 +60,7 @@
           <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 8px">
             <span style="font-size: 11px; color: #8c8c8c">
               {{ isSyncGroup(group)
-                ? (group.events.length ? group.events.length + ' 次同步' : '暂无记录')
+                ? (group.events.length ? group.events.length + ' 次记录' : '暂无记录')
                 : (group.batches.length ? group.batches.length + ' 批次' : '暂无记录') }}
             </span>
             <a-badge :status="groupBadgeStatus(group)" />
@@ -71,10 +71,10 @@
         <Transition name="slide">
           <div v-if="isExpanded(group.id)">
 
-            <!-- ── Sync event list ── -->
+            <!-- ── Event list (nextcloud / webapp) ── -->
             <template v-if="isSyncGroup(group)">
               <div v-if="group.events.length === 0" style="padding: 12px 16px; color: #bfbfbf; font-size: 13px">
-                暂无同步事件
+                暂无记录
               </div>
 
               <div
@@ -91,32 +91,52 @@
                 @mouseenter="(e) => (e.currentTarget.style.background = '#f0f5ff')"
                 @mouseleave="(e) => (e.currentTarget.style.background = eIdx % 2 === 0 ? '#fff' : '#fafafa')"
               >
-                <!-- Event header row -->
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
-                  <span :style="{ color: eventColor(event), fontSize: '14px', fontWeight: 700, lineHeight: 1 }">
-                    {{ event.direction === 'in' ? '▼' : '▲' }}
-                  </span>
-                  <span style="font-size: 12px; font-weight: 500; color: #262626">
-                    {{ event.direction === 'in' ? '写入' : '写出' }}
-                  </span>
-                  <a-tag
-                    :color="event.trigger === 'webhook' ? 'blue' : 'default'"
-                    style="margin: 0; font-size: 10px; padding: 0 5px; line-height: 16px"
-                  >{{ event.trigger === 'webhook' ? 'webhook' : '定时' }}</a-tag>
-                  <a-badge :status="badgeStatus(event.status)" :text="statusLabel(event.status)" />
-                  <span style="font-size: 11px; color: #8c8c8c; margin-left: auto">
-                    {{ formatTime(event.timestamp) }}
-                  </span>
-                </div>
-                <!-- Record info -->
-                <div style="font-size: 12px; color: #595959; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" :title="event.detail">
-                  {{ event.record_count }} 条记录{{ event.conflict_count > 0 ? ' · ' + event.conflict_count + ' 处冲突' : '' }}
-                  {{ event.detail ? ' · ' + event.detail : '' }}
-                </div>
+                <!-- Nextcloud event row -->
+                <template v-if="group.pipeline === 'nextcloud'">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                    <span :style="{ color: eventColor(event), fontSize: '14px', fontWeight: 700, lineHeight: 1 }">
+                      {{ event.direction === 'in' ? '▼' : '▲' }}
+                    </span>
+                    <span style="font-size: 12px; font-weight: 500; color: #262626">
+                      {{ event.direction === 'in' ? '写入' : '写出' }}
+                    </span>
+                    <a-tag
+                      :color="event.trigger === 'webhook' ? 'blue' : 'default'"
+                      style="margin: 0; font-size: 10px; padding: 0 5px; line-height: 16px"
+                    >{{ event.trigger === 'webhook' ? 'webhook' : '定时' }}</a-tag>
+                    <a-badge :status="badgeStatus(event.status)" :text="statusLabel(event.status)" />
+                    <span style="font-size: 11px; color: #8c8c8c; margin-left: auto">
+                      {{ formatTime(event.timestamp) }}
+                    </span>
+                  </div>
+                  <div style="font-size: 12px; color: #595959; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" :title="event.detail">
+                    {{ event.record_count }} 条记录{{ event.conflict_count > 0 ? ' · ' + event.conflict_count + ' 处冲突' : '' }}
+                    {{ event.detail ? ' · ' + event.detail : '' }}
+                  </div>
+                </template>
+
+                <!-- Webapp scraper event row -->
+                <template v-else>
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                    <a-badge :status="badgeStatus(event.status)" :text="statusLabel(event.status)" />
+                    <span style="font-size: 11px; color: #8c8c8c; margin-left: auto">
+                      {{ formatTime(event.timestamp) }}
+                    </span>
+                  </div>
+                  <div style="font-size: 12px; color: #595959; margin-top: 5px">
+                    <template v-if="event.status === 'success'">
+                      写入 {{ event.rows_inserted }} · 更新 {{ event.rows_updated }} · 接收 {{ event.rows_received }}
+                      <span v-if="event.rows_unmatched > 0" style="color: #fa8c16"> · 未匹配 {{ event.rows_unmatched }}</span>
+                    </template>
+                    <template v-else>
+                      <span style="color: #ff4d4f">{{ event.error_message || '处理失败' }}</span>
+                    </template>
+                  </div>
+                </template>
               </div>
             </template>
 
-            <!-- ── Batch list ── -->
+            <!-- ── Batch list (excel / db / email) ── -->
             <template v-else>
               <div v-if="group.batches.length === 0" style="padding: 12px 16px; color: #bfbfbf; font-size: 13px">
                 该任务暂无批次记录
@@ -136,7 +156,6 @@
                 @mouseenter="(e) => (e.currentTarget.style.background = '#f0f5ff')"
                 @mouseleave="(e) => (e.currentTarget.style.background = bIdx % 2 === 0 ? '#fff' : '#fafafa')"
               >
-                <!-- Batch header -->
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap">
                   <a-tag
                     :color="sourceColor(batch.source)"
@@ -149,13 +168,11 @@
                   </span>
                 </div>
 
-                <!-- Detail -->
                 <div
                   style="font-size: 12px; color: #595959; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
                   :title="batch.detail"
                 >{{ batch.detail }}</div>
 
-                <!-- Progress bar -->
                 <div v-if="batch.total_jobs > 0" style="display: flex; align-items: center; gap: 8px">
                   <div style="flex: 1; height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden">
                     <div
@@ -212,7 +229,7 @@
       </div>
     </a-modal>
 
-    <!-- Sync event detail modal -->
+    <!-- Event detail modal (nextcloud + webapp) -->
     <a-modal
       v-model:open="syncModalOpen"
       :title="selectedEventGroup?.label"
@@ -220,35 +237,88 @@
       :centered="true"
     >
       <div v-if="selectedEvent">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
-          <span :style="{ color: eventColor(selectedEvent), fontSize: '20px', fontWeight: 700, lineHeight: 1 }">
-            {{ selectedEvent.direction === 'in' ? '▼' : '▲' }}
-          </span>
-          <span style="font-size: 14px; font-weight: 500">
-            {{ selectedEvent.direction === 'in' ? '写入（Nextcloud → DB）' : '写出（DB → Nextcloud）' }}
-          </span>
-          <a-tag :color="pipelineColor(selectedEventGroup?.pipeline)">{{ selectedEventGroup?.pipeline }}</a-tag>
-          <a-badge :status="badgeStatus(selectedEvent.status)" :text="statusLabel(selectedEvent.status)" />
-        </div>
-        <div style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap">
-          <div>
-            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">时间</div>
-            <div style="font-size: 13px">{{ formatTime(selectedEvent.timestamp) }}</div>
+
+        <!-- ── Nextcloud event ── -->
+        <template v-if="selectedEventGroup?.pipeline === 'nextcloud'">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
+            <span :style="{ color: eventColor(selectedEvent), fontSize: '20px', fontWeight: 700, lineHeight: 1 }">
+              {{ selectedEvent.direction === 'in' ? '▼' : '▲' }}
+            </span>
+            <span style="font-size: 14px; font-weight: 500">
+              {{ selectedEvent.direction === 'in' ? '写入（Nextcloud → DB）' : '写出（DB → Nextcloud）' }}
+            </span>
+            <a-tag :color="pipelineColor(selectedEventGroup?.pipeline)">{{ selectedEventGroup?.pipeline }}</a-tag>
+            <a-badge :status="badgeStatus(selectedEvent.status)" :text="statusLabel(selectedEvent.status)" />
           </div>
-          <div>
-            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">记录数</div>
-            <div style="font-size: 13px">{{ selectedEvent.record_count }} 条</div>
+          <div style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap">
+            <div>
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">时间</div>
+              <div style="font-size: 13px">{{ formatTime(selectedEvent.timestamp) }}</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">记录数</div>
+              <div style="font-size: 13px">{{ selectedEvent.record_count }} 条</div>
+            </div>
+            <div v-if="selectedEvent.conflict_count > 0">
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">冲突</div>
+              <div style="font-size: 13px; color: #fa8c16">{{ selectedEvent.conflict_count }} 处</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">触发方式</div>
+              <div style="font-size: 13px">{{ selectedEvent.trigger === 'webhook' ? 'Webhook' : '定时任务' }}</div>
+            </div>
           </div>
-          <div v-if="selectedEvent.conflict_count > 0">
-            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">冲突</div>
-            <div style="font-size: 13px; color: #fa8c16">{{ selectedEvent.conflict_count }} 处</div>
+          <div style="color: #595959; font-size: 13px; word-break: break-all">{{ selectedEvent.detail }}</div>
+        </template>
+
+        <!-- ── Webapp scraper event ── -->
+        <template v-else-if="selectedEventGroup?.pipeline === 'webapp'">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
+            <a-tag :color="pipelineColor(selectedEventGroup?.pipeline)">webapp</a-tag>
+            <a-tag color="default" style="font-size: 11px">{{ selectedEvent.task_type }}</a-tag>
+            <a-badge :status="badgeStatus(selectedEvent.status)" :text="statusLabel(selectedEvent.status)" />
           </div>
-          <div>
-            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">触发方式</div>
-            <div style="font-size: 13px">{{ selectedEvent.trigger === 'webhook' ? 'Webhook' : '定时任务' }}</div>
+
+          <!-- Stage timeline -->
+          <div style="margin-bottom: 14px">
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 8px; font-weight: 500">阶段时间线</div>
+            <div style="display: flex; flex-direction: column; gap: 5px">
+              <div style="display: flex; gap: 8px; font-size: 12px; align-items: baseline">
+                <span style="color: #8c8c8c; width: 56px; flex-shrink: 0">创建</span>
+                <span>{{ formatTime(selectedEvent.created_at) }}</span>
+              </div>
+              <div style="display: flex; gap: 8px; font-size: 12px; align-items: baseline">
+                <span style="color: #8c8c8c; width: 56px; flex-shrink: 0">下载完成</span>
+                <span>{{ formatTime(selectedEvent.received_at) || '—' }}</span>
+              </div>
+              <div style="display: flex; gap: 8px; font-size: 12px; align-items: baseline">
+                <span style="color: #8c8c8c; width: 56px; flex-shrink: 0">清洗开始</span>
+                <span>{{ formatTime(selectedEvent.cleaning_started_at) || '—' }}</span>
+              </div>
+              <div style="display: flex; gap: 8px; font-size: 12px; align-items: baseline">
+                <span style="color: #8c8c8c; width: 56px; flex-shrink: 0">完成</span>
+                <span :style="{ color: selectedEvent.status === 'error' ? '#ff4d4f' : 'inherit' }">
+                  {{ formatTime(selectedEvent.completed_at) }}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div style="color: #595959; font-size: 13px; word-break: break-all">{{ selectedEvent.detail }}</div>
+
+          <!-- Row stats -->
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 0; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0">
+            <div v-for="stat in scrapeStats(selectedEvent)" :key="stat.label">
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">{{ stat.label }}</div>
+              <div :style="{ fontSize: '15px', fontWeight: 600, color: stat.color || 'inherit' }">{{ stat.value }}</div>
+            </div>
+          </div>
+
+          <!-- Error message -->
+          <div
+            v-if="selectedEvent.error_message"
+            style="background: #fff2f0; border: 1px solid #ffccc7; border-radius: 4px; padding: 8px 12px; font-size: 12px; color: #ff4d4f; word-break: break-all"
+          >{{ selectedEvent.error_message }}</div>
+        </template>
+
       </div>
     </a-modal>
   </div>
@@ -266,7 +336,6 @@ const expandedGroups = ref({})
 function toggle(id) { expandedGroups.value[id] = !expandedGroups.value[id] }
 function isExpanded(id) { return !!expandedGroups.value[id] }
 
-// ── Sync group detection ──────────────────────────────────────────────────────
 function isSyncGroup(group) { return Array.isArray(group.events) }
 
 // ── Batch detail modal ────────────────────────────────────────────────────────
@@ -279,7 +348,7 @@ function openDetail(batch, group) {
   modalOpen.value = true
 }
 
-// ── Sync event modal ──────────────────────────────────────────────────────────
+// ── Event detail modal (nextcloud + webapp) ───────────────────────────────────
 const syncModalOpen = ref(false)
 const selectedEvent = ref(null)
 const selectedEventGroup = ref(null)
@@ -297,11 +366,11 @@ const STATUS_COLORS = {
 }
 
 function pipelineColor(pipeline) {
-  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan' }[pipeline] ?? 'default'
+  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan', webapp: 'orange' }[pipeline] ?? 'default'
 }
 
 function sourceColor(source) {
-  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan' }[source] ?? 'default'
+  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan', webapp: 'orange' }[source] ?? 'default'
 }
 
 function sourceLabel(source) {
@@ -336,6 +405,16 @@ function groupBadgeStatus(group) {
     new Date(a.created_at || 0) > new Date(b.created_at || 0) ? a : b
   )
   return badgeStatus(last.status)
+}
+
+function scrapeStats(event) {
+  return [
+    { label: '接收', value: event.rows_received },
+    { label: '写入', value: event.rows_inserted, color: '#52c41a' },
+    { label: '更新', value: event.rows_updated, color: '#1677ff' },
+    { label: '跳过', value: event.rows_skipped },
+    { label: '未匹配', value: event.rows_unmatched, color: event.rows_unmatched > 0 ? '#fa8c16' : undefined },
+  ]
 }
 
 function formatTime(iso) {

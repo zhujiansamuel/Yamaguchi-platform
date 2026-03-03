@@ -29,9 +29,32 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Mock data — four sections: Nextcloud sync / Excel tracking / DB tracking / Email
-# Replace with real DB/API queries once dataapp event API is ready.
+# Mock data — five sections:
+#   Nextcloud sync / Webapp scraper / Excel tracking / DB tracking / Email
+# Replace with real DB/API queries once event APIs are ready.
 # ---------------------------------------------------------------------------
+
+def _ws(sid, day, h, m, rr=0, ri=0, ru=0, rs=0, rum=0, status="success", err=None):
+    """Helper to generate a webapp scraper ingestion event."""
+    base = datetime.datetime(2026, 3, day, h, m)
+    return {
+        "id": f"wb-{sid}-030{day}",
+        "source_name": sid,
+        "task_type": "WEBSCRAPER",
+        "timestamp": base.isoformat(),
+        "status": status,
+        "rows_received": rr,
+        "rows_inserted": ri,
+        "rows_updated": ru,
+        "rows_skipped": rs,
+        "rows_unmatched": rum,
+        "error_message": err,
+        "created_at": (base - datetime.timedelta(minutes=3)).isoformat(),
+        "received_at": (base - datetime.timedelta(seconds=90)).isoformat(),
+        "cleaning_started_at": (base - datetime.timedelta(seconds=60)).isoformat(),
+        "completed_at": base.isoformat(),
+    }
+
 
 _NEXTCLOUD_SYNC = [
     {
@@ -206,6 +229,91 @@ _NEXTCLOUD_SYNC = [
             },
         ],
     },
+]
+
+_WEBAPP_SCRAPER = [
+    {"id": "WEBAPP_SHOP1",  "label": "shop1",  "pipeline": "webapp", "events": [
+        _ws("shop1",  2, 6, 31, 148, 120, 18, 7, 3),
+        _ws("shop1",  1, 6, 30, 145, 115, 20, 8, 2),
+    ]},
+    {"id": "WEBAPP_SHOP2",  "label": "shop2",  "pipeline": "webapp", "events": [
+        _ws("shop2",  2, 6, 34, 215, 178, 25, 8, 4),
+        _ws("shop2",  1, 6, 33, 210, 172, 28, 7, 3),
+    ]},
+    {"id": "WEBAPP_SHOP3",  "label": "shop3",  "pipeline": "webapp", "events": [
+        _ws("shop3",  2, 6, 37,  82,  70,  8, 3, 1),
+        _ws("shop3",  1, 6, 36,   0, status="error",
+            err="WebScraper.io API 返回 503：服务暂时不可用"),
+    ]},
+    {"id": "WEBAPP_SHOP4",  "label": "shop4",  "pipeline": "webapp", "events": [
+        _ws("shop4",  2, 6, 40, 125, 100, 15, 8, 2),
+        _ws("shop4",  1, 6, 39, 122,  98, 16, 6, 2),
+    ]},
+    {"id": "WEBAPP_SHOP5",  "label": "shop5",  "pipeline": "webapp", "events": [
+        _ws("shop5",  2, 6, 45, 312, 260, 38, 10, 4),
+        _ws("shop5",  1, 6, 44, 308, 255, 40,  9, 4),
+    ]},
+    {"id": "WEBAPP_SHOP6",  "label": "shop6",  "pipeline": "webapp", "events": [
+        _ws("shop6",  2, 6, 50, 268, 220, 32, 12, 4),
+        _ws("shop6",  1, 6, 49, 265, 218, 34,  9, 4),
+    ]},
+    {"id": "WEBAPP_SHOP7",  "label": "shop7",  "pipeline": "webapp", "events": [
+        _ws("shop7",  2, 6, 53,  65, status="error",
+            err="清洗失败：KeyError 'jan_code' in shop7_cleaner"),
+        _ws("shop7",  1, 6, 52,  65,  52,  8, 3, 2),
+    ]},
+    {"id": "WEBAPP_SHOP8",  "label": "shop8",  "pipeline": "webapp", "events": [
+        _ws("shop8",  2, 6, 56,  92,  76, 12, 3, 1),
+        _ws("shop8",  1, 6, 55,  90,  74, 12, 3, 1),
+    ]},
+    {"id": "WEBAPP_SHOP9",  "label": "shop9",  "pipeline": "webapp", "events": [
+        _ws("shop9",  2, 6, 59,  47,  38,  6, 2, 1),
+        _ws("shop9",  1, 6, 58,  45,  36,  6, 2, 1),
+    ]},
+    {"id": "WEBAPP_SHOP10", "label": "shop10", "pipeline": "webapp", "events": [
+        _ws("shop10", 2, 7,  2, 188, 155, 22, 9, 2),
+        _ws("shop10", 1, 7,  1, 185, 152, 24, 7, 2),
+    ]},
+    {"id": "WEBAPP_SHOP11", "label": "shop11", "pipeline": "webapp", "events": [
+        _ws("shop11", 2, 7,  5,  78,  64,  9, 4, 1),
+        _ws("shop11", 1, 7,  4,  76,  62,  9, 4, 1),
+    ]},
+    {"id": "WEBAPP_SHOP12", "label": "shop12", "pipeline": "webapp", "events": [
+        _ws("shop12", 2, 7,  8, 115,  94, 16, 4, 1),
+        _ws("shop12", 1, 7,  7, 112,  92, 14, 5, 1),
+    ]},
+    {"id": "WEBAPP_SHOP13", "label": "shop13", "pipeline": "webapp", "events": [
+        _ws("shop13", 2, 7, 11,  98,  82, 11, 4, 1),
+        _ws("shop13", 1, 7, 10,  95,  80, 10, 4, 1),
+    ]},
+    {"id": "WEBAPP_SHOP14", "label": "shop14", "pipeline": "webapp", "events": [
+        _ws("shop14", 2, 7, 14, 135, 110, 18, 5, 2),
+        _ws("shop14", 1, 7, 13, 132, 108, 18, 4, 2),
+    ]},
+    {"id": "WEBAPP_SHOP15", "label": "shop15", "pipeline": "webapp", "events": [
+        _ws("shop15", 2, 7, 17,  88,  72, 10, 5, 1),
+        _ws("shop15", 1, 7, 16,  86,  70, 10, 5, 1),
+    ]},
+    {"id": "WEBAPP_SHOP16", "label": "shop16", "pipeline": "webapp", "events": [
+        _ws("shop16", 2, 7, 20,  58,  47,  7, 3, 1),
+        _ws("shop16", 1, 7, 19,  56,  45,  7, 3, 1),
+    ]},
+    {"id": "WEBAPP_SHOP17", "label": "shop17", "pipeline": "webapp", "events": [
+        _ws("shop17", 2, 7, 23, 165, 135, 22, 6, 2),
+        _ws("shop17", 1, 7, 22, 162, 132, 22, 6, 2),
+    ]},
+    {"id": "WEBAPP_SHOP18", "label": "shop18", "pipeline": "webapp", "events": [
+        _ws("shop18", 2, 7, 26,  72,  58,  9, 4, 1),
+        _ws("shop18", 1, 7, 25,  70,  56, 10, 3, 1),
+    ]},
+    {"id": "WEBAPP_SHOP19", "label": "shop19", "pipeline": "webapp", "events": [
+        _ws("shop19", 2, 7, 29,  43,  35,  5, 2, 1),
+        _ws("shop19", 1, 7, 28,  41,  33,  5, 2, 1),
+    ]},
+    {"id": "WEBAPP_SHOP20", "label": "shop20", "pipeline": "webapp", "events": [
+        _ws("shop20", 2, 7, 32, 102,  84, 13, 4, 1),
+        _ws("shop20", 1, 7, 31, 100,  82, 13, 4, 1),
+    ]},
 ]
 
 _EXCEL_TRACKING = [
@@ -511,6 +619,11 @@ MOCK_SECTIONS = [
         "id": "nextcloud_sync",
         "label": "Nextcloud 数据同步",
         "task_groups": _NEXTCLOUD_SYNC,
+    },
+    {
+        "id": "webapp_scraper",
+        "label": "价格抓取（Webapp）",
+        "task_groups": _WEBAPP_SCRAPER,
     },
     {
         "id": "excel_tracking",

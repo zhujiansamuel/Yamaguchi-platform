@@ -77,11 +77,11 @@
               <a-badge :status="groupBadgeStatus(group)" style="flex-shrink: 0" />
             </div>
 
-            <!-- Chart area: sync markers or mini blocks -->
+            <!-- Chart area: event markers or mini blocks -->
             <div :style="{ ...chartColStyle, position: 'relative' }">
               <div v-for="mark in timeMarks" :key="'g1-' + group.id + mark.pos" :style="gridLineStyle(mark.pos)"></div>
 
-              <!-- Sync group: triangle point markers -->
+              <!-- Event-based groups (nextcloud & webapp) -->
               <template v-if="isSyncGroup(group)">
                 <span
                   v-if="group.events.length === 0"
@@ -90,12 +90,12 @@
                 <div
                   v-for="event in group.events"
                   :key="'mkr-' + event.id"
-                  :style="syncMarkerStyle(event)"
+                  :style="markerStyle(event, group)"
                   @click.stop="openSyncDetail(event, group)"
                 ></div>
               </template>
 
-              <!-- Batch group: mini blocks -->
+              <!-- Batch groups (excel / db / email) -->
               <template v-else>
                 <span
                   v-if="group.batches.length === 0"
@@ -114,12 +114,12 @@
           <Transition name="expand">
             <div v-if="isExpanded(group.id)">
 
-              <!-- ── Sync event list ── -->
+              <!-- ── Event list (nextcloud / webapp) ── -->
               <template v-if="isSyncGroup(group)">
                 <div v-if="group.events.length === 0" :style="rowStyle('l2')">
                   <div :style="{ ...labelColStyle, paddingLeft: '24px' }"></div>
                   <div :style="chartColStyle" style="display: flex; align-items: center">
-                    <span style="font-size: 12px; color: #bfbfbf">暂无同步事件</span>
+                    <span style="font-size: 12px; color: #bfbfbf">暂无记录</span>
                   </div>
                 </div>
 
@@ -133,24 +133,38 @@
                   }"
                   @click="openSyncDetail(event, group)"
                 >
-                  <!-- Label col -->
-                  <div :style="{ ...labelColStyle, paddingLeft: '22px', display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', paddingRight: '8px' }">
-                    <span :style="{ color: eventColor(event), fontSize: '12px', flexShrink: 0, fontWeight: 700, lineHeight: 1 }">
-                      {{ event.direction === 'in' ? '▼' : '▲' }}
-                    </span>
-                    <a-tag
-                      :color="event.trigger === 'webhook' ? 'blue' : 'default'"
-                      style="font-size: 10px; flex-shrink: 0; margin: 0; padding: 0 4px; line-height: 16px"
-                    >{{ event.trigger === 'webhook' ? 'hook' : '定时' }}</a-tag>
-                    <span style="font-size: 11px; color: #595959; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1">
-                      {{ event.record_count }} 条 · {{ formatTime(event.timestamp) }}
-                    </span>
-                  </div>
+                  <!-- Label col: nextcloud -->
+                  <template v-if="group.pipeline === 'nextcloud'">
+                    <div :style="{ ...labelColStyle, paddingLeft: '22px', display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', paddingRight: '8px' }">
+                      <span :style="{ color: eventColor(event), fontSize: '12px', flexShrink: 0, fontWeight: 700, lineHeight: 1 }">
+                        {{ event.direction === 'in' ? '▼' : '▲' }}
+                      </span>
+                      <a-tag
+                        :color="event.trigger === 'webhook' ? 'blue' : 'default'"
+                        style="font-size: 10px; flex-shrink: 0; margin: 0; padding: 0 4px; line-height: 16px"
+                      >{{ event.trigger === 'webhook' ? 'hook' : '定时' }}</a-tag>
+                      <span style="font-size: 11px; color: #595959; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1">
+                        {{ event.record_count }} 条 · {{ formatTime(event.timestamp) }}
+                      </span>
+                    </div>
+                  </template>
 
-                  <!-- Chart col -->
+                  <!-- Label col: webapp -->
+                  <template v-else>
+                    <div :style="{ ...labelColStyle, paddingLeft: '22px', display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', paddingRight: '8px' }">
+                      <a-badge :status="badgeStatus(event.status)" style="flex-shrink: 0" />
+                      <span style="font-size: 11px; color: #595959; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1">
+                        {{ event.status === 'success'
+                          ? `写入 ${event.rows_inserted + event.rows_updated}/${event.rows_received}`
+                          : '失败' }}
+                        · {{ formatTime(event.timestamp) }}
+                      </span>
+                    </div>
+                  </template>
+
+                  <!-- Chart col (shared) -->
                   <div :style="{ ...chartColStyle, position: 'relative' }">
                     <div v-for="mark in timeMarks" :key="'g2e-' + event.id + mark.pos" :style="gridLineStyle(mark.pos)"></div>
-                    <!-- Vertical indicator at timestamp -->
                     <div
                       :style="{
                         position: 'absolute',
@@ -168,7 +182,7 @@
                 </div>
               </template>
 
-              <!-- ── Batch progress bars ── -->
+              <!-- ── Batch progress bars (excel / db / email) ── -->
               <template v-else>
                 <div v-if="group.batches.length === 0" :style="rowStyle('l2')">
                   <div :style="{ ...labelColStyle, paddingLeft: '24px' }"></div>
@@ -185,7 +199,6 @@
                     background: bIdx % 2 === 0 ? '#fafafa' : 'transparent',
                   }"
                 >
-                  <!-- Label col -->
                   <div :style="{ ...labelColStyle, paddingLeft: '22px', display: 'flex', alignItems: 'center', gap: '5px', overflow: 'hidden', paddingRight: '8px' }">
                     <a-tag
                       :color="sourceColor(batch.source)"
@@ -197,17 +210,14 @@
                     >{{ batch.detail }}</span>
                   </div>
 
-                  <!-- Chart col -->
                   <div :style="{ ...chartColStyle, position: 'relative' }">
                     <div v-for="mark in timeMarks" :key="'g2-' + batch.id + mark.pos" :style="gridLineStyle(mark.pos)"></div>
 
-                    <!-- Batch has no start time yet (pipeline waiting) -->
                     <span
                       v-if="!batch.created_at"
                       style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); font-size: 11px; color: #bfbfbf"
                     >等待触发</span>
 
-                    <!-- Progress bar -->
                     <a-tooltip v-else :disabled="isMobile" placement="top">
                       <template #title>
                         <div style="font-weight: 500">{{ group.label }}</div>
@@ -237,9 +247,7 @@
                         "
                         @click="openDetail(batch, group)"
                       >
-                        <!-- Unfilled overlay -->
                         <div :style="batchUnfilledStyle(batch)" style="position: absolute; right: 0; top: 0; bottom: 0;"></div>
-                        <!-- Label -->
                         <span style="position: relative; z-index: 2; font-size: 11px; color: white; padding: 0 8px; white-space: nowrap; overflow: hidden; text-shadow: 0 1px 2px rgba(0,0,0,0.25)">
                           <span
                             v-if="batch.status === 'running'"
@@ -293,7 +301,7 @@
       </div>
     </a-modal>
 
-    <!-- Sync event detail modal -->
+    <!-- Event detail modal (nextcloud + webapp) -->
     <a-modal
       v-model:open="syncModalOpen"
       :title="selectedEventGroup?.label"
@@ -302,35 +310,88 @@
       :width="isMobile ? '92%' : 420"
     >
       <div v-if="selectedEvent">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
-          <span :style="{ color: eventColor(selectedEvent), fontSize: '20px', fontWeight: 700, lineHeight: 1 }">
-            {{ selectedEvent.direction === 'in' ? '▼' : '▲' }}
-          </span>
-          <span style="font-size: 14px; font-weight: 500">
-            {{ selectedEvent.direction === 'in' ? '写入（Nextcloud → DB）' : '写出（DB → Nextcloud）' }}
-          </span>
-          <a-tag :color="pipelineColor(selectedEventGroup?.pipeline)">{{ selectedEventGroup?.pipeline }}</a-tag>
-          <a-badge :status="badgeStatus(selectedEvent.status)" :text="statusLabel(selectedEvent.status)" />
-        </div>
-        <div style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap">
-          <div>
-            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">时间</div>
-            <div style="font-size: 13px">{{ formatTime(selectedEvent.timestamp) }}</div>
+
+        <!-- ── Nextcloud event ── -->
+        <template v-if="selectedEventGroup?.pipeline === 'nextcloud'">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
+            <span :style="{ color: eventColor(selectedEvent), fontSize: '20px', fontWeight: 700, lineHeight: 1 }">
+              {{ selectedEvent.direction === 'in' ? '▼' : '▲' }}
+            </span>
+            <span style="font-size: 14px; font-weight: 500">
+              {{ selectedEvent.direction === 'in' ? '写入（Nextcloud → DB）' : '写出（DB → Nextcloud）' }}
+            </span>
+            <a-tag :color="pipelineColor(selectedEventGroup?.pipeline)">{{ selectedEventGroup?.pipeline }}</a-tag>
+            <a-badge :status="badgeStatus(selectedEvent.status)" :text="statusLabel(selectedEvent.status)" />
           </div>
-          <div>
-            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">记录数</div>
-            <div style="font-size: 13px">{{ selectedEvent.record_count }} 条</div>
+          <div style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap">
+            <div>
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">时间</div>
+              <div style="font-size: 13px">{{ formatTime(selectedEvent.timestamp) }}</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">记录数</div>
+              <div style="font-size: 13px">{{ selectedEvent.record_count }} 条</div>
+            </div>
+            <div v-if="selectedEvent.conflict_count > 0">
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">冲突</div>
+              <div style="font-size: 13px; color: #fa8c16">{{ selectedEvent.conflict_count }} 处</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">触发方式</div>
+              <div style="font-size: 13px">{{ selectedEvent.trigger === 'webhook' ? 'Webhook' : '定时任务' }}</div>
+            </div>
           </div>
-          <div v-if="selectedEvent.conflict_count > 0">
-            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">冲突</div>
-            <div style="font-size: 13px; color: #fa8c16">{{ selectedEvent.conflict_count }} 处</div>
+          <div style="color: #595959; font-size: 13px; word-break: break-all">{{ selectedEvent.detail }}</div>
+        </template>
+
+        <!-- ── Webapp scraper event ── -->
+        <template v-else-if="selectedEventGroup?.pipeline === 'webapp'">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap">
+            <a-tag :color="pipelineColor(selectedEventGroup?.pipeline)">webapp</a-tag>
+            <a-tag color="default" style="font-size: 11px">{{ selectedEvent.task_type }}</a-tag>
+            <a-badge :status="badgeStatus(selectedEvent.status)" :text="statusLabel(selectedEvent.status)" />
           </div>
-          <div>
-            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">触发方式</div>
-            <div style="font-size: 13px">{{ selectedEvent.trigger === 'webhook' ? 'Webhook' : '定时任务' }}</div>
+
+          <!-- Stage timeline -->
+          <div style="margin-bottom: 14px">
+            <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 8px; font-weight: 500">阶段时间线</div>
+            <div style="display: flex; flex-direction: column; gap: 5px">
+              <div style="display: flex; gap: 8px; font-size: 12px; align-items: baseline">
+                <span style="color: #8c8c8c; width: 56px; flex-shrink: 0">创建</span>
+                <span>{{ formatTime(selectedEvent.created_at) }}</span>
+              </div>
+              <div style="display: flex; gap: 8px; font-size: 12px; align-items: baseline">
+                <span style="color: #8c8c8c; width: 56px; flex-shrink: 0">下载完成</span>
+                <span>{{ formatTime(selectedEvent.received_at) || '—' }}</span>
+              </div>
+              <div style="display: flex; gap: 8px; font-size: 12px; align-items: baseline">
+                <span style="color: #8c8c8c; width: 56px; flex-shrink: 0">清洗开始</span>
+                <span>{{ formatTime(selectedEvent.cleaning_started_at) || '—' }}</span>
+              </div>
+              <div style="display: flex; gap: 8px; font-size: 12px; align-items: baseline">
+                <span style="color: #8c8c8c; width: 56px; flex-shrink: 0">完成</span>
+                <span :style="{ color: selectedEvent.status === 'error' ? '#ff4d4f' : 'inherit' }">
+                  {{ formatTime(selectedEvent.completed_at) }}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div style="color: #595959; font-size: 13px; word-break: break-all">{{ selectedEvent.detail }}</div>
+
+          <!-- Row stats -->
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 0; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0">
+            <div v-for="stat in scrapeStats(selectedEvent)" :key="stat.label">
+              <div style="font-size: 11px; color: #8c8c8c; margin-bottom: 2px">{{ stat.label }}</div>
+              <div :style="{ fontSize: '15px', fontWeight: 600, color: stat.color || 'inherit' }">{{ stat.value }}</div>
+            </div>
+          </div>
+
+          <!-- Error message -->
+          <div
+            v-if="selectedEvent.error_message"
+            style="background: #fff2f0; border: 1px solid #ffccc7; border-radius: 4px; padding: 8px 12px; font-size: 12px; color: #ff4d4f; word-break: break-all"
+          >{{ selectedEvent.error_message }}</div>
+        </template>
+
       </div>
     </a-modal>
   </div>
@@ -364,7 +425,7 @@ function openDetail(batch, group) {
   modalOpen.value = true
 }
 
-// ── Sync event modal ──────────────────────────────────────────────────────────
+// ── Event detail modal (nextcloud + webapp) ───────────────────────────────────
 const syncModalOpen = ref(false)
 const selectedEvent = ref(null)
 const selectedEventGroup = ref(null)
@@ -374,16 +435,16 @@ function openSyncDetail(event, group) {
   syncModalOpen.value = true
 }
 
-// ── Reactive now (running bar right edge only) ───────────────────────────────
+// ── Reactive now ──────────────────────────────────────────────────────────────
 const now = ref(Date.now())
 let timer
 onMounted(() => { timer = setInterval(() => { now.value = Date.now() }, 1000) })
 onUnmounted(() => { clearInterval(timer) })
 
-// ── Sync group detection ──────────────────────────────────────────────────────
+// ── Group type detection ──────────────────────────────────────────────────────
 function isSyncGroup(group) { return Array.isArray(group.events) }
 
-// ── All batches and events (flat) ─────────────────────────────────────────────
+// ── All batches and events (flat, for time range) ─────────────────────────────
 const allBatches = computed(() =>
   props.sections.flatMap((s) => s.task_groups.flatMap((g) => g.batches || []))
 )
@@ -391,7 +452,7 @@ const allEvents = computed(() =>
   props.sections.flatMap((s) => s.task_groups.flatMap((g) => g.events || []))
 )
 
-// ── Time range (stable, no reactive now) ─────────────────────────────────────
+// ── Time range ────────────────────────────────────────────────────────────────
 const timeRange = computed(() => {
   const times = []
   allBatches.value.forEach((b) => {
@@ -469,38 +530,53 @@ const STATUS_COLORS = {
 }
 
 function pipelineColor(pipeline) {
-  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan' }[pipeline] ?? 'default'
+  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan', webapp: 'orange' }[pipeline] ?? 'default'
 }
 
 function sourceColor(source) {
-  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan' }[source] ?? 'default'
+  return { excel: 'green', db: 'geekblue', email: 'purple', nextcloud: 'cyan', webapp: 'orange' }[source] ?? 'default'
 }
 
 function sourceLabel(source) {
   return { excel: 'Excel', db: 'DB', email: 'Email' }[source] ?? source
 }
 
+// eventColor: used for vertical indicator line + nextcloud triangle color
 function eventColor(event) {
   if (event.status === 'error') return '#ff4d4f'
+  // nextcloud has direction; webapp doesn't — both fall through to green for success
   return event.direction === 'in' ? '#1677ff' : '#52c41a'
 }
 
-// ── Sync marker (L1 triangle) ─────────────────────────────────────────────────
-function syncMarkerStyle(event) {
+// ── Markers ───────────────────────────────────────────────────────────────────
+function markerStyle(event, group) {
   const pos = toPercent(event.timestamp)
   const color = eventColor(event)
-  const isIn = event.direction === 'in'
-  return {
+  const base = {
     position: 'absolute',
     left: pos + '%',
     top: '50%',
-    width: '10px',
-    height: '9px',
-    background: color,
     transform: 'translate(-50%, -50%)',
-    clipPath: isIn ? 'polygon(0% 0%, 100% 0%, 50% 100%)' : 'polygon(50% 0%, 100% 100%, 0% 100%)',
     cursor: 'pointer',
     zIndex: 2,
+  }
+  if (group.pipeline === 'nextcloud') {
+    const isIn = event.direction === 'in'
+    return {
+      ...base,
+      width: '10px',
+      height: '9px',
+      background: color,
+      clipPath: isIn ? 'polygon(0% 0%, 100% 0%, 50% 100%)' : 'polygon(50% 0%, 100% 100%, 0% 100%)',
+    }
+  }
+  // webapp: circle
+  return {
+    ...base,
+    width: '9px',
+    height: '9px',
+    background: color,
+    borderRadius: '50%',
   }
 }
 
@@ -571,6 +647,17 @@ function groupBadgeStatus(group) {
     new Date(a.created_at || 0) > new Date(b.created_at || 0) ? a : b
   )
   return badgeStatus(last.status)
+}
+
+// ── Webapp modal stats helper ─────────────────────────────────────────────────
+function scrapeStats(event) {
+  return [
+    { label: '接收', value: event.rows_received },
+    { label: '写入', value: event.rows_inserted, color: '#52c41a' },
+    { label: '更新', value: event.rows_updated, color: '#1677ff' },
+    { label: '跳过', value: event.rows_skipped },
+    { label: '未匹配', value: event.rows_unmatched, color: event.rows_unmatched > 0 ? '#fa8c16' : undefined },
+  ]
 }
 
 // ── Formatters ───────────────────────────────────────────────────────────────
