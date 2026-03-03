@@ -5,6 +5,14 @@ services:
     restart: unless-stopped
     ports:
       - "8002:8001"
+    environment:
+      - DATAAPP_API_URL=${DATAAPP_API_URL:-http://host.docker.internal:8000}
+      - DATAAPP_SERVICE_TOKEN=${DATAAPP_SERVICE_TOKEN:-}
+      - WEBAPP_API_URL=${WEBAPP_API_URL:-http://host.docker.internal:8001}
+      - WEBAPP_SERVICE_TOKEN=${WEBAPP_SERVICE_TOKEN:-}
+      - FETCH_INTERVAL_S=${FETCH_INTERVAL_S:-30}
+      - FETCH_TIMEOUT_S=${FETCH_TIMEOUT_S:-10}
+      - TIME_WINDOW_DAYS=${TIME_WINDOW_DAYS:-2}
     networks:
       - dashboard-net
     healthcheck:
