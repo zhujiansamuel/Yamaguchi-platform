@@ -291,41 +291,231 @@ webapp/
 
 ### 3.3 dataapp — 数据整合平台
 
-**用途**: 平台的数据中枢，负责从多个数据源采集、整合、分发数据。
+**用途**: 平台的数据中枢，负责库存收集与分类管理、快递追踪与到货状态自动更新、Nextcloud 数据同步、邮件处理等核心业务。
 
 **技术栈**:
 - 后端: Python 3.11+ / Django 4.2+ / Django REST Framework
-- 异步任务: Celery + Redis + Celery Beat
+- 异步任务: Celery + Redis + Celery Beat（多队列: default, tracking_webhook_queue 等）
 - 数据库: PostgreSQL
-- 文件同步: Nextcloud WebDAV
+- 文件同步: Nextcloud WebDAV + OnlyOffice 回调拦截
+- 外部爬虫服务: WebScraper API（快递页面数据采集）
 - 邮件处理: IMAP
 - 容器化: Docker Compose
 - Web 服务器: Gunicorn / Daphne
+- Excel 处理: openpyxl（读写回写）
 
 **核心功能**:
-1. **Nextcloud 数据同步**: 从 Nextcloud 服务器同步业务文件（Excel 等）
-2. **Tracking 批次管理**: 管理快递追踪批次数据，支持批量导入
-3. **邮件任务处理**: 自动处理业务邮件
-4. **商品价格管理**: 维护 iPhone 各机型的买取价格数据
-5. **库存 API**: 为 desktopapp 提供库存登录接口
-6. **Dashboard API**: 向 dashboard 系统提供各任务状态接口
-   - `GET /api/dashboard/nextcloud-events/` — Nextcloud 同步事件
-   - `GET /api/dashboard/tracking-batches/` — Tracking 批次事件
-   - `GET /api/dashboard/email-events/` — 邮件处理事件
+
+#### 3.3.1 库存收集与分类管理
+
+**数据模型层级**:
+
+```
+商品主数据 (Product Master)
+├── iPhone (继承 ElectronicProduct)  ─── part_number, model_name, capacity_gb, color, jan
+├── iPad   (继承 ElectronicProduct)  ─── 同上
+└── ElectronicProduct (抽象基类)
+
+库存 (Inventory)
+├── 状态: planned → in_transit → arrived → out_of_stock / abnormal
+├── 商品关联: iphone FK / ipad FK（多态，通过 JAN 码匹配）
+├── 设备标识: IMEI（最长 17 位）
+├── 三级批次分类: batch_level_1 / batch_level_2 / batch_level_3
+├── 时间追踪:
+│   ├── transaction_confirmed_at   — 交易确认时间
+│   ├── scheduled_arrival_at       — 预定到达时间
+│   ├── checked_arrival_at_1       — 第一次确认到达时间
+│   ├── checked_arrival_at_2       — 第二次确认到达时间
+│   └── actual_arrival_at          — 实际到达时间
+└── 四种来源 (source):
+    ├── source1 → EcSite（电商平台订单）
+    ├── source2 → Purchasing（采购订单）
+    ├── source3 → LegalPersonOffline（法人线下店取）
+    └── source4 → TemporaryChannel（临时渠道）
+```
+
+**库存来源分类**:
+
+| 来源 | 模型 | 说明 | 创建方式 |
+|------|------|------|----------|
+| **Purchasing** | 采购订单 | 线上采购订单，含官方账号、快递追踪、支付信息 | Nextcloud Excel 同步 / API / 爬虫自动创建 |
+| **LegalPersonOffline** | 法人线下 | 线下店面客户到店取货 | desktopapp API 调用 `create_with_inventory` |
+| **EcSite** | 电商订单 | 来自 mobile-zone.jp 的预约订单 | Nextcloud Excel 同步 |
+| **TemporaryChannel** | 临时渠道 | 临时性库存来源 | Nextcloud Excel 同步 |
+
+**库存创建流程**:
+- `Purchasing.create_with_inventory(**kwargs)` — 创建采购订单并自动创建关联库存:
+  - 通过 JAN 码或 iPhone 型号名匹配商品（支持日语型号名解析，如 `iPhone 17 Pro Max 256GB コズミックオレンジ`）
+  - 自动关联 OfficialAccount（通过 email 查找或创建）
+  - 支持多商品订单（iphone_type_names 列表）
+  - 自动处理支付卡关联（GiftCard / DebitCard / CreditCard）
+  - IMEI 重复检测，重复时记录到 `DuplicateProduct` 表
+- `LegalPersonOffline.create_with_inventory(inventory_data, **fields)` — 法人线下创建:
+  - 接受 (jan, imei) 列表
+  - 支持 skip_on_error 模式，部分失败不影响整体
+  - 三级批次管理字段传递
+
+**采购订单阶段统计** (`purchasing_stats` API):
+
+| 阶段 | 名称 | 含义 |
+|------|------|------|
+| Stage 1 | `confirmed_at_empty` | 等待确认（所有字段为空） |
+| Stage 2 | `shipped_at_empty` | 已确认未发货 |
+| Stage 3 | `estimated_website_arrival_date_empty` | 已发货，等待官网预计到达 |
+| Stage 4 | `tracking_number_empty` | 有预计到达日，等待邮寄单号 |
+| Stage 5 | `estimated_delivery_date_empty` | 有邮寄单号，等待邮寄送达预计 |
+| Stage 6 | `other` | 信息已完整或其他状态 |
+
+每个阶段有对应的 **Worker** 自动处理缺失数据（见下文快递追踪）。
+
+#### 3.3.2 快递追踪与到货状态自动更新
+
+**整体流程**:
+
+```
+Nextcloud Excel 保存 / Worker 定时扫描
+         │
+         ▼
+  [阶段一] 文件/数据源识别 → 根据文件名前缀匹配任务类型
+         │
+         ▼
+  [阶段二] 创建 TrackingBatch + TrackingJob → 调用 WebScraper API 发布爬虫任务
+         │
+         ▼
+  [阶段三] WebScraper 执行网页爬取（快递公司官网）
+         │
+         ▼
+  [阶段四] WebScraper 回调 webhook → dataapp 接收
+         │
+         ▼
+  [阶段五] 解析爬取数据 → 更新 Purchasing 记录（追踪号、配送状态、预计到达时间）
+         │
+         ▼
+  [阶段六] 批量回写 Excel（每 10 条 + 批次完成时）
+```
+
+**追踪任务类型**:
+
+| 任务名 | 前缀 | 快递公司 | 说明 |
+|--------|------|----------|------|
+| `official_website_redirect_to_yamato_tracking` | OWRYT- | ヤマト運輸 | 从官网重定向到ヤマト追踪页面，提取配送状态 |
+| `redirect_to_japan_post_tracking` | — | 日本郵便 | OWRYT 重定向逻辑：如果ヤマト页面无数据，自动重定向到日本郵便 |
+| `official_website_tracking` | OWT- | — | 直接从官网提取追踪信息 |
+| `yamato_tracking_only` | YTO- | ヤマト運輸 | 仅通过追踪号查询ヤマト |
+| `japan_post_tracking_only` | JPTO- | 日本郵便 | 仅通过追踪号查询日本郵便 |
+| `japan_post_tracking_10` | JPT10- | 日本郵便 | 批量10件日本郵便追踪 |
+| `yamato_tracking_10` | YT10- | ヤマト運輸 | 批量10件ヤマト追踪（直接调用API，不使用WebScraper） |
+
+**自动化 Worker**:
+
+系统通过多个 Worker 自动扫描处于各阶段的 Purchasing 记录，补全缺失信息:
+
+| Worker | 扫描条件 | 动作 |
+|--------|----------|------|
+| `confirmed_at_empty` | 确认时间为空 | 爬取官网获取订单确认信息 |
+| `shipped_at_empty` | 发货时间为空（已确认） | 爬取官网获取发货信息 |
+| `estimated_website_arrival_date_empty` | 预计到达为空（已发货） | 爬取官网获取预计到达日 |
+| `tracking_number_empty` | 追踪号为空（有预计到达日） | 爬取官网提取邮寄单号 |
+| `japan_post_tracking_10_tracking_number` | 有追踪号待查询 | 批量查询日本郵便配送状态 |
+| `yamato_tracking_10_tracking_number` | 有追踪号待查询 | 批量查询ヤマト配送状态 |
+| `temporary_flexible_capture` | 临时性灵活抓取 | 按需灵活抓取官网信息 |
+| `playwright_apple_pickup` | Apple 到店取货 | Playwright 自动化抓取取货信息 |
+
+**数据更新逻辑** (以 `official_website_redirect_to_yamato_tracking` 为例):
+
+1. WebScraper 抓取官网 → 重定向到ヤマト追踪页面 → 返回 CSV 数据
+2. 解析 CSV: 提取 order_number、tracking_number、latest_delivery_status、estimated_delivery_date 等
+3. 通过 order_number 查找对应 Purchasing 记录
+4. 如果 Purchasing 不存在 → 自动创建（含 OfficialAccount 和 Inventory）
+5. 如果ヤマト页面无数据（Discriminant 列全空）→ 自动重定向到 `redirect_to_japan_post_tracking`
+6. 更新字段时进行 **冲突检测**: tracking_number、email 等关键字段如果已有值且不同，记录到 `OrderConflict` 表而不覆盖
+7. 更新完成后解锁记录 (is_locked = False)
+
+**批量回写机制** (`TrackingBatch.update_progress`):
+- 每完成 10 个 TrackingJob 自动触发一次 Excel 回写
+- 批次全部完成时触发最后一次回写
+- 回写到 Nextcloud Excel 文件（通过 WebDAV）
+
+**追踪数据模型**:
+
+| 模型 | 用途 |
+|------|------|
+| `TrackingBatch` | 追踪批次（batch_uuid, task_name, 进度统计, 回写状态） |
+| `TrackingJob` | 单个追踪任务（关联 batch, custom_id, target_url, 状态, writeback_data） |
+| `OrderConflict` | 订单冲突记录（字段级冲突检测与记录） |
+| `OrderConflictField` | 冲突字段详情 |
+| `DuplicateProduct` | IMEI 重复记录 |
+
+#### 3.3.3 Nextcloud 数据同步
+
+- **Webhook 驱动**: Nextcloud 文件保存 → OnlyOffice 回调拦截器 → dataapp webhook
+- **双向同步**: Excel → DB（通过 __id, __version, __op 列实现版本控制）+ DB → Excel（ID 回写）
+- **冲突处理**: ETag + 版本号双重检测，冲突记录到 `SyncConflict` 表
+- **支持的同步模型**: Purchasing, OfficialAccount, GiftCard, DebitCard, CreditCard, TemporaryChannel
+
+#### 3.3.4 邮件自动处理
+
+- IMAP 邮箱监控（`MailAccount` 配置）
+- 邮件线程管理（`MailThread`）
+- 邮件内容解析: 提取配送日期、订单信息等
+- 邮件标签管理（`MailLabel`, `MailMessageLabel`）
+- 附件处理（`MailAttachment`）
+
+#### 3.3.5 Dashboard API
+
+向 dashboard 系统提供各任务状态接口:
+- `GET /api/dashboard/nextcloud-events/` — Nextcloud 同步事件
+- `GET /api/dashboard/tracking-batches/` — Tracking 批次事件
+- `GET /api/dashboard/email-events/` — 邮件处理事件
 
 **项目结构**:
 ```
 dataapp/
-├── inventory/            # 库存管理模块
-├── tracking/             # 快递追踪模块
-├── pricing/              # 价格管理模块
-├── sync/                 # 数据同步模块 (Nextcloud)
-├── email_tasks/          # 邮件处理模块
-├── dashboard_api/        # Dashboard 接口
-├── config/               # Django 项目配置
-├── docker-compose.yml    # 容器编排
-├── Dockerfile            # 应用容器
-└── requirements.txt      # Python 依赖
+├── apps/
+│   ├── core/                    # 核心模块
+│   │   └── history.py           # 历史记录追踪基类
+│   ├── data_aggregation/        # 数据聚合（业务模型层）
+│   │   ├── models.py            # 核心模型: iPhone, iPad, Inventory, Purchasing,
+│   │   │                        #   OfficialAccount, LegalPersonOffline, EcSite,
+│   │   │                        #   TemporaryChannel, GiftCard/DebitCard/CreditCard,
+│   │   │                        #   OrderConflict, Mail*, HistoricalData
+│   │   ├── views.py             # REST API + purchasing_stats + inventory dashboard
+│   │   ├── serializers.py       # DRF 序列化器
+│   │   ├── admin.py             # Django Admin 配置
+│   │   ├── utils.py             # WebScraper 导出、Excel 导出等工具
+│   │   └── excel_exporters/     # Excel 导出器
+│   │       └── iphone_inventory_dashboard_exporter.py
+│   └── data_acquisition/        # 数据采集（任务调度层）
+│       ├── tasks.py             # Celery 任务: 同步、追踪、回写
+│       ├── views.py             # Webhook 接收: OnlyOffice 回调、WebScraper 回调
+│       ├── sync_handler.py      # Nextcloud Excel 双向同步处理器
+│       ├── excel_writeback.py   # Excel 回写逻辑
+│       ├── yamato_parser.py     # ヤマト追踪页面 HTML 解析
+│       ├── trackers/            # 追踪器（各快递公司数据处理）
+│       │   ├── registry_tracker.py                          # 追踪器注册与分发
+│       │   ├── official_website_redirect_to_yamato_tracking.py  # 官网→ヤマト
+│       │   ├── redirect_to_japan_post_tracking.py           # 重定向→日本郵便
+│       │   ├── official_website_tracking.py                 # 官网直接追踪
+│       │   ├── yamato_tracking_only.py                      # ヤマト单独追踪
+│       │   ├── japan_post_tracking_only.py                  # 日本郵便单独追踪
+│       │   └── japan_post_tracking_10.py                    # 日本郵便批量追踪
+│       ├── workers/             # 自动化 Worker（定时扫描补全数据）
+│       │   ├── base.py                                      # Worker 基类
+│       │   ├── record_selector.py                           # 记录筛选器
+│       │   ├── confirmed_at_empty.py                        # 确认时间补全
+│       │   ├── shipped_at_empty.py                          # 发货时间补全
+│       │   ├── estimated_website_arrival_date_empty.py      # 预计到达补全
+│       │   ├── tracking_number_empty.py                     # 追踪号补全
+│       │   ├── japan_post_tracking_10_tracking_number.py    # 日本郵便批量查询
+│       │   ├── temporary_flexible_capture.py                # 临时灵活抓取
+│       │   └── celery_*.py / tasks_*.py                     # 各 Worker 的 Celery 任务定义
+│       └── EmailParsing/        # 邮件解析
+│           └── email_content_analysis.py                    # 邮件内容分析（提取配送日期等）
+├── nextcloud_apps/
+│   └── onlyoffice_callback_interceptor/  # OnlyOffice 回调拦截器
+├── docker-compose.yml
+├── Dockerfile
+└── requirements.txt
 ```
 
 **部署**: Docker 容器运行在主服务器上。
@@ -721,12 +911,19 @@ dashboard/
 - 开发 Dashboard API 端点
 
 #### dataapp（数据整合平台）
-- 构建 Nextcloud WebDAV 数据同步模块
-- 开发 Tracking 批次管理功能
-- 实现邮件自动处理（IMAP）
-- 开发库存 API（供 desktopapp 使用）
-- 开发 Dashboard API 端点
-- Celery Beat 定时任务配置
+- 设计并实现库存管理数据模型: Inventory（五状态流转）+ 四种来源（Purchasing / LegalPersonOffline / EcSite / TemporaryChannel）+ 三级批次分类
+- 开发 `create_with_inventory` 工厂方法，支持 JAN 码/型号名自动匹配商品、IMEI 重复检测、支付卡自动关联
+- 构建六阶段采购订单管道（confirmed_at → shipped_at → estimated_arrival → tracking_number → delivery_date → 完成）
+- 开发 7 种快递追踪任务类型（ヤマト運輸 + 日本郵便），含自动重定向机制（ヤマト无数据时自动切换日本郵便）
+- 实现 8 个自动化 Worker 定时扫描各阶段订单，通过 WebScraper API 补全缺失信息
+- 开发追踪批次管理（TrackingBatch/TrackingJob），支持进度追踪和每 10 条自动回写 Excel
+- 实现字段级冲突检测（OrderConflict），tracking_number / email 等关键字段变更时记录而非覆盖
+- 构建 Nextcloud WebDAV 双向同步模块（Excel ↔ DB），含 ETag + 版本号冲突检测
+- 开发 OnlyOffice 回调拦截器，实现 Nextcloud 文件保存事件驱动的数据同步
+- 实现邮件自动处理（IMAP 监控、内容解析、配送日期提取）
+- 开发库存 API（供 desktopapp 调用 create_with_inventory）
+- 开发 Dashboard API 端点（Nextcloud / Tracking / Email 事件流）
+- Celery Beat 多队列定时任务配置
 
 #### auto（自动化脚本）
 - 开发 wiki-price 价格抓取脚本
