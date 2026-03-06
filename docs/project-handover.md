@@ -555,44 +555,168 @@ auto/
 
 ### 3.5 desktopapp — iPhone 库存管理桌面应用
 
-**用途**: 面向仓库操作人员的 Windows 桌面应用，通过扫描条码完成 iPhone 入库操作。
+**用途**: 面向仓库操作人员的 Windows 桌面应用，通过条码扫描枪完成 Apple 设备入库操作，支持 iPhone、iPad、Apple Watch、Magic Keyboard 等产品。
 
 **技术栈**:
 - 语言: C++ (C++17)
-- GUI 框架: Qt 6 (Widgets, SvgWidgets)
+- GUI 框架: Qt 6.4+ (Widgets, SvgWidgets, Sql, Multimedia, Network)
 - 构建系统: CMake 3.16+
-- 本地数据库: SQLite
-- Excel 库: QXlsx（嵌入式）
+- 本地数据库: SQLite (WAL 模式)
+- Excel 库: QXlsx（作为子目录嵌入）
 - 编译器: MSVC (Visual Studio 2019/2022)
-- 平台: Windows
+- 平台: Windows (主要), Linux (支持)
 
 **核心功能**:
-1. **iPhone 入库管理** (Tab 1):
-   - JAN 码（13位）和 IMEI（15位）扫码录入
-   - 实时重复检测（红色高亮提示）
-   - 会话制记录管理（支持断点续录）
-   - Excel 导出
-2. **批量数据导入** (Tab 2):
-   - 支持 V3/V4 格式解析
-   - 批量导入历史数据
-3. **会话管理** (Tab 3):
-   - 会话历史记录
-   - 会话恢复与回溯
 
-**通信**: 通过 REST API 与 dataapp 通信，实现库存数据的上传和查询。
+#### Tab 1: iPhone（三种并行操作模式）
+
+1. **入荷登録（库存入库登记）**:
+   - 扫描 JAN 码（13位）→ 自动查找商品名 → 扫描 IMEI（15位）→ 存入数据库
+   - 每扫 10 件自动重置计数并播放提示音
+   - 实时显示商品名称和颜色标识（彩色圆点）
+   - LCD 计数器显示已扫数量
+
+2. **検索（搜索查询）**:
+   - 通过 JAN 码或 IMEI 搜索已有库存
+   - 搜索结果在列表中高亮显示
+
+3. **仮登録（临时登记）**:
+   - 先将商品存入临时缓冲区，可批量确认入库
+   - 实时 IMEI 重复检测（红色高亮警告）
+   - 支持批量提交到正式数据库
+
+#### Tab 2: 批量数据导入/导出
+
+- 粘贴 V3/V4 格式批量数据（JAN+IMEI 配对，支持全角/半角逗号分隔）
+- 单条手动输入
+- Excel 导出当前会话数据
+- 导出后自动调用 API 上传至 dataapp
+
+**条码扫描枪快捷码**:
+
+| 快捷码 | 功能 |
+|--------|------|
+| `2222222222222` | 跳转到搜索模式 |
+| `5555555555555` | 跳转到入库登记模式 |
+| `3333333333333` | 跳转到临时登记模式 |
+| `1111111111111` | 重置计数器 |
+| `4444444444444` | 批量刷入临时登记到数据库 |
+| `7777777777777` | 导出 Excel |
+| `8888888888888` | 打开最近导出的文件 |
+
+**音效提示**:
+
+| 音效文件 | 触发场景 |
+|----------|----------|
+| `success.wav` | 操作成功 |
+| `jan_error.wav` | JAN 码格式错误 |
+| `jan_not_found.wav` | JAN 未找到对应商品 |
+| `imei_error.wav` | IMEI 格式错误 |
+| `imei_duplicate.wav` | IMEI 重复 |
+| `count_reset.wav` | 计数器重置 |
+
+**本地数据库** (SQLite: `iphone_stock.sqlite`):
+
+| 表名 | 用途 | 关键字段 |
+|------|------|----------|
+| `inbound` | 库存主表 | session_id, kind(入荷登録/仮登録/検索), code13(JAN), imei15(IMEI) |
+| `entry_log` | 操作审计日志 | session_id, type, left_code(JAN), right_code(IMEI) |
+| `catalog` | 商品主数据 | part_number, model_name, capacity_gb, color, jan, color_hex |
+
+**会话管理**:
+- 使用 `QSettings` 持久化 session_id（Windows 注册表: `HKCU\Software\Syu\iPhoneStockManagementSystem`）
+- Session ID 格式: ISO 8601 时间戳 (`yyyyMMddHHmmsszzz`)
+- 启动时弹窗询问: 继续上次会话 / 开始新会话
+- 支持断点续录
+
+**商品目录**:
+- 内置 43+ 种产品型号（硬编码数组 + CSV 文件）:
+  - iPhone 17 / 17 Pro / 17 Pro Max / Air（全容量全颜色）
+  - iPad / iPad mini / iPad Air / iPad Pro
+  - Magic Keyboard（多型号）
+  - Apple Watch Series 11 / SE 3 / Ultra 3
+- 每种产品关联 JAN 码、型号名、容量、颜色、颜色 HEX 值
+- 查找优先级: 其他产品 JAN 映射表 → catalog 表（iPhone）
+
+**API 集成** (与 dataapp 通信):
+- **端点**: `https://data.yamaguchi.lan/api/aggregation/legal-person-offline/create-with-inventory/`
+- **认证**: Bearer Token（硬编码在 `mainwindow.cpp` 中）
+- **SSL**: 自定义 CA 证书 (`caddy-ca-bundle.crt`)，追加到系统证书存储
+- **请求体 (JSON)**:
+  ```json
+  {
+    "username": "操作员名",
+    "visit_time": "ISO 8601 时间戳",
+    "inventory_data": [
+      { "jan": "4549995XXXXXX", "imei": "35XXXXXXXXXXXXX" }
+    ],
+    "inventory_times": {
+      "checked_arrival_at_1": "ISO 8601 时间戳"
+    },
+    "batch_level_1": "批次一级",
+    "batch_level_2": "批次二级",
+    "batch_level_3": "session_id"
+  }
+  ```
+- **触发时机**: Excel 导出完成后自动 POST（fire-and-forget，无响应处理）
+- 对应 dataapp 后端: `LegalPersonOffline.create_with_inventory()` 方法
+
+**Excel 导出格式**:
+- **Sheet "Exported_Items"**: 汇总表 + 明细表
+  - 汇总: 商品名、数量、单价、合计金额（含 Excel 公式）
+  - 明细: 每台设备的 JAN、商品名、IMEI
+  - 日期/签名栏
+- **Sheet "ws3"**: CSV 风格详细导出（11+ 列）
+
+**输入验证**:
+- JAN 码: `^\d{0,13}$`（正好 13 位数字）
+- IMEI: `^\d{0,15}$`（正好 15 位数字）
+- 使用 `QRegularExpressionValidator` 进行按键过滤
+- 输入框获取焦点时绿色边框，出错时红色边框
+
+**DPI 适配**:
+- 自动检测屏幕 DPI，按 `screenDPI / 96` 比例缩放图标和 SVG
+
+**构建与部署**:
+```powershell
+# 在 Visual Studio Developer Command Prompt 中执行
+cd C:\path\to\desktopapp
+powershell .\deploy_windows.ps1 -QtPath "C:\Qt\6.5.0\msvc2019_64"
+```
+- 使用 `windeployqt` 自动打包依赖 DLL
+- 输出: `build-windows\deploy\iPhoneStockManagement.exe`
+- 打包: `iPhoneStockManagement_v0.1.0_Windows_x64.zip`
+
+**安全注意事项**:
+- Bearer Token 硬编码在源码中（`mainwindow.cpp` 第 1339 行），建议迁移到配置文件
+- 无用户身份验证机制，username 字段由操作员手动填写
+- API 调用为 fire-and-forget，网络异常时数据可能丢失
 
 **项目结构**:
 ```
 desktopapp/
-├── CMakeLists.txt        # CMake 构建配置
-├── main.cpp              # 入口
-├── mainwindow.h/cpp      # 主窗口逻辑
-├── Mainwindow.ui         # UI 布局 (Qt Designer)
-├── QXlsx-master/         # Excel 库（嵌入）
-├── pic/                  # SVG/PNG 图标资源
-├── sounds/               # WAV 音效（成功/错误提示音）
-├── deploy_windows.ps1    # Windows 部署脚本
-└── WINDOWS_BUILD.md      # Windows 编译说明
+├── CMakeLists.txt                  # CMake 构建配置
+├── main.cpp                        # 应用入口
+├── mainwindow.h                    # 主窗口类声明
+├── mainwindow.cpp                  # 主窗口实现（约 3500 行）
+├── Mainwindow.ui                   # Qt Designer UI 布局文件
+├── QXlsx-master/                   # Excel 读写库（嵌入式）
+├── pic/                            # SVG/PNG 图标资源
+│   ├── app.png                     # 应用图标
+│   ├── Stock_Registration.svg      # 入库登记按钮
+│   ├── Temporary_Registration.svg  # 临时登记按钮
+│   ├── Search.svg                  # 搜索按钮
+│   ├── Excel_Output.svg            # Excel 导出按钮
+│   ├── View_Summary.svg            # 查看汇总按钮
+│   └── Reset.svg                   # 重置按钮
+├── sounds/                         # WAV 音效文件（6 种提示音）
+├── Apple_iPad_JAN_full_JP_*.csv              # iPad 产品 JAN 目录
+├── Magic_Keyboard_SKUs_JAN_partial_*.csv     # Magic Keyboard JAN 目录
+├── apple_watch_jp_sku_jan_*.csv              # Apple Watch JAN 目录
+├── deploy_windows.ps1              # Windows 自动化部署脚本
+├── build_windows.bat               # Windows 构建批处理（备选）
+├── WINDOWS_BUILD.md                # Windows 编译说明
+└── app.rc                          # Windows 资源文件（应用图标）
 ```
 
 ---
