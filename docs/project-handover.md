@@ -134,37 +134,156 @@ ecsite/
 
 ### 3.2 webapp — iPhone 买取价格监控与分析系统
 
-**用途**: 从多个竞品网站抓取 iPhone 买取价格数据，进行分析对比，辅助定价决策。
+**用途**: 从多个竞品网站抓取 iPhone 买取价格数据，进行统计指标计算、趋势分析和因果推断，辅助定价决策。
 
 **技术栈**:
 - 后端: Python 3.11+ / Django 4.2+ / Django REST Framework
 - 异步任务: Celery + Redis
-- 数据库: PostgreSQL
+- 数据库: PostgreSQL（业务数据）+ ClickHouse（分析数据仓库）
+- 计算引擎: PyTorch（向量化特征计算）+ CuPy（GPU 加速，可选）
+- 统计建模: statsmodels 0.14.4（VAR 模型、Granger 因果检验）
 - 前端: Django 模板 + Chart.js（价格趋势图）
 - 浏览器自动化: Playwright（爬虫使用）
 - 容器化: Docker Compose
 - Web 服务器: Daphne (ASGI)
 
 **核心功能**:
-1. **价格爬虫**: 定时抓取竞品网站的 iPhone 买取价格
-2. **价格分析**: 生成价格趋势图表、对比分析
-3. **Dashboard API**: 向 dashboard 系统提供爬虫任务状态接口
+
+1. **价格爬虫**: 定时抓取多个竞品网站的 iPhone 买取价格，存入 PostgreSQL
+
+2. **数据管道 (ETL Pipeline)**:
+   - `engine/pipeline.py` — 编排完整流程: 读取 → 对齐 → 聚合 → 特征计算 → Cohort → 写入 ClickHouse
+   - `engine/reader.py` — 从 PostgreSQL 读取原始价格记录
+   - `engine/align.py` — 将价格数据对齐到 15 分钟时间桶（Bucket），取每个 (shop, iphone, bucket) 最近记录
+   - 支持 CPU / GPU 设备选择，支持按天分批处理
+
+3. **统计指标计算**:
+   - `engine/aggregate.py` — 构建 3D 价格张量 (iphones × shops × buckets)，跨店铺聚合计算:
+     - **均值 (mean)**、**中位数 (median)**、**标准差 (std)**、**离散系数 (dispersion)**
+     - 店铺计数 (shop_count)，支持最低法定人数验证
+   - `engine/features.py` — PyTorch 向量化特征计算，三个时间窗口 (120min / 900min / 1800min):
+     - **EMA** (指数移动平均): α = 2/(window+1)
+     - **SMA** (简单移动平均): F.conv1d 向量化
+     - **WMA** (加权移动平均): 线性权重
+     - **Bollinger Bands** (布林带): Mid (SMA) ± k×std，含 upper/lower/width
+     - 共计 **32 个特征列**
+   - `engine/cohorts.py` — Cohort（群组）加权聚合:
+     - 定义 Cohort 成员和店铺权重
+     - 加权计算群组级别 mean/median/std
+     - 在群组均值基础上重新计算所有特征
+
+4. **因果推断 (AutoML Causal Analysis)** — 三阶段自动化因果分析管道:
+   - **Stage 1 - 预处理 (Preprocessing-Rapid)**:
+     - 计算 log_price → dlog_price（对数收益率）→ z_dlog_price（标准化）
+     - 支持 CuPy GPU 加速，自动回退到 CPU
+     - 存入 `AutomlPreprocessedSeries` 表
+   - **Stage 2 - VAR 模型拟合 (Cause-and-Effect-Testing)**:
+     - 向量自回归模型 (Vector AutoRegression)，statsmodels 实现
+     - 面板数据构建: (time × shops) 的 z_dlog_price 矩阵
+     - 数据质量检查: 前向填充、低覆盖行剔除、常量列/高相关列移除
+     - AIC 自动选择最优滞后阶数（最大 12 阶）
+     - 存入 `AutomlVarModel` 表（系数、AIC、BIC、样本量）
+   - **Stage 3 - 因果影响量化 (Quantification-of-Impact)**:
+     - **Granger 因果检验**: 检验所有店铺对之间的因果关系
+     - F-test 多滞后阶（最大 5 阶），提取最小 p 值和最优滞后
+     - 显著性判断: min_pvalue < 0.05
+     - 因果权重: VAR 系数绝对值之和
+     - 置信度: max(0, min(1, 1 - min_pvalue))
+     - 存入 `AutomlGrangerResult`（全部检验结果）和 `AutomlCausalEdge`（显著因果关系）
+
+5. **趋势分析**:
+   - `api/trends/core.py` — 多线均线趋势计算:
+     - **A-line**: 原始最近邻重采样
+     - **B-line**: 时间窗口移动平均（默认 60 分钟）
+     - **C-line**: 时间窗口移动平均（默认 240 分钟）
+   - 支持跨颜色合并、按颜色分拆、降采样
+   - 并行数据库 I/O (ThreadPoolExecutor)
+
+6. **Dashboard API**: 向 dashboard 系统提供爬虫任务状态接口
    - `GET /api/dashboard/scraper-events/` — 爬虫事件流
+
+**ClickHouse 数据仓库**:
+
+两张核心分析表（`clickhouse/init.sql`）:
+
+| 表 | 用途 | 分区 |
+|---|---|---|
+| `price_aligned` | 对齐后的价格记录 (shop_id, iphone_id, bucket, prices) | (run_id, toYYYYMM(bucket)) |
+| `features_wide` | 计算后的特征值 (32列统计指标 + scope维度) | (run_id, toYYYYMM(bucket)) |
+
+ClickHouse 服务层 (`services/clickhouse_service.py`):
+- 批量插入、分区查询、run 管理（list/promote/drop）
+- 惰性客户端初始化，连接池管理
+
+**AutoML 数据模型** (PostgreSQL):
+
+| 模型 | 用途 |
+|------|------|
+| `AutomlCausalJob` | 分析作业主表（三阶段状态跟踪） |
+| `AutomlPreprocessedSeries` | 预处理后的时间序列 |
+| `AutomlVarModel` | VAR 模型参数（系数、AIC、BIC） |
+| `AutomlGrangerResult` | Granger 检验结果（p 值、滞后阶） |
+| `AutomlCausalEdge` | 显著因果关系（权重、置信度） |
+
+**AutoML API 端点** (`api/api_automl.py`):
+
+| 端点 | 功能 |
+|------|------|
+| `TriggerPreprocessingRapidView` | 触发预处理任务 |
+| `TriggerCauseAndEffectTestingView` | 触发 VAR 建模 |
+| `TriggerQuantificationOfImpactView` | 触发 Granger 检验 |
+| `ScheduleAutoMLJobsView` | 批量调度所有活跃 iPhone 的分析作业 |
+| `SlidingWindowAnalysisView` | 滑动窗口分析任务 |
+| `AutoMLJobStatusView` | 查询作业状态 |
+| `AutoMLJobResultView` | 获取因果分析结果 |
+| `CompletedJobsListView` | 按 iPhone 列出已完成作业 |
 
 **项目结构**:
 ```
 webapp/
-├── scraper/              # 爬虫模块
-│   ├── tasks.py          # Celery 定时任务
-│   ├── scrapers/         # 各网站爬虫实现
-│   └── models.py         # 数据模型
-├── analysis/             # 分析模块
-├── dashboard_api/        # Dashboard 接口
-├── config/               # Django 项目配置
-├── docker-compose.yml    # 容器编排
-├── Dockerfile            # 应用容器
-└── requirements.txt      # Python 依赖
+├── AppleStockChecker/
+│   ├── engine/               # 计算引擎
+│   │   ├── pipeline.py       # ETL 编排
+│   │   ├── reader.py         # PG 数据读取
+│   │   ├── align.py          # 时间桶对齐
+│   │   ├── aggregate.py      # 跨店铺聚合 (3D 张量)
+│   │   ├── features.py       # 特征计算 (EMA/SMA/WMA/Bollinger)
+│   │   ├── cohorts.py        # Cohort 加权聚合
+│   │   └── config.py         # 管道配置
+│   ├── services/
+│   │   └── clickhouse_service.py  # ClickHouse 读写服务
+│   ├── clickhouse/
+│   │   └── init.sql          # ClickHouse 建表 DDL
+│   ├── tasks/
+│   │   └── automl_tasks.py   # 三阶段因果分析 Celery 任务
+│   ├── api/
+│   │   ├── api_automl.py     # AutoML REST API
+│   │   └── trends/           # 趋势分析 API
+│   │       ├── core.py       # 趋势计算核心
+│   │       ├── model_colors.py   # 完整趋势（含店铺明细）
+│   │       ├── avg_only.py       # 仅均线（轻量）
+│   │       └── color_std.py      # 按颜色标准差
+│   ├── utils/
+│   │   └── automl_tasks/
+│   │       └── gpu_utils.py  # GPU (CuPy) 加速工具
+│   ├── models.py             # Django ORM 模型
+│   └── management/commands/  # 管理命令
+│       ├── run_pipeline.py   # 执行数据管道
+│       ├── promote_run.py    # 提升 run 到生产
+│       └── drop_run.py       # 删除 ClickHouse run
+├── YamagotiProjects/
+│   └── settings.py           # ClickHouse 连接配置、GPU 设备设置
+├── docker-compose.yml        # 容器编排
+├── Dockerfile                # 应用容器
+└── requirements.txt          # 依赖 (statsmodels, cupy, torch, pandas, etc.)
 ```
+
+**关键依赖**:
+- `statsmodels == 0.14.4` — VAR 模型、Granger 因果检验
+- `cupy-cuda13x == 13.6.0` — GPU 加速（可选，自动回退 CPU）
+- `torch` — PyTorch 向量化特征计算
+- `clickhouse-driver` — ClickHouse 客户端
+- `pandas == 2.3.2` / `numpy == 2.2.6` — 数据处理
 
 **部署**: 独立部署在 Proxmox 虚拟机中。
 
@@ -537,6 +656,9 @@ dashboard/
 | Django REST Framework | webapp, dataapp | API 开发 |
 | FastAPI | dashboard, n8n-auto | 轻量 API 服务 |
 | Celery + Redis | webapp, dataapp | 异步任务队列 |
+| PyTorch | webapp | 向量化特征计算 (EMA/SMA/WMA/Bollinger) |
+| statsmodels 0.14.4 | webapp | VAR 模型、Granger 因果检验 |
+| CuPy (cuda13x) | webapp | GPU 加速（可选，自动回退 CPU） |
 | PHP 8.0+ / ThinkPHP 6 | ecsite | 电商后端 |
 | C++ (C++17) | desktopapp, dedktoptools | 桌面应用 |
 
@@ -555,6 +677,7 @@ dashboard/
 | 技术 | 使用项目 | 用途 |
 |------|----------|------|
 | PostgreSQL | webapp, dataapp | 主数据库 |
+| ClickHouse | webapp | 分析数据仓库（统计指标、特征存储） |
 | MySQL | ecsite | 电商数据库 |
 | SQLite | desktopapp | 本地嵌入式数据库 |
 | Redis | webapp, dataapp, ecsite | 缓存 / 消息队列 |
@@ -586,10 +709,15 @@ dashboard/
 - 适配二手 iPhone 买取业务流程
 - Docker 化部署
 
-#### webapp（价格监控）
+#### webapp（价格监控与分析）
 - 开发多源价格爬虫系统（Playwright）
 - 实现 Celery 定时任务调度
-- 添加价格趋势分析与可视化（Chart.js）
+- 构建 ClickHouse 分析数据仓库（price_aligned + features_wide）
+- 开发 ETL 数据管道：读取 → 对齐 → 聚合 → 特征计算 → Cohort → ClickHouse
+- 实现 PyTorch 向量化统计指标计算（32 个特征：EMA/SMA/WMA/Bollinger Bands × 3 时间窗口）
+- 开发三阶段 AutoML 因果推断管道（预处理 → VAR 建模 → Granger 因果检验）
+- 添加 CuPy GPU 加速支持（自动回退 CPU）
+- 添加价格趋势分析与可视化（A/B/C 三线均线 + Chart.js）
 - 开发 Dashboard API 端点
 
 #### dataapp（数据整合平台）
