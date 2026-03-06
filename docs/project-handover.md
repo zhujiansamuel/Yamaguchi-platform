@@ -835,68 +835,215 @@ dev/
 
 ### 3.9 dashboard — 统一任务监控仪表盘
 
-**用途**: 聚合 dataapp 和 webapp 的任务状态数据，提供实时可视化监控面板。
+**用途**: 聚合 dataapp 和 webapp 的任务状态数据，提供实时可视化监控面板，覆盖 Nextcloud 同步、快递追踪、邮件处理、价格爬虫四大任务类型。
 
 **技术栈**:
-- 前端: Vue 3 (Composition API) + Vite 6.1 + Ant Design Vue 4.2 + Pinia
-- 后端: Python FastAPI + httpx
+- 前端: Vue 3.5 (Composition API) + Vite 6.1 + Ant Design Vue 4.2 + Pinia 2.3
+- 后端: Python 3.11 / FastAPI + httpx (async HTTP)
 - 实时推送: Server-Sent Events (SSE)
-- 容器化: Docker Compose（nginx + Python）
+- 容器化: Docker Compose（nginx 1.27 + Python 3.11-slim）
+- 构建: Node 22 Alpine (多阶段构建)
 
 **核心功能**:
-1. **实时任务监控**:
-   - Nextcloud 数据同步状态
-   - Tracking 批次处理状态
-   - Email 任务处理状态
-   - Webapp 价格爬虫状态
-2. **双视图模式**:
-   - Gantt 图（甘特图时间轴）— 桌面端
-   - Card 卡片布局 — 移动端
-3. **状态统计**: 总数、运行中、成功、错误计数
-4. **响应式设计**: 桌面侧边栏 + 移动端抽屉导航
 
-**数据源**:
-- dataapp API:
-  - `/api/dashboard/nextcloud-events/`
-  - `/api/dashboard/tracking-batches/`
-  - `/api/dashboard/email-events/`
-- webapp API:
-  - `/api/dashboard/scraper-events/`
+1. **实时任务监控** — 五大数据区块:
+   - **Nextcloud 数据同步** (`nextcloud_sync`): 各模型的 Excel ↔ DB 同步事件
+   - **追踪任务 — Excel 驱动** (`excel_tracking`): Excel 文件触发的快递追踪批次
+   - **追踪任务 — DB 驱动** (`db_tracking`): Worker 自动扫描触发的快递追踪批次
+   - **邮件处理** (`email`): 邮件相关任务批次
+   - **价格抓取 — Webapp** (`webapp_scraper`): 价格爬虫执行状态
+
+2. **双视图模式**:
+   - **甘特图 (Gantt)** — 桌面端默认: 时间轴横向展示，可折叠/展开任务组
+   - **卡片 (Card)** — 移动端默认: 垂直卡片列表，可折叠/展开任务组
+   - 通过 Segmented 控件手动切换
+
+3. **状态统计面板**: 总数、运行中、成功、异常四项实时计数
+
+4. **响应式设计**: 桌面侧边栏（可折叠）+ 移动端抽屉导航（768px 断点）
+
+#### 后端架构 (FastAPI)
+
+**数据缓存机制**:
+- 内存缓存 `_cache`（sections + timestamp + stale 标志）
+- `asyncio.Lock` 保护并发更新
+- 后台循环每 `FETCH_INTERVAL_S` 秒刷新一次（默认 30 秒）
+- 使用 `asyncio.gather()` 并行拉取四个上游 API
+
+**上游 API 端点**:
+
+| 数据源 | 端点 | 认证方式 |
+|--------|------|----------|
+| Nextcloud 同步 | `{DATAAPP_API_URL}/api/acquisition/dashboard/nextcloud-sync/?days={N}` | Bearer Token |
+| 追踪批次 | `{DATAAPP_API_URL}/api/acquisition/dashboard/tracking-batches/?days={N}` | Bearer Token |
+| 邮件任务 | `{DATAAPP_API_URL}/api/aggregation/dashboard/email-tasks/?days={N}` | Bearer Token |
+| 价格爬虫 | `{WEBAPP_API_URL}/api/dashboard/scraper-events/?days={N}` | Token (DRF) |
+
+**API 路由**:
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/health` | GET | 健康检查，返回 `{"status": "ok", "timestamp": "..."}` |
+| `/api/tasks` | GET | 当前快照，返回 `{"timestamp", "sections", "stale"}` |
+| `/api/tasks/stream` | GET | SSE 流，每 10 秒推送一次完整快照 |
+
+**SSE 实现**:
+```python
+# 每 10 秒推送一次缓存快照
+async def event_generator():
+    while True:
+        payload = json.dumps(_snapshot(), ensure_ascii=False)
+        yield f"data: {payload}\n\n"
+        await asyncio.sleep(10)
+
+return StreamingResponse(
+    event_generator(),
+    media_type="text/event-stream",
+    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+)
+```
+
+**错误处理**:
+- 单个 API 拉取失败时返回 `None`，不阻塞其他 API
+- 任一 API 失败时设置 `stale = True`，前端可据此显示警告
+- 后台循环异常时记录日志并继续（不会崩溃）
+- 无重试逻辑，依赖下次刷新间隔自动恢复
+
+#### 前端架构 (Vue 3)
+
+**状态管理** (Pinia: `stores/tasks.js`):
+```javascript
+// 核心状态
+sections = ref([])           // 后端返回的区块数组
+connected = ref(false)       // SSE 连接状态
+lastUpdated = ref(null)      // 最后更新时间戳
+
+// SSE 连接
+startStream() → new EventSource('/api/tasks/stream')
+  onopen    → connected = true
+  onmessage → 解析 JSON, 更新 sections/lastUpdated
+  onerror   → connected = false (浏览器自动重连)
+```
+
+**数据模型**:
+
+```
+Section {
+  id: string            // "nextcloud_sync", "webapp_scraper", "excel_tracking", "db_tracking", "email"
+  label: string         // 中文显示名
+  task_groups: [{
+    id: string          // "SYNC_CONTACTS", "WEBAPP_AMAZON" 等
+    label: string       // 任务组名称
+    pipeline: string    // "nextcloud" | "webapp" | "excel" | "db" | "email"
+    events?: [{         // Nextcloud/Webapp 类型
+      id, status, timestamp, direction?, record_count?, conflict_count?,
+      trigger?, rows_received?, rows_inserted?, rows_updated?, ...
+    }]
+    batches?: [{        // Tracking/Email 类型
+      id, status, source, created_at, completed_at,
+      total_jobs, completed_jobs, failed_jobs, detail
+    }]
+  }]
+}
+```
+
+**Pipeline 颜色映射**:
+
+| Pipeline | 颜色 | Ant Design Tag |
+|----------|------|----------------|
+| excel | 绿色 | `green` |
+| db | 极客蓝 | `geekblue` |
+| email | 紫色 | `purple` |
+| nextcloud | 青色 | `cyan` |
+| webapp | 橙色 | `orange` |
+
+**状态颜色**:
+
+| 状态 | 颜色 | 中文标签 |
+|------|------|----------|
+| running | `#1677ff` (蓝) | 运行中 |
+| success | `#52c41a` (绿) | 成功 |
+| error | `#ff4d4f` (红) | 异常 |
+| pending | `#bfbfbf` (灰) | 等待中 |
+
+**甘特图实现** (`TaskTimeline.vue`):
+- 时间范围: 收集所有事件时间戳，前后各加 5% padding（最少 5 分钟）
+- 运行中任务自动延伸未来 10 分钟
+- 时间刻度: 桌面 5 个标记 / 移动 3 个标记（MM-DD HH:MM 格式）
+- L1 层（任务组行）: 可折叠，显示缩略时间条（8px 高度）或事件标记
+- L2 层（展开详情）: 进度条（宽度 = completed_jobs/total_jobs）或事件标记线
+- 动画: 进度条宽度 500ms 渐变，展开/折叠 200ms，运行中脉冲 1.5s 循环
+- 标签列: 桌面 240px / 移动 120px，图表区域弹性填充
+
+**卡片视图实现** (`TaskCards.vue`):
+- 每个区块以分隔线划分
+- 每个任务组为可折叠卡片
+- Nextcloud 事件行: 方向箭头（▼写入/▲写出）+ 触发方式 tag + 状态 badge + 记录数/冲突数
+- Webapp 事件行: 状态 badge + 写入/更新/接收/未匹配统计
+- Tracking 批次行: 来源 tag + 状态 badge + 进度条 + 详情
+- 点击任意项弹出详情 Modal（含阶段时间线、统计表、错误信息等）
+
+**响应式设计** (`useIsMobile.js`):
+- 断点: 768px（监听 window resize 事件，组件卸载时清理）
+- 桌面: 侧边栏 + 甘特图默认 + 5 个时间刻度 + 240px 标签列
+- 移动: 抽屉导航 + 卡片默认 + 3 个时间刻度 + 120px 标签列 + Modal 宽度 92vw
+- 统计面板: xs=12 sm=6（移动 2 列，桌面 4 列）
 
 **环境变量**:
+
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
-| `DATAAPP_API_URL` | dataapp 地址 | — |
-| `DATAAPP_SERVICE_TOKEN` | 认证 Token | — |
-| `WEBAPP_API_URL` | webapp 地址 | — |
-| `FETCH_INTERVAL_S` | 轮询间隔 | 30s |
-| `TIME_WINDOW_DAYS` | 历史时间窗口 | 2天 |
+| `DATAAPP_API_URL` | dataapp 地址 | `http://localhost:8000` |
+| `DATAAPP_SERVICE_TOKEN` | dataapp Bearer Token | — |
+| `WEBAPP_API_URL` | webapp 地址 | `http://localhost:8001` |
+| `WEBAPP_SERVICE_TOKEN` | webapp Token (DRF 格式) | — |
+| `FETCH_INTERVAL_S` | 后台刷新间隔 | 30 秒 |
+| `FETCH_TIMEOUT_S` | 单次请求超时 | 10 秒 |
+| `TIME_WINDOW_DAYS` | 历史数据窗口 | 2 天 |
 
-**访问端口**: 前端 3080 → nginx 80, 后端 8002 → 8001
+**访问端口**: 前端 3080 → nginx:80, 后端 8002 → uvicorn:8001
+
+**Docker 部署**:
+- **后端**: `python:3.11-slim` + uvicorn，健康检查 `/api/health`（15s 间隔, 3 次重试）
+- **前端**: 多阶段构建 `node:22-alpine`(构建) → `nginx:1.27-alpine`(运行)
+- **nginx 配置**: SPA 路由回退 + `/api/` 反向代理到后端，SSE 特殊配置（`proxy_buffering off`, `proxy_read_timeout 86400s`, `Connection ''`）
+- **网络**: 独立 bridge 网络 `dashboard-net`，前端通过 Docker DNS 名 `backend` 访问后端
+
+**安全注意事项**:
+- CORS 配置为 `allow_origins=["*"]`，生产环境应限制域名
+- 无用户级认证（假定为内网仪表盘）
+- 前端不接触上游 Token，全部由后端代理注入
 
 **项目结构**:
 ```
 dashboard/
-├── docker-compose.yml
+├── docker-compose.yml                # 双服务编排（backend + frontend）
 ├── backend/
-│   ├── main.py            # FastAPI 应用
-│   ├── requirements.txt
-│   └── Dockerfile
+│   ├── main.py                       # FastAPI 应用（约 300 行）
+│   │                                 #   后台刷新循环、4 个 section builder、
+│   │                                 #   SSE 流、缓存管理
+│   ├── requirements.txt              # fastapi, uvicorn, httpx
+│   └── Dockerfile                    # python:3.11-slim + uvicorn
 └── frontend/
     ├── src/
-    │   ├── App.vue         # 根组件
-    │   ├── views/
-    │   │   └── DashboardView.vue
-    │   ├── components/
-    │   │   ├── TaskTimeline.vue    # Gantt 视图
-    │   │   └── TaskCards.vue       # Card 视图
+    │   ├── main.js                   # Vue 3 入口（注册 Pinia/Router/AntD）
+    │   ├── App.vue                   # 根布局（侧边栏 + 头部连接状态 + 路由出口）
+    │   ├── router/
+    │   │   └── index.js              # 单路由: / → DashboardView
     │   ├── stores/
-    │   │   └── tasks.js           # Pinia 状态管理 (SSE)
+    │   │   └── tasks.js              # Pinia 状态管理（SSE EventSource 连接）
+    │   ├── views/
+    │   │   └── DashboardView.vue     # 主视图（统计面板 + 视图切换 + Gantt/Card）
+    │   ├── components/
+    │   │   ├── TaskTimeline.vue      # 甘特图视图（时间轴 + 进度条 + 事件标记）
+    │   │   └── TaskCards.vue         # 卡片视图（折叠列表 + 详情 Modal）
     │   └── composables/
-    │       └── useIsMobile.js     # 移动端检测
-    ├── package.json
-    ├── nginx.conf
-    └── Dockerfile
+    │       └── useIsMobile.js        # 响应式断点检测（768px）
+    ├── index.html                    # HTML 入口（lang="ja"）
+    ├── vite.config.js                # Vite 配置（开发代理 /api → :8001）
+    ├── package.json                  # 依赖（vue, pinia, ant-design-vue, vue-router）
+    ├── nginx.conf                    # 生产 nginx（SPA 回退 + API 代理 + SSE 配置）
+    └── Dockerfile                    # 多阶段构建（node:22-alpine → nginx:1.27-alpine）
 ```
 
 ---
