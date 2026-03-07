@@ -7,7 +7,11 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
+import numpy as np
 from django.conf import settings
+
+# numpy 整型的基类，用于 insert_features 类型判断
+_NP_INT_TYPES = np.integer
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +25,7 @@ def _get_client():
         database=getattr(settings, "CLICKHOUSE_DB", "yamagoti"),
         user=getattr(settings, "CLICKHOUSE_USER", "default"),
         password=getattr(settings, "CLICKHOUSE_PASSWORD", ""),
+        compression=getattr(settings, "CLICKHOUSE_COMPRESSION", "lz4"),
     )
 
 
@@ -104,7 +109,12 @@ class ClickHouseService:
             d = {"run_id": run_id, "bucket": _to_naive(row.bucket), "scope": row.scope}
             for c in feature_cols:
                 v = getattr(row, c)
-                d[c] = None if _is_nan(v) else float(v)
+                if _is_nan(v):
+                    d[c] = None
+                elif isinstance(v, (int, _NP_INT_TYPES)):
+                    d[c] = int(v)
+                else:
+                    d[c] = float(v)
             rows.append(d)
 
         self.client.execute(f"INSERT INTO features_wide ({col_list}) VALUES", rows)
@@ -308,6 +318,7 @@ class ClickHouseService:
         limit: int = 200,
         offset: int = 0,
         columns: list[str] | None = None,
+        need_total: bool = True,
     ) -> tuple[list[dict], int]:
         """查询 features_wide, 返回 (rows, total_count)。
 
@@ -315,6 +326,8 @@ class ClickHouseService:
         ----------
         columns : list[str] | None
             要读取的列 (除 bucket, scope 外的额外列), None=全部
+        need_total : bool
+            是否执行 COUNT 查询, False 时 total 返回 -1
         """
         wheres = ["run_id = %(run_id)s"]
         params: dict = {"run_id": run_id}
@@ -349,25 +362,29 @@ class ClickHouseService:
         else:
             col_expr = "*"
 
-        total = self.client.execute(
-            f"SELECT count() FROM features_wide WHERE {where_clause}", params
-        )[0][0]
+        total = -1
+        if need_total:
+            total = self.client.execute(
+                f"SELECT count() FROM features_wide WHERE {where_clause}", params
+            )[0][0]
 
-        rows_raw = self.client.execute(
+        sql = (
             f"SELECT {col_expr} FROM features_wide "
             f"WHERE {where_clause} "
-            f"ORDER BY {order_sql} "
-            f"LIMIT %(lim)s OFFSET %(off)s",
-            {**params, "lim": limit, "off": offset},
-            with_column_types=True,
+            f"ORDER BY {order_sql}"
         )
+        query_params = {**params}
+        if limit > 0:
+            sql += " LIMIT %(lim)s OFFSET %(off)s"
+            query_params["lim"] = limit
+            query_params["off"] = offset
+
+        rows_raw = self.client.execute(sql, query_params, with_column_types=True)
 
         data_rows, col_types = rows_raw
         col_names = [c[0] for c in col_types]
 
-        result = []
-        for r in data_rows:
-            result.append(dict(zip(col_names, r)))
+        result = [dict(zip(col_names, r)) for r in data_rows]
 
         return result, total
 
