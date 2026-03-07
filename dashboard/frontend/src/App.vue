@@ -12,6 +12,10 @@
           <template #icon><dashboard-outlined /></template>
           <router-link to="/">任务总览</router-link>
         </a-menu-item>
+        <a-menu-item key="mail">
+          <template #icon><mail-outlined /></template>
+          <router-link to="/mail">メール管理</router-link>
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
 
@@ -32,6 +36,10 @@
           <template #icon><dashboard-outlined /></template>
           <router-link to="/">任务总览</router-link>
         </a-menu-item>
+        <a-menu-item key="mail">
+          <template #icon><mail-outlined /></template>
+          <router-link to="/mail">メール管理</router-link>
+        </a-menu-item>
       </a-menu>
     </a-drawer>
 
@@ -43,10 +51,10 @@
             style="font-size: 18px; cursor: pointer; color: #595959"
             @click="drawerOpen = true"
           />
-          <span style="font-size: 18px; font-weight: 600">统一任务仪表盘</span>
+          <span style="font-size: 18px; font-weight: 600">{{ pageTitle }}</span>
         </div>
         <a-tag :color="connected ? 'green' : 'red'">
-          {{ connected ? '实时连接中' : '连接断开' }}
+          {{ connected ? '実時間接続中' : '接続切断' }}
         </a-tag>
       </a-layout-header>
 
@@ -64,7 +72,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { DashboardOutlined, MenuOutlined } from '@ant-design/icons-vue'
+import { DashboardOutlined, MailOutlined, MenuOutlined } from '@ant-design/icons-vue'
 import { useTaskStore } from './stores/tasks'
 import { useIsMobile } from './composables/useIsMobile'
 
@@ -73,6 +81,12 @@ const drawerOpen = ref(false)
 const route = useRoute()
 const currentRoute = computed(() => route.name || 'dashboard')
 const isMobile = useIsMobile()
+
+const PAGE_TITLES = {
+  dashboard: '統一タスクダッシュボード',
+  mail: 'メール管理',
+}
+const pageTitle = computed(() => PAGE_TITLES[currentRoute.value] || 'Dashboard')
 
 const taskStore = useTaskStore()
 const connected = computed(() => taskStore.connected)
