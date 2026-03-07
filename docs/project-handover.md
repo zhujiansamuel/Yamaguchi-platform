@@ -3,7 +3,7 @@
 > **项目名称**: Yamaguchi Platform
 > **开发周期**: 2024年9月 ~ 2025年2月
 > **交接日期**: 2025年2月
-> **文档版本**: v1.0
+> **文档版本**: v1.1
 
 ---
 
@@ -134,7 +134,7 @@ ecsite/
 
 ### 3.2 webapp — iPhone 买取价格监控与分析系统
 
-**用途**: 从多个竞品网站抓取 iPhone 买取价格数据，进行统计指标计算、趋势分析和因果推断，辅助定价决策。
+**用途**: 从多个竞品网站抓取 iPhone 买取价格数据，进行统计指标计算、趋势分析、因果推断和价格预测，辅助定价决策。
 
 **技术栈**:
 - 后端: Python 3.11+ / Django 4.2+ / Django REST Framework
@@ -142,6 +142,7 @@ ecsite/
 - 数据库: PostgreSQL（业务数据）+ ClickHouse（分析数据仓库）
 - 计算引擎: PyTorch（向量化特征计算）+ CuPy（GPU 加速，可选）
 - 统计建模: statsmodels 0.14.4（VAR 模型、Granger 因果检验）
+- 机器学习: LightGBM（价格预测模型）
 - 前端: Django 模板 + Chart.js（价格趋势图）
 - 浏览器自动化: Playwright（爬虫使用）
 - 容器化: Docker Compose
@@ -156,6 +157,10 @@ ecsite/
    - `engine/reader.py` — 从 PostgreSQL 读取原始价格记录
    - `engine/align.py` — 将价格数据对齐到 15 分钟时间桶（Bucket），取每个 (shop, iphone, bucket) 最近记录
    - 支持 CPU / GPU 设备选择，支持按天分批处理
+   - **双 NaN 处理模式** (`nan_mode` 参数):
+     - `ffill`（默认）: 前向填充 NaN 后再计算特征，结果更平滑但掩盖数据空隙
+     - `skipnan`: NaN 桶直接输出 NaN，EMA 在有效值恢复时重新初始化，更真实反映数据可用性
+   - **分批读取** (`batch_days` 参数，默认 30 天): 按天分段读取 PostgreSQL，降低峰值内存占用
 
 3. **统计指标计算**:
    - `engine/aggregate.py` — 构建 3D 价格张量 (iphones × shops × buckets)，跨店铺聚合计算:
@@ -199,7 +204,18 @@ ecsite/
    - 支持跨颜色合并、按颜色分拆、降采样
    - 并行数据库 I/O (ThreadPoolExecutor)
 
-6. **Dashboard API**: 向 dashboard 系统提供爬虫任务状态接口
+6. **价格预测 (LightGBM Prediction)** — 基于 LightGBM 的多步价格预测管道:
+   - `engine/prediction.py` — 训练与推理核心逻辑
+   - **训练**: 从 ClickHouse `features_wide` 表读取历史特征（默认 14 天），构建训练集
+   - **模型**: 4 个独立 LightGBM 回归器，分别预测 15 / 30 / 45 / 60 分钟后的跨店铺均价 (mean)
+   - **超参数**: learning_rate=0.05, num_leaves=31, max_depth=6, subsample=0.8, max_rounds=500, early_stopping=50
+   - **训练集划分**: 80% 训练 / 20% 验证（holdout），评估指标 MAE + RMSE
+   - **模型持久化**: pickle 序列化存入 `ModelArtifact` 表，附带 metrics_json（MAE、RMSE、样本量、最佳迭代次数等）
+   - **推理**: 加载最新模型，使用最近 6 小时特征生成预测，结果存入 `ForecastSnapshot` 表
+   - **Celery 异步任务**: `tasks/prediction_tasks.py` 提供训练与推理的异步任务封装
+   - **管理命令**: `train_price_model` / `predict_prices`
+
+7. **Dashboard API**: 向 dashboard 系统提供爬虫任务状态接口
    - `GET /api/dashboard/scraper-events/` — 爬虫事件流
 
 **ClickHouse 数据仓库**:
@@ -214,6 +230,10 @@ ecsite/
 ClickHouse 服务层 (`services/clickhouse_service.py`):
 - 批量插入、分区查询、run 管理（list/promote/drop）
 - 惰性客户端初始化，连接池管理
+- **LZ4 压缩传输** (`CLICKHOUSE_COMPRESSION` 设置，默认 lz4)
+- **动态列选择**: `query_features(columns=[...])` 仅获取所需特征列，节省带宽
+- **可选 COUNT 查询**: `need_total=False` 跳过昂贵的 COUNT 查询
+- **无限行模式**: `limit=0` 配合时间范围可取消行数限制
 
 **AutoML 数据模型** (PostgreSQL):
 
@@ -224,6 +244,8 @@ ClickHouse 服务层 (`services/clickhouse_service.py`):
 | `AutomlVarModel` | VAR 模型参数（系数、AIC、BIC） |
 | `AutomlGrangerResult` | Granger 检验结果（p 值、滞后阶） |
 | `AutomlCausalEdge` | 显著因果关系（权重、置信度） |
+| `ModelArtifact` | LightGBM 模型存储（pickle 二进制 + 特征列 + 评估指标） |
+| `ForecastSnapshot` | 价格预测结果快照（bucket, iphone_id, horizon_min, yhat, is_final） |
 
 **AutoML API 端点** (`api/api_automl.py`):
 
@@ -238,26 +260,45 @@ ClickHouse 服务层 (`services/clickhouse_service.py`):
 | `AutoMLJobResultView` | 获取因果分析结果 |
 | `CompletedJobsListView` | 按 iPhone 列出已完成作业 |
 
+**Prediction API 端点** (`api/api_prediction.py`):
+
+| 端点 | 功能 |
+|------|------|
+| `POST /api/predictions/trigger-training/` | 触发 LightGBM 模型异步训练（指定 iphone 列表） |
+| `POST /api/predictions/trigger-prediction/` | 触发异步推理（指定 iphone 列表） |
+| `GET /api/predictions/forecasts/` | 查询预测结果（支持 iphone_id、model_name、horizon_min 筛选） |
+| `GET /api/predictions/models/` | 列出已训练模型（支持 iphone_id、version 筛选） |
+
+**Feature API 端点** (`views.py`):
+
+| 端点 | 功能 |
+|------|------|
+| `FeatureSnapshotViewSet` | 宽表→长表转换，支持动态列选择和按 name 筛选 |
+| `FeaturePointsViewSet` | 前端图表专用，前端名称↔ClickHouse 列名映射（17 个特征），gzip 压缩响应 |
+
 **项目结构**:
 ```
 webapp/
 ├── AppleStockChecker/
 │   ├── engine/               # 计算引擎
-│   │   ├── pipeline.py       # ETL 编排
-│   │   ├── reader.py         # PG 数据读取
+│   │   ├── pipeline.py       # ETL 编排（含 nan_mode / batch_days 参数）
+│   │   ├── reader.py         # PG 数据读取（分批读取）
 │   │   ├── align.py          # 时间桶对齐
 │   │   ├── aggregate.py      # 跨店铺聚合 (3D 张量)
-│   │   ├── features.py       # 特征计算 (EMA/SMA/WMA/Bollinger)
+│   │   ├── features.py       # 特征计算 (EMA/SMA/WMA/Bollinger，双 NaN 模式)
 │   │   ├── cohorts.py        # Cohort 加权聚合
+│   │   ├── prediction.py     # LightGBM 价格预测（训练 + 推理）
 │   │   └── config.py         # 管道配置
 │   ├── services/
-│   │   └── clickhouse_service.py  # ClickHouse 读写服务
+│   │   └── clickhouse_service.py  # ClickHouse 读写服务（LZ4 压缩、动态列选择）
 │   ├── clickhouse/
 │   │   └── init.sql          # ClickHouse 建表 DDL
 │   ├── tasks/
-│   │   └── automl_tasks.py   # 三阶段因果分析 Celery 任务
+│   │   ├── automl_tasks.py   # 三阶段因果分析 Celery 任务
+│   │   └── prediction_tasks.py  # LightGBM 训练与推理 Celery 任务
 │   ├── api/
 │   │   ├── api_automl.py     # AutoML REST API
+│   │   ├── api_prediction.py # 价格预测 REST API
 │   │   └── trends/           # 趋势分析 API
 │   │       ├── core.py       # 趋势计算核心
 │   │       ├── model_colors.py   # 完整趋势（含店铺明细）
@@ -267,8 +308,13 @@ webapp/
 │   │   └── automl_tasks/
 │   │       └── gpu_utils.py  # GPU (CuPy) 加速工具
 │   ├── models.py             # Django ORM 模型
+│   ├── dashboard_views.py    # Dashboard API（爬虫事件流）
+│   ├── dashboard_auth.py     # Dashboard Token 认证
+│   ├── dashboard_serializers.py  # Dashboard 序列化器
 │   └── management/commands/  # 管理命令
 │       ├── run_pipeline.py   # 执行数据管道
+│       ├── train_price_model.py  # 训练 LightGBM 模型
+│       ├── predict_prices.py # 执行价格预测
 │       ├── promote_run.py    # 提升 run 到生产
 │       └── drop_run.py       # 删除 ClickHouse run
 ├── YamagotiProjects/
@@ -280,9 +326,10 @@ webapp/
 
 **关键依赖**:
 - `statsmodels == 0.14.4` — VAR 模型、Granger 因果检验
+- `lightgbm` — LightGBM 价格预测模型
 - `cupy-cuda13x == 13.6.0` — GPU 加速（可选，自动回退 CPU）
 - `torch` — PyTorch 向量化特征计算
-- `clickhouse-driver` — ClickHouse 客户端
+- `clickhouse-driver` — ClickHouse 客户端（LZ4 压缩）
 - `pandas == 2.3.2` / `numpy == 2.2.6` — 数据处理
 
 **部署**: 独立部署在 Proxmox 虚拟机中。
@@ -1119,6 +1166,7 @@ dashboard/
 | Celery + Redis | webapp, dataapp | 异步任务队列 |
 | PyTorch | webapp | 向量化特征计算 (EMA/SMA/WMA/Bollinger) |
 | statsmodels 0.14.4 | webapp | VAR 模型、Granger 因果检验 |
+| LightGBM | webapp | 价格预测模型（多步回归） |
 | CuPy (cuda13x) | webapp | GPU 加速（可选，自动回退 CPU） |
 | PHP 8.0+ / ThinkPHP 6 | ecsite | 电商后端 |
 | C++ (C++17) | desktopapp, dedktoptools | 桌面应用 |
@@ -1180,6 +1228,12 @@ dashboard/
 - 添加 CuPy GPU 加速支持（自动回退 CPU）
 - 添加价格趋势分析与可视化（A/B/C 三线均线 + Chart.js）
 - 开发 Dashboard API 端点
+- **新增 LightGBM 价格预测模型**: 4 个时间步（15/30/45/60 分钟），含训练/推理管道、模型持久化和 REST API
+- **新增双 NaN 处理模式**: ffill（前向填充）和 skipnan（跳过 NaN）两种特征计算策略
+- **ETL 管道性能优化**: 分批读取（batch_days）、ClickHouse LZ4 压缩传输、动态列选择、可选 COUNT 查询
+- **GPU 引擎对齐**: SMA/WMA 向量化、消除 logb 重复写入、Celery 计算方法与 GPU 引擎统一输出格式
+- **特征计算 Bug 修复**: EMA 前向填充修正、Bollinger Bands 一致性修复、加权 std/dispersion 修正
+- **前端图表 API 优化**: FeaturePointsViewSet 前端名称映射 + gzip 压缩响应
 
 #### dataapp（数据整合平台）
 - 设计并实现库存管理数据模型: Inventory（五状态流转）+ 四种来源（Purchasing / LegalPersonOffline / EcSite / TemporaryChannel）+ 三级批次分类
