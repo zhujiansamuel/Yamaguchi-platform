@@ -13,6 +13,8 @@ services:
       - FETCH_INTERVAL_S=${FETCH_INTERVAL_S:-30}
       - FETCH_TIMEOUT_S=${FETCH_TIMEOUT_S:-10}
       - TIME_WINDOW_DAYS=${TIME_WINDOW_DAYS:-2}
+      - XSERVER_MAIL_HOST=${XSERVER_MAIL_HOST:-sv16698.xserver.jp}
+      - MAIL_ACCOUNTS=${MAIL_ACCOUNTS:-[]}
     networks:
       - dashboard-net
     healthcheck:
