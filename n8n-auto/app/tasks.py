@@ -1,12 +1,15 @@
 import re
 import requests
 import asyncio
+import traceback
+import subprocess
+import json
 from typing import Optional, Tuple, List, Dict
 import pandas as pd
 from playwright.async_api import async_playwright
 
 # 全局变量定义
-df2 = None
+# df2 = None # This global variable is not used after refactoring
 
 BASE_URL = "http://www.mobile-zone.jp"
 TOKEN = "008c43ec-7b08-4af0-86c4-b4495e15cee0"
@@ -14,7 +17,7 @@ LIST_ENDPOINT = f"{BASE_URL}/api/goodsprice/list"
 UPDATE_ENDPOINT = f"{BASE_URL}/api/goodsprice/update"
 PRICE_COL = "未開封_int"
 URL = "https://iphonekaitori.tokyo/series/iphone/market-price"
-BASE_URL = "http://www.mobile-zone.jp"
+# BASE_URL = "http://www.mobile-zone.jp" # Duplicate definition
 reduce_json = [{
     "goods_id": 36,
     "title": "iPhone Air 1TB",
@@ -639,45 +642,83 @@ def post_update_prices(payload: dict, token: str, timeout: int = 60) -> dict:
     return resp.json()
 
 
-async def main():
-    global df2
-    print("=" * 20)
-    print(f"  🚀 开始提取...")
-    df2 = await scrape_rank_table_to_df(headless=True)
-    # df2 = scrape_rank_table_to_df(headless=True)
+async def run_price_update_task(webhook_url: Optional[str] = None):
+    print("--- Background task: run_price_update_task started ---", flush=True)
+    result_payload = {}
+    try:
+        print("=" * 20, flush=True)
+        print(f"  🚀 开始提取...", flush=True)
+        df = await scrape_rank_table_to_df(headless=True)
 
-    if df2 is None or df2.empty:
-        raise RuntimeError(f" ❌ df2 is not defined or empty. Please check the scraping logic.")
+        if df is None or df.empty:
+            raise RuntimeError(f" ❌ df is not defined or empty. Please check the scraping logic.")
 
-    if "iphone" not in df2.columns:
-        raise ValueError(f" ❌ df2 must contain column: 'iphone'")
+        if "iphone" not in df.columns:
+            raise ValueError(f" ❌ df must contain column: 'iphone'")
 
-    if PRICE_COL not in df2.columns:
-        raise ValueError(f" ❌ df2 must contain column: '{PRICE_COL}'")
+        if PRICE_COL not in df.columns:
+            raise ValueError(f" ❌ df must contain column: '{PRICE_COL}'")
 
-    print(f"  ✅ 成功提取")
-    print(f"  🔍 获取映射表...")
-    goods_json_live = fetch_goodsprice_list_all(token=TOKEN, title="iPhone", limit=200)
-    print(f"  📝 匹配映射表...")
-    df3 = add_goods_mapping_from_live_json(df2, goods_json_live)
-    unmatched = df3[df3["goods_id"].isna() | df3["spec_index"].isna()][["iphone"]].drop_duplicates()
-    if len(unmatched) > 0:
-        print("  ⚠️ Some rows cannot be mapped to goods_id/spec_index. They will be skipped:", len(unmatched), ".")
+        print(f"  ✅ 成功提取", flush=True)
+        print(f"  🔍 获取映射表...", flush=True)
+        goods_json_live = fetch_goodsprice_list_all(token=TOKEN, title="iPhone", limit=200)
+        print(f"  📝 匹配映射表...", flush=True)
+        df3 = add_goods_mapping_from_live_json(df, goods_json_live)
+        unmatched_count = len(df3[df3["goods_id"].isna() | df3["spec_index"].isna()][["iphone"]].drop_duplicates())
+        if unmatched_count > 0:
+            print(f"  ⚠️ Some rows cannot be mapped to goods_id/spec_index. They will be skipped: {unmatched_count} .", flush=True)
 
-    df3_adj = apply_reduce_price(
-        df=df3,
-        reduce_json=reduce_json,  # 你提供的新 json（list[dict]）
-        base_price_col=PRICE_COL,  # 原始提取价格列
-        out_price_col="price_to_update",  # 最终用于更新的价格列名
-    )
+        df3_adj = apply_reduce_price(
+            df=df3,
+            reduce_json=reduce_json,
+            base_price_col=PRICE_COL,
+            out_price_col="price_to_update",
+        )
 
-    payload = build_prices_payload(df3_adj, price_col=PRICE_COL)
-    print("  ⏳ Ready to update price entries:", len(payload["prices"]), ".")
-    result = post_update_prices(payload, token=TOKEN)
-    print(f"  ", "-" * 10)
-    print(f"  ✅ 已完成：{result['msg']}")
-    print(f"  ", "-" * 10)
-    print("=" * 20)
+        payload = build_prices_payload(df3_adj, price_col="price_to_update")
+        print(f"  ⏳ Ready to update price entries: {len(payload['prices'])} .", flush=True)
+        result = post_update_prices(payload, token=TOKEN)
+        print(f"  ", "-" * 10, flush=True)
+        print(f"  ✅ 已完成：{result['msg']}", flush=True)
+        print(f"  ", "-" * 10, flush=True)
+        print("=" * 20, flush=True)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+        result_payload = {"status": "success", "data": result, "unmatched_rows": unmatched_count}
+
+    except Exception as e:
+        error_message = f"Error: {e}"
+        print(f"--- Background task: run_price_update_task encountered an error ---", flush=True)
+        print(error_message, flush=True)
+        traceback.print_exc()
+        result_payload = {"status": "error", "message": error_message, "traceback": traceback.format_exc()}
+
+    finally:
+        if webhook_url:
+            try:
+                print(f"--- Sending callback to webhook via curl: {webhook_url} ---", flush=True)
+                json_data = json.dumps(result_payload)
+                command = [
+                    "curl",
+                    "-X", "POST",
+                    "-H", "Content-Type: application/json",
+                    "-d", json_data,
+                    "--max-time", "10", # 10 second timeout for the curl command
+                    webhook_url
+                ]
+                process = subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    check=False # Do not raise exception on non-zero exit codes
+                )
+                if process.returncode == 0:
+                    print(f"--- curl callback sent successfully. Response: {process.stdout}", flush=True)
+                else:
+                    print(f"--- FAILED to send webhook callback via curl. Return code: {process.returncode}", flush=True)
+                    print(f"--- curl stderr: {process.stderr}", flush=True)
+
+            except Exception as e:
+                print(f"--- FAILED to execute curl command: {e} ---", flush=True)
+                traceback.print_exc()
+        
+        print("--- Background task: run_price_update_task finished ---", flush=True)
