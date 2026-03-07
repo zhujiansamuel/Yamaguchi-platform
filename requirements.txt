@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+requests
+pandas
+playwright==1.40.0
