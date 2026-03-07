@@ -804,30 +804,120 @@ dedktoptools/
 
 ---
 
-### 3.7 n8n-auto — n8n 集成自动化脚本
+### 3.7 n8n-auto — n8n 集成自动化价格同步
 
-**用途**: 以 FastAPI 形式提供 HTTP 接口，配合 n8n 自动化平台进行价格同步操作。
+**用途**: 配合 n8n 自动化平台，从竞品网站抓取 iPhone 买取价格并自动同步到 ecsite（mobile-zone.jp），包含价格折减规则引擎。
 
-**与 auto 的区别**: auto 以系统服务形式独立运行定期脚本；n8n-auto 以 FastAPI 服务形式运行，由 n8n 平台的 workflow 通过 HTTP 触发调用，两者并行使用，覆盖不同的自动化场景。
+**与 auto 的区别**: auto 以系统服务形式独立运行定期脚本；n8n-auto 由 n8n 平台的 workflow 通过 HTTP 触发调用，两者并行使用，覆盖不同的自动化场景。
 
 **技术栈**:
-- 语言: Python 3
-- Web 框架: FastAPI（推断）
-- Web 自动化: Playwright (async)
-- 数据处理: pandas
-- HTTP 客户端: requests
+- 语言: Python 3（async/await）
+- Web 自动化: Playwright (async_playwright, Chromium headless)
+- 数据处理: pandas（DataFrame 匹配、合并、清洗）
+- HTTP 客户端: requests（ecsite API 调用）
 
 **核心功能**:
-- 从外部网站抓取 iPhone 价格数据
-- 通过 ecsite API 更新商品价格
-- 支持 iPhone Air 等新机型价格管理
-- 价格折减规则自动应用（如 -1000 日元折扣）
+
+1. **竞品价格抓取** (`scrape_rank_table_to_df`):
+   - 数据源: `https://iphonekaitori.tokyo/series/iphone/market-price`
+   - Playwright 异步抓取「iPhone カラー別・ランク別買取価格表」HTML 表格
+   - 解析 5 种商品状态价格: 未開封 / 未使用 / ランクA / ランクB / ランクC
+   - 从「機種名」单元格提取: 机型名、型番（Model Number）、JANコード
+   - 日元字符串自动转整数（如 `"209,800 円"` → `209800`）
+
+2. **ecsite 商品映射** (`match_goods_by_iphone`):
+   - 从 ecsite API 分页获取全部商品列表（`GET /api/goodsprice/list`，自动翻页）
+   - 构建 `title_norm → [{spec_name, goods_id, spec_index}]` 映射表
+   - 模糊匹配: 标题标准化（小写、空格归一化、容量单位统一 256G→256GB）
+   - 兜底: GB/G 互换重试、最长匹配优先
+   - 输出: 每条抓取记录关联到 `(goods_id, spec_index)`
+
+3. **价格折减规则引擎** (`apply_reduce_price`):
+   - 基于 `(goods_id, spec_index)` 键匹配折减规则
+   - 当前配置 41 条规则，覆盖:
+
+   | 机型 | 容量 | 折减 |
+   |------|------|------|
+   | iPhone Air | 256GB / 512GB / 1TB（全 4 色） | -1000 円 |
+   | iPhone 17 | 512GB（全 5 色） | -1000 円 |
+   | iPhone 17 | 256GB（全 5 色） | 0 円 |
+   | iPhone 17 Pro | 1TB（全 3 色） | -1000 円 |
+   | iPhone 17 Pro | 256GB / 512GB（全 3 色） | 0 円 |
+   | iPhone 17 Pro Max | 2TB（全 3 色） | -1000 円 |
+   | iPhone 17 Pro Max | 256GB / 512GB / 1TB（全 3 色） | 0 円 |
+
+   - 计算: `最终价格 = 抓取价格 + reduce_price`
+   - 未匹配规则的商品默认 reduce_price = 0
+
+4. **批量价格更新** (`post_update_prices`):
+   - 构建 JSON payload: `{"prices": [{"goods_id", "spec_index", "price"}, ...]}`
+   - 过滤: 仅提交 goods_id / spec_index / price 均有效且价格 > 0 的记录
+   - 调用 ecsite API: `POST /api/goodsprice/update`（Token 认证）
+
+**完整执行流程**:
+
+```
+iphonekaitori.tokyo            ecsite (mobile-zone.jp)
+  (竞品价格网站)                    (自家电商网站)
+       │                              │
+       ▼                              ▼
+  [1] Playwright 抓取           [2] GET /api/goodsprice/list
+  (カラー別価格表)               (获取全部商品 + 分页)
+       │                              │
+       ▼                              ▼
+   DataFrame df2               title_to_specs 映射表
+       │                              │
+       └──────────┬───────────────────┘
+                  ▼
+         [3] 模糊匹配 → (goods_id, spec_index)
+                  │
+                  ▼
+         [4] apply_reduce_price (折减规则)
+                  │
+                  ▼
+         [5] POST /api/goodsprice/update
+                  │
+                  ▼
+            ecsite 价格已更新
+```
+
+**ecsite API 端点**:
+
+| 端点 | 方法 | 用途 |
+|------|------|------|
+| `/api/goodsprice/list` | GET | 分页获取商品列表（params: page, limit, title） |
+| `/api/goodsprice/update` | POST | 批量更新商品价格（JSON body: prices 数组） |
+
+**认证**: 两个端点均使用 Header `token: <TOKEN>` 认证。
+
+**关键函数**:
+
+| 函数 | 用途 |
+|------|------|
+| `scrape_rank_table_to_df()` | Playwright 异步抓取竞品价格表 |
+| `parse_device_cell()` | 解析 HTML 单元格（机型名 + 型番 + JAN） |
+| `yen_to_int()` | 日元字符串转整数 |
+| `fetch_goodsprice_list_all()` | 分页获取 ecsite 全部商品 |
+| `build_title_to_specs()` | 构建标题→规格映射表 |
+| `match_goods_by_iphone()` | 模糊匹配抓取记录到 ecsite 商品 |
+| `apply_reduce_price()` | 应用价格折减规则 |
+| `build_prices_payload()` | 构建 API 更新 payload |
+| `post_update_prices()` | 调用 ecsite 价格更新 API |
 
 **项目结构**:
 ```
 n8n-auto/
-└── wiki-price.py         # 价格同步脚本
+└── wiki-price.py         # 价格同步脚本（约 680 行）
+                          #   全局配置: API 端点、Token、折减规则 (reduce_json)
+                          #   抓取: Playwright async 竞品价格表
+                          #   匹配: 标题标准化 + 模糊匹配
+                          #   折减: (goods_id, spec_index) 键匹配规则
+                          #   更新: ecsite REST API 批量价格更新
 ```
+
+**安全注意事项**:
+- ecsite API Token 硬编码在源码中，建议迁移到环境变量
+- 折减规则硬编码为 Python 列表，如需动态调整建议改为配置文件或数据库
 
 **部署**: Docker 容器运行在主服务器上，与 n8n 平台配合。
 
@@ -1162,7 +1252,8 @@ dashboard/
 | Python 3.11+ | webapp, dataapp, auto, n8n-auto, dashboard | 主要后端语言 |
 | Django 4.2+ | webapp, dataapp | Web 框架 |
 | Django REST Framework | webapp, dataapp | API 开发 |
-| FastAPI | dashboard, n8n-auto | 轻量 API 服务 |
+| FastAPI | dashboard | 轻量 API 服务 |
+| Playwright (async) | n8n-auto, auto | 浏览器自动化（价格抓取） |
 | Celery + Redis | webapp, dataapp | 异步任务队列 |
 | PyTorch | webapp | 向量化特征计算 (EMA/SMA/WMA/Bollinger) |
 | statsmodels 0.14.4 | webapp | VAR 模型、Granger 因果检验 |
@@ -1269,10 +1360,12 @@ dashboard/
 - 实现 Excel 映射表批量重命名
 - 构建 Qt6 GUI 界面
 
-#### n8n-auto（n8n 自动化）
-- 开发 FastAPI 接口供 n8n 调用
-- 实现 iPhone Air 等新机型价格管理
-- 配置价格折减规则
+#### n8n-auto（n8n 自动化价格同步）
+- 开发 Playwright 异步竞品价格抓取（iphonekaitori.tokyo カラー別・ランク別買取価格表）
+- 实现 ecsite 商品模糊匹配引擎（标题标准化 + 容量单位归一化 + 最长匹配）
+- 开发价格折减规则引擎（41 条规则，覆盖 iPhone Air / 17 / 17 Pro / 17 Pro Max）
+- 实现 ecsite API 分页获取 + 批量价格更新
+- 支持 5 种商品状态价格: 未開封 / 未使用 / ランクA / ランクB / ランクC
 
 #### dev（ELK 日志平台）
 - 搭建 ELK Stack 8.12.0
