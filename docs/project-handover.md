@@ -1008,7 +1008,7 @@ dev/
 
 ### 3.9 dashboard — 统一任务监控仪表盘
 
-**用途**: 聚合 dataapp 和 webapp 的任务状态数据，提供实时可视化监控面板，覆盖 Nextcloud 同步、快递追踪、邮件处理、价格爬虫四大任务类型。
+**用途**: 聚合 dataapp 和 webapp 的任务状态数据，提供实时可视化监控面板，覆盖 Nextcloud 同步、快递追踪、邮件处理、价格爬虫四大任务类型。同时提供多账户邮件管理功能（Xserver IMAP/SMTP）。
 
 **技术栈**:
 - 前端: Vue 3.5 (Composition API) + Vite 6.1 + Ant Design Vue 4.2 + Pinia 2.3
@@ -1035,6 +1035,14 @@ dev/
 
 4. **响应式设计**: 桌面侧边栏（可折叠）+ 移动端抽屉导航（768px 断点）
 
+5. **多账户邮件管理** (`/mail` 页面):
+   - 支持 4 个 Xserver 邮箱账户（contact / error / info / no-reply）
+   - IMAP4_SSL (993) 收信 + SMTP_SSL (465) 发信
+   - 收信: 收件箱 / 已发送切换，分页列表，已读/未读标记，附件下载
+   - 发信: 手动选择发件人（默认 contact@mobile-zone.jp），支持 CC、纯文本
+   - 操作: 删除、标记已读、返信（自动引用原文）
+   - 布局: 左侧邮件列表（380px）+ 右侧详情，移动端上下排列
+
 #### 后端架构 (FastAPI)
 
 **数据缓存机制**:
@@ -1059,6 +1067,14 @@ dev/
 | `/api/health` | GET | 健康检查，返回 `{"status": "ok", "timestamp": "..."}` |
 | `/api/tasks` | GET | 当前快照，返回 `{"timestamp", "sections", "stale"}` |
 | `/api/tasks/stream` | GET | SSE 流，每 10 秒推送一次完整快照 |
+| `/api/mail/accounts` | GET | 已配置邮箱账户列表（不含密码） |
+| `/api/mail/{account}/inbox` | GET | 收件箱（分页：`page`, `per_page`） |
+| `/api/mail/{account}/sent` | GET | 已发送（自动探测 Sent / INBOX.Sent 文件夹） |
+| `/api/mail/{account}/message/{uid}` | GET | 单封邮件详情（含正文、附件列表） |
+| `/api/mail/{account}/attachment/{uid}/{part}` | GET | 下载附件 |
+| `/api/mail/{account}/send` | POST | 发送邮件（JSON: `to`, `subject`, `body`, `cc?`） |
+| `/api/mail/{account}/delete` | POST | 删除邮件（JSON: `uids[]`, `folder?`） |
+| `/api/mail/{account}/mark-read` | POST | 标记已读（JSON: `uids[]`, `folder?`） |
 
 **SSE 实现**:
 ```python
@@ -1081,6 +1097,25 @@ return StreamingResponse(
 - 任一 API 失败时设置 `stale = True`，前端可据此显示警告
 - 后台循环异常时记录日志并继续（不会崩溃）
 - 无重试逻辑，依赖下次刷新间隔自动恢复
+
+**邮件管理后端** (IMAP/SMTP):
+
+邮箱账户通过环境变量 `MAIL_ACCOUNTS` (JSON 数组) 配置，启动时解析为 `_ACCOUNT_MAP` 字典。
+配置模板脚本: `dashboard/setup-env.sh`（密码部分需手动填写）。
+
+| 账户 key | 邮箱地址 | 用途 |
+|----------|----------|------|
+| `contact` | contact@mobile-zone.jp | 对外联络（默认发件人） |
+| `error` | error@automation.mobile-zone.jp | 自动化异常通知 |
+| `info` | info@automation.mobile-zone.jp | 自动化信息通知 |
+| `no-reply` | no-reply@mobile-zone.jp | 无需回复的通知 |
+
+- **收信**: `imaplib.IMAP4_SSL` (端口 993)，`asyncio.to_thread()` 避免阻塞事件循环
+- **发信**: `smtplib.SMTP_SSL` (端口 465)，支持纯文本 + 附件
+- **分页**: `conn.search(None, "ALL")` 获取全量 UID，倒序排列后切片
+- **已发送文件夹**: 自动探测 `Sent` / `INBOX.Sent` / `sent`（Xserver 兼容）
+- **头部解码**: RFC 2047 编码头 (`=?UTF-8?B?...?=`) 通过 `email.header.decode_header()` 解码
+- **安全**: 密码仅存于环境变量，`/api/mail/accounts` 不返回密码字段
 
 #### 前端架构 (Vue 3)
 
@@ -1173,6 +1208,8 @@ Section {
 | `FETCH_INTERVAL_S` | 后台刷新间隔 | 30 秒 |
 | `FETCH_TIMEOUT_S` | 单次请求超时 | 10 秒 |
 | `TIME_WINDOW_DAYS` | 历史数据窗口 | 2 天 |
+| `XSERVER_MAIL_HOST` | Xserver 邮件服务器地址 | `sv16698.xserver.jp` |
+| `MAIL_ACCOUNTS` | 邮箱账户 JSON 数组（含 key, address, password） | `[]` |
 
 **访问端口**: 前端 3080 → nginx:80, 后端 8002 → uvicorn:8001
 
@@ -1191,22 +1228,26 @@ Section {
 ```
 dashboard/
 ├── docker-compose.yml                # 双服务编排（backend + frontend）
+├── setup-env.sh                      # 環境変数テンプレート（パスワード要書換）
+├── .gitignore                        # .env をコミット対象外に設定
 ├── backend/
-│   ├── main.py                       # FastAPI 应用（约 300 行）
+│   ├── main.py                       # FastAPI 应用（约 640 行）
 │   │                                 #   后台刷新循环、4 个 section builder、
-│   │                                 #   SSE 流、缓存管理
-│   ├── requirements.txt              # fastapi, uvicorn, httpx
+│   │                                 #   SSE 流、缓存管理、
+│   │                                 #   IMAP/SMTP 邮件管理 API
+│   ├── requirements.txt              # fastapi, uvicorn, httpx, python-multipart
 │   └── Dockerfile                    # python:3.11-slim + uvicorn
 └── frontend/
     ├── src/
     │   ├── main.js                   # Vue 3 入口（注册 Pinia/Router/AntD）
     │   ├── App.vue                   # 根布局（侧边栏 + 头部连接状态 + 路由出口）
     │   ├── router/
-    │   │   └── index.js              # 单路由: / → DashboardView
+    │   │   └── index.js              # 路由: / → DashboardView, /mail → MailView
     │   ├── stores/
     │   │   └── tasks.js              # Pinia 状态管理（SSE EventSource 连接）
     │   ├── views/
-    │   │   └── DashboardView.vue     # 主视图（统计面板 + 视图切换 + Gantt/Card）
+    │   │   ├── DashboardView.vue     # 主视图（统计面板 + 视图切换 + Gantt/Card）
+    │   │   └── MailView.vue          # 邮件管理（账户切换 + 列表 + 详情 + 新規作成）
     │   ├── components/
     │   │   ├── TaskTimeline.vue      # 甘特图视图（时间轴 + 进度条 + 事件标记）
     │   │   └── TaskCards.vue         # 卡片视图（折叠列表 + 详情 Modal）
