@@ -59,10 +59,12 @@ class WorkerThread(QThread):
         if self.task == "apply":
             self.log_signal.emit(f"[{timestamp}] === 内網設定を適用中 ===")
 
-            # Import certificate
+            # Import certificates
             self.log_signal.emit(f"[{timestamp}] ルート証明書をインポート中...")
-            ok, msg = cert_manager.import_root_cert()
-            self.log_signal.emit(f"[{timestamp}] {msg}")
+            results = cert_manager.import_root_certs()
+            for ok, msg in results:
+                t = datetime.now().strftime("%H:%M:%S")
+                self.log_signal.emit(f"[{t}] {msg}")
 
             # Apply DNS + disable IPv6
             self.log_signal.emit(f"[{timestamp}] DNS設定 / IPv6無効化中...")
@@ -218,7 +220,7 @@ class MainWindow(QMainWindow):
             self,
             "確認",
             f"以下の操作を実行します:\n\n"
-            f"1. ルート証明書をインポート\n"
+            f"1. ルート証明書（2件）をインポート\n"
             f"2. DNS を {dns_config.DNS_SERVER} に設定\n"
             f"3. IPv6 を無効化\n\n"
             f"すべてのアクティブなアダプタに適用されます。\n"
